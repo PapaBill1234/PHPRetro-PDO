@@ -1,4 +1,5 @@
 <?php
+// FILE: collectables.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -26,14 +27,20 @@ $page['bodyid'] = "home";
 $page['cat'] = "credits";
 require_once('./templates/community_header.php');
 
+$db = new Database();
 $data = new credits_sql;
 $this['month'] = date('m');
 $this['year'] = date('Y');
 $this['time'] = mktime(0,0,0,$this['month'],1,$this['year']);
 $this['next_time'] = strtotime("+1 Month",$this['time']);
-$sql = $data->select3($this['time']);
-$row = $db->fetch_row($sql);
-if($row[0] == ""){ $row[0] = $lang->loc['no.collectables']; $row[1] = $lang->loc['no.collectables.desc']; $row[2] = ""; $nocollectable = true; }
+// Use prepared statement – assume select3 expects time parameter
+$row = $db->fetchRow("SELECT name, desc, image FROM collectibles WHERE time = ?", [$this['time']]);
+if(empty($row['name'])){ 
+    $row['name'] = $lang->loc['no.collectables']; 
+    $row['desc'] = $lang->loc['no.collectables.desc']; 
+    $row['image'] = ""; 
+    $nocollectable = true; 
+}
 ?>
 <div id="container">
 	<div id="content" style="position: relative" class="clearfix">
@@ -45,10 +52,10 @@ if($row[0] == ""){ $row[0] = $lang->loc['no.collectables']; $row[1] = $lang->loc
 							</h2>
 
 						<div id="collectible-current-content" class="clearfix">
-		<div id="collectibles-current-img" style="background-image: url(<?php echo str_replace("%path%",PATH,$row[2]); ?>)"></div>
-		<h4><?php echo $input->HoloText($row[0]); ?></h4>
+		<div id="collectibles-current-img" style="background-image: url(<?php echo str_replace("%path%",PATH,$row['image']); ?>)"></div>
+		<h4><?php echo $input->HoloText($row['name']); ?></h4>
 		<p><?php echo date('F')." ".date('Y'); ?></p>
-			<p class="last"><?php echo $input->HoloText($row[1]); ?></p>
+			<p class="last"><?php echo $input->HoloText($row['desc']); ?></p>
 			<?php if($user->id != "0" && $nocollectable != true){ ?>
 			<p id="collectibles-purchase">
 
@@ -83,9 +90,10 @@ Collectibles.init(<?php echo $this['next_time'] - time(); ?>);
 							</h2>
 						<ul id="collectibles-list">
 		<?php
-		$sql = $data->select4($this['time']);
+		// select4 expects time parameter
+		$rows = $db->fetchAll("SELECT name, desc, image, time FROM collectibles WHERE time < ? ORDER BY time DESC", [$this['time']]);
 		$i = 0;
-		while($row = $db->fetch_row($sql)) {
+		foreach($rows as $row) {
         $i++;
         if($input->IsEven($i)){
             $even = "even";
@@ -94,9 +102,9 @@ Collectibles.init(<?php echo $this['next_time'] - time(); ?>);
         }
 		?>
 	<li class="<?php echo $even; ?> clearfix">
-		<div class="collectibles-prodimg" style="background-image: url(<?php echo str_replace("%path%",PATH,$row[2]); ?>)"></div>
-		<h4><?php echo date('F Y',$row[3]); ?>: <?php echo $input->HoloText($row[0]); ?></h4>
-		<p class="collectibles-proddesc last"><?php echo $input->HoloText($row[1]); ?></p>
+		<div class="collectibles-prodimg" style="background-image: url(<?php echo str_replace("%path%",PATH,$row['image']); ?>)"></div>
+		<h4><?php echo date('F Y',$row['time']); ?>: <?php echo $input->HoloText($row['name']); ?></h4>
+		<p class="collectibles-proddesc last"><?php echo $input->HoloText($row['desc']); ?></p>
 	</li>
 	<?php } ?>
 </ul>

@@ -1,4 +1,5 @@
 <?php
+// FILE: security_check.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -17,26 +18,44 @@
 
 $page['bypass_user_check'] = true;
 require_once('./includes/core.php');
+require_once('./includes/Database.php');
 $lang->addLocale("redirect");
 
-$pageid = $input->HoloText($_GET['page']);
+$pageid = isset($_GET['page']) ? $input->HoloText($_GET['page']) : '';
 if(isset($_SESSION['page']) && $pageid == ""){ $pageid = $_SESSION['page']; }
-$type = $_GET['type'];
+$type = isset($_GET['type']) ? $_GET['type'] : '';
+
+$db = new Database();
 
 if($type == "token"){
 	$_SESSION = array();
-	$token = $input->FilterText($_COOKIE['rememberme_token']);
-	$sql = $serverdb->query("SELECT id FROM ".PREFIX."users WHERE remember_token = '".$token."' LIMIT 1");
-		if($serverdb->num_rows($sql) > 0){
-			$id = $serverdb->result($sql);
-			$username = $serverdb->result($core->select1($id), 0, 1);
-			$password = $serverdb->result($core->select1($id));
-		}else{
+	$token = isset($_COOKIE['rememberme_token']) ? $_COOKIE['rememberme_token'] : '';
+	// Look up token using hash_equals for timing safety
+	$rows = $db->fetchAll("SELECT id, remember_token FROM users WHERE remember_token IS NOT NULL");
+	$id = null;
+	foreach($rows as $row){
+		if(hash_equals($row['remember_token'], $token)){
+			$id = $row['id'];
+			break;
+		}
+	}
+	if($id){
+		$user = new HoloUser(null, null); // empty user
+		if($user->loadUserById($id)){
+			$_SESSION['user'] = $user;
+			$_SESSION['reauthenticate'] = "true";
+		} else {
 			$user->destroy();
 		}
-	$user = new HoloUser($username,$password,true);
-	$_SESSION['user'] = $user;
-	$_SESSION['reauthenticate'] = "true";
+	} else {
+		// invalid token, destroy any existing session
+		if(isset($user) && is_object($user)){
+			$user->destroy();
+		} else {
+			$user = new HoloUser(null, null);
+			$user->destroy();
+		}
+	}
 }elseif(isset($_SESSION['user']) && is_object($_SESSION['user'])){
 	$user = $_SESSION['user'];
 }else{

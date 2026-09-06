@@ -1,4 +1,5 @@
 <?php
+// FILE: reauthenticate.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -28,18 +29,19 @@ if($user->id == 0){ header("Location: ".PATH."/"); }
 
 if(isset($_POST['password'])) {
 	$username = $user->name;
-	$password = $input->FilterText($_POST['password']);
-	$password_hash = $input->HoloHash($password, $username);
-
-	$user = new HoloUser($username,$password_hash,true);
+	$plain_password = $_POST['password']; // plaintext, not hashed
+	// We will pass plaintext to HoloUser constructor
+	$user = new HoloUser($username, $plain_password, true);
 	$_SESSION['user'] = $user;
 	unset($_SESSION['reauthenticate']);
 	
 	if($user->error > 0){
 		$user->destroy();
-		header("Location: ".PATH."/?page=".$input->HoloText($_POST['page'])."&username=".$username."&error=".$user->error); exit;
+		$page = isset($_POST['page']) ? $input->HoloText($_POST['page']) : '';
+		header("Location: ".PATH."/?page=".$page."&username=".$username."&error=".$user->error); exit;
 	}else{
-		$_SESSION['page'] = $input->HoloText($_POST['page']);
+		$page = isset($_POST['page']) ? $input->HoloText($_POST['page']) : '';
+		$_SESSION['page'] = $page;
 		header("Location: ".PATH."/security_check"); exit;
 	}
 }
@@ -71,7 +73,7 @@ require_once('./templates/login_header.php');
     
     <div class="box-content clearfix" id="login-habblet">
         <form action="<?php echo PATH; ?>/account/reauthenticate" method="post" class="login-habblet">
-        	<input type="hidden" name="page" value="<?php echo $_SESSION['page']; ?>" />
+        	<input type="hidden" name="page" value="<?php echo isset($_SESSION['page']) ? $input->HoloText($_SESSION['page']) : ''; ?>" />
             <ul>
 
                 <li>

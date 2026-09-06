@@ -1,4 +1,5 @@
 <?php
+// FILE: account.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -38,11 +39,12 @@ case "submit":
 	}
 	$lang->addLocale("redirect");
 	unset($_SESSION['error']);
-	$name = $input->FilterText($_POST['username']);
-	$password = $input->HoloHash($_POST['password'], $name);
+	// Plaintext password – HoloUser will verify and migrate to password_hash if needed
+	$name = $_POST['username'];
+	$password = $_POST['password'];
 	$remember_me = $_POST['_login_remember_me'];
 	
-	$user = new HoloUser($name,$password,true,$remember_me);
+	$user = new HoloUser($name, $password, true, $remember_me);
 	$_SESSION['user'] = $user;
 	$lang->addLocale("landing.login");
 	

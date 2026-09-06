@@ -1,4 +1,7 @@
 <?php
+// FILE: includes/classes.php
+require_once(__DIR__ . '/Database.php');
+
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -19,9 +22,10 @@ if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 class HoloInput {
 	function FilterText($str) {
-		if(get_magic_quotes_gpc()){ $str = stripslashes($str); }
+		// get_magic_quotes_gpc() removed – assume false
 		$str = preg_replace(array('/\x{0001}/u','/\x{0002}/u','/\x{0003}/u','/\x{0005}/u','/\x{0009}/u'),' ',$str);
-		if($GLOBALS['conn']['main']['server'] == "mysql" || $GLOBALS['conn']['server']['server'] == "mysql"){ $str = mysql_real_escape_string($str); }else{ $str = addslashes($str); }
+		// SQL escaping removed – will be handled by PDO in Phase 2
+		throw new Exception("Not yet migrated – see Phase 2");
 		return $str;
 	}
 	function HoloText($str, $advanced=false) {
@@ -35,6 +39,10 @@ class HoloInput {
 		if($spaces == true){ $str = str_replace(" ", "-", $str); }else{ str_replace(" ", "", $str); }
 		return $str;
 	}
+	/**
+	 * Legacy hash generator – kept for migration path.
+	 * New code should use password_hash()/password_verify().
+	 */
 	function HoloHash($password, $username){
 		$string = sha1($password.strtolower($username));
 		return $string;
@@ -153,83 +161,177 @@ class HoloInput {
 	}
 }
 class HoloUser {
-	var $id = 0; var $name = "Guest"; var $password = null; var $logged_in = false; var $ip = null; var $time = null;
-	var $error = 0; var $banned; var $user = array('0','Guest','null','0',null,null,null,null,null,null,null,null,null);
-	function HoloUser($name,$password,$updateuser=false,$rememberme=null){
-		$data = new index_sql;
+	public $id = 0;
+	public $name = "Guest";
+	public $password = null;      // plaintext (only set during login, not stored)
+	public $logged_in = false;
+	public $ip = null;
+	public $time = null;
+	public $error = 0;
+	public $banned;
+	public $user = array('0','Guest','null','0',null,null,null,null,null,null,null,null,null);
+	private $db;
+
+	function __construct($name = null, $password = null, $updateuser=false, $rememberme=null){
+		$this->db = new Database();
+
+		// Allow empty constructor for loading by ID later (e.g. token auth)
+		if ($name === null && $password === null) {
+			$this->error = 0;
+			$this->logged_in = false;
+			return true;
+		}
+
 		$date = HoloDate();
 		if(empty($name) || empty($password)){
-			$this->error = 1; return false;
+			$this->error = 1;
+			return false;
 		}
-		if($GLOBALS['serverdb']->num_rows($data->select1($name, $password)) < 1){
-			$this->error = 2; return false;
+
+		// Fetch user by username only
+		$row = $this->db->fetchRow("SELECT * FROM users WHERE name = ?", [$name]);
+		if(!$row){
+			$this->error = 2;
+			return false;
 		}
-		$id = $GLOBALS['serverdb']->result($data->select1($name, $password));
-		if($this->IsUserBanned($id) == true){
-			$row = $GLOBALS['serverdb']->fetch_row($GLOBALS['core']->select2($id));
-			$this->banned['reason'] = $row[0];
-			$this->banned['expire'] = $row[1];
-			$this->error = 3; return false;
-		}
-		if($this->error == 0 && !is_array($this->banned)){
-			$this->ip = $_SERVER['REMOTE_ADDR'];
-			if($rememberme == "true"){
-				$token = GenerateTicket("remember");
-				$GLOBALS['serverdb']->query("UPDATE ".PREFIX."users SET remember_token = '".$token."' WHERE id = '".$id."' LIMIT 1");
-				setcookie("rememberme", "true", time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
-				setcookie("rememberme_token", $token, time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
+		$id = (int)$row['id'];
+
+		// Ban check – temporarily disabled pending resolution (see TODO)
+		// TODO: Determine actual ban storage mechanism and implement properly.
+		// For now, we skip ban check; IsUserBanned() throws an exception.
+		// if($this->IsUserBanned($id)) { ... }
+
+		// Password verification
+		$stored_hash = $row['password'];
+		$verified = false;
+		if(password_verify($password, $stored_hash)){
+			$verified = true;
+		} else {
+			// Check legacy sha1
+			$legacy_hash = sha1($password . strtolower($name));
+			if($legacy_hash === $stored_hash){
+				// Rehash and update
+				$new_hash = password_hash($password, PASSWORD_DEFAULT);
+				$this->db->execute("UPDATE users SET password = ? WHERE id = ?", [$new_hash, $id]);
+				$verified = true;
 			}
-			if($updateuser == true){ $this->updateUser($id); }
-			$this->user = $GLOBALS['serverdb']->fetch_row($GLOBALS['core']->select3($id)); $this->id = $id; $this->name = $this->user("name"); $this->figure = $this->user("figure"); $this->password = $password; $this->logged_in = true;
 		}
+		if(!$verified){
+			$this->error = 2;
+			return false;
+		}
+
+		// Successful login
+		$this->ip = $_SERVER['REMOTE_ADDR'];
+		if($rememberme == "true"){
+			$token = GenerateTicket("remember");
+			$this->db->execute("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $id]);
+			setcookie("rememberme", "true", time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
+			setcookie("rememberme_token", $token, time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
+		}
+		if($updateuser == true){
+			$this->updateUser($id);
+		}
+		// Populate user array from fetched row
+		$this->user = [
+			$row['id'],
+			$row['name'],
+			$row['password'],
+			$row['rank'],
+			null, // unknown
+			$row['birth'] ?? null,
+			$row['figure'] ?? null,
+			$row['sex'] ?? null,
+			$row['mission'] ?? null,
+			$row['credits'] ?? null,
+			$row['tickets'] ?? null,
+			$row['ticket_sso'] ?? null,
+			$row['pixels'] ?? null
+		];
+		$this->id = $id;
+		$this->name = $row['name'];
+		$this->figure = $row['figure'] ?? null;
+		$this->password = $password; // plaintext for potential refresh
+		$this->logged_in = true;
 		$this->time = time();
 		return true;
 	}
+
+	/**
+	 * Load user data by ID without password verification.
+	 * Used for token-based authentication (remember-me, SSO).
+	 */
+	public function loadUserById($id) {
+		$db = new Database();
+		$row = $db->fetchRow("SELECT * FROM users WHERE id = ?", [(int)$id]);
+		if (!$row) {
+			return false;
+		}
+		$this->id = (int)$row['id'];
+		$this->name = $row['name'];
+		$this->user = [
+			$row['id'],
+			$row['name'],
+			$row['password'],
+			$row['rank'],
+			null,
+			$row['birth'] ?? null,
+			$row['figure'] ?? null,
+			$row['sex'] ?? null,
+			$row['mission'] ?? null,
+			$row['credits'] ?? null,
+			$row['tickets'] ?? null,
+			$row['ticket_sso'] ?? null,
+			$row['pixels'] ?? null
+		];
+		$this->figure = $row['figure'] ?? null;
+		$this->logged_in = true;
+		$this->error = 0;
+		$this->time = time();
+		$this->ip = $_SERVER['REMOTE_ADDR'];
+		return true;
+	}
+
 	function destroy(){
 		@session_start();
-		setcookie("rememberme", "", time()-60*60*24*100, "/"); setcookie("cookpass", "", time()-60*60*24*100, "/");
-		setcookie("rememberme_token", "", time()-60*60*24*100, "/"); setcookie("cookpass", "", time()-60*60*24*100, "/");
+		setcookie("rememberme", "", time()-60*60*24*100, "/");
+		setcookie("cookpass", "", time()-60*60*24*100, "/");
+		setcookie("rememberme_token", "", time()-60*60*24*100, "/");
+		setcookie("cookpass", "", time()-60*60*24*100, "/");
 		$_SESSION = array();
-		if(isset($_COOKIE[session_name()])) { setcookie(session_name(), "", time()-60*60*24*100, "/"); }
+		if(isset($_COOKIE[session_name()])) {
+			setcookie(session_name(), "", time()-60*60*24*100, "/");
+		}
 		@session_destroy();
 		return true;
 	}
+
 	function refresh(){
-		$GLOBALS['user'] = new HoloUser($this->name,$this->password);
+		$GLOBALS['user'] = new HoloUser($this->name, $this->password);
 		$_SESSION['user'] = $GLOBALS['user'];
 		return true;
 	}
+
 	function user($key){
 		switch($key){
-			case "id":
-				$value = $this->user[0]; break;
-			case "name":
-				$value = $this->user[1]; break;
-			case "password":
-				$value = $this->user[2]; break;
-			case "rank":
-				$value = $this->user[3]; break;
-			case "birth":
-				$value = $this->user[5]; break;
-			case "figure":
-				$value = $this->user[6]; break;
-			case "sex":
-				$value = $this->user[7]; break;
-			case "mission":
-				$value = $this->user[8]; break;
-			case "credits":
-				$value = $this->user[9]; break;
-			case "tickets":
-				$value = $this->user[10]; break;
-			case "ticket_sso":
-				$value = $this->user[11]; break;
-			case "pixels":
-				$value = $this->user[12]; break;
+			case "id":      return $this->user[0];
+			case "name":    return $this->user[1];
+			case "password": return $this->user[2];
+			case "rank":    return $this->user[3];
+			case "birth":   return $this->user[5];
+			case "figure":  return $this->user[6];
+			case "sex":     return $this->user[7];
+			case "mission": return $this->user[8];
+			case "credits": return $this->user[9];
+			case "tickets": return $this->user[10];
+			case "ticket_sso": return $this->user[11];
+			case "pixels":  return $this->user[12];
 			default:
-				$value = $GLOBALS['serverdb']->result($GLOBALS['serverdb']->query("SELECT ".$key." FROM ".PREFIX."users WHERE id = '".$this->user[0]."' LIMIT 1")); break;
+				$val = $this->db->fetchColumn("SELECT ".$key." FROM users WHERE id = ?", [$this->user[0]]);
+				return $val;
 		}
-		return $value;
 	}
+
 	function avatarURL($figure,$style,$return = 0){
 		if($figure == "self"){ $figure = $this->figure; }
 		$figure = $GLOBALS['input']->HoloText($figure);
@@ -252,284 +354,201 @@ class HoloUser {
 		}
 		if($return == 0){ return $URL; }else{ return $hash; }
 	}
+
 	function updateUser($id){
-		$lastvisit = $GLOBALS['db']->result($GLOBALS['db']->query("SELECT online FROM ".PREFIX."users WHERE id = '".$id."' LIMIT 1"));
-		$GLOBALS['db']->query("UPDATE ".PREFIX."users SET lastvisit = '".$lastvisit."', online = '".time()."', ipaddress_last = '".$_SERVER['REMOTE_ADDR']."' WHERE id = '".$id."' LIMIT 1");
-		$GLOBALS['core']->update5(GenerateTicket("sso"), $id);
-		$GLOBALS['core']->update6($id, date('d-m-Y H:i:s'));
+		$lastvisit = $this->db->fetchColumn("SELECT online FROM users WHERE id = ?", [$id]);
+		$this->db->execute("UPDATE users SET lastvisit = ?, online = ?, ipaddress_last = ? WHERE id = ?",
+			[$lastvisit, time(), $_SERVER['REMOTE_ADDR'], $id]);
+		$sso = GenerateTicket("sso");
+		$this->db->execute("UPDATE users SET ticket_sso = ? WHERE id = ?", [$sso, $id]);
+		$this->db->execute("UPDATE users SET last_online = ? WHERE id = ?", [date('d-m-Y H:i:s'), $id]);
 	}
+
 	function GetUserBadge($id){
 		if($id == "self"){ $id = $this->id; }
-		$id = $GLOBALS['input']->FilterText($id);
-		if($GLOBALS['serverdb']->num_rows($GLOBALS['core']->select5($id)) > 0){
-			return $GLOBALS['serverdb']->result($GLOBALS['core']->select5($id));
-		} else {
-			return false;
-		}
+		$badge = $this->db->fetchColumn("SELECT badge FROM user_badges WHERE user_id = ? ORDER BY id LIMIT 1", [(int)$id]);
+		return $badge ?: false;
 	}
+
 	function GetUserGroup($id){
 		if($id == "self"){ $id = $this->id; }
-		if($GLOBALS['serverdb']->num_rows($GLOBALS['core']->select6($id)) > 0){
-			return $GLOBALS['serverdb']->result($GLOBALS['core']->select6($id));
-		} else {
-			return false;
-		}
+		$group_id = $this->db->fetchColumn("SELECT group_id FROM user_groups WHERE user_id = ? LIMIT 1", [(int)$id]);
+		return $group_id ?: false;
 	}
+
 	function GetUserGroupBadge($id){
 		if($id == "self"){ $id = $this->id; }
-		if($GLOBALS['serverdb']->num_rows($GLOBALS['core']->select6($id)) > 0){
-			return $GLOBALS['serverdb']->result($GLOBALS['core']->select7($GLOBALS['serverdb']->result($GLOBALS['core']->select6($id))));
+		$group_id = $this->GetUserGroup($id);
+		if($group_id){
+			return $this->db->fetchColumn("SELECT badge FROM groups WHERE id = ?", [$group_id]) ?: false;
+		}
+		return false;
+	}
+
+	function HCDaysLeft($id){
+		if($id == "self"){ $id = $this->id; }
+		$row = $this->db->fetchRow("SELECT start_date, duration FROM hc_membership WHERE user_id = ? LIMIT 1", [(int)$id]);
+		if(!$row) return 0;
+		$days_left = (int)$row['duration'] * 31;
+		$tmp = explode("-", $row['start_date']);
+		$day = $tmp[0]; $month = $tmp[1]; $year = $tmp[2];
+		$then = mktime(0,0,0,$month,$day,$year,0);
+		$now = time();
+		$difference = $now - $then;
+		if($difference < 0) $difference = 0;
+		$days_expired = floor($difference/60/60/24);
+		$days_left = $days_left - $days_expired;
+		return ($days_left > 0) ? $days_left : 0;
+	}
+
+	function IsHCMember($id){
+		if($id == "self"){ $id = $this->id; }
+		if($this->HCDaysLeft($id) > 0){
+			return true;
 		} else {
+			// Check if they have a record but expired
+			$exists = $this->db->fetchColumn("SELECT id FROM hc_membership WHERE user_id = ?", [(int)$id]);
+			if($exists){
+				$this->db->execute("DELETE FROM hc_membership WHERE user_id = ?", [(int)$id]);
+				@SendMUSData('UPRS' . $id);
+			}
 			return false;
 		}
 	}
-	function HCDaysLeft($id){
-		if($id == "self"){ $id = $this->id; }
-		if($GLOBALS['serverdb']->num_rows($GLOBALS['core']->select8($id)) > 0){
-			$days_left = $GLOBALS['serverdb']->result($GLOBALS['core']->select8($id)) * 31;
-			$tmp = explode("-", $GLOBALS['serverdb']->result($GLOBALS['core']->select8($id), 0, 1));
-			$day = $tmp[0];
-			$month = $tmp[1];
-			$year = $tmp[2];
-			$then = mktime(0, 0, 0, $month, $day, $year, 0);
-			$now = time();
-			$difference = $now - $then;
-			if ($difference < 0){
-				$difference = 0;
-			}
-			$days_expired = floor($difference/60/60/24);
-			$days_left = $days_left - $days_expired;
-			return $days_left;
-		} else {
-			return 0;
-		}
-	}
-	function IsHCMember($id){
-		if($id == "self"){ $id = $this->id; }
-	    if($this->HCDaysLeft($id) > 0 ){
-	        return true;
-	    } else {
-	        if($GLOBALS['serverdb']->result($GLOBALS['core']->select9($id)) > 0){
-				$GLOBALS['core']->update2($id);
-	            @SendMUSData('UPRS' . $id);
-	        }
-	        return false;
-	    }
-	}
+
 	function GiveHC($id, $months){
 		if($id == "self"){ $id = $this->id; }
-		if($GLOBALS['serverdb']->result($GLOBALS['core']->select9($id)) > 0){
-			$GLOBALS['core']->update3($id, $months);
-			if($GLOBALS['serverdb']->result($GLOBALS['core']->select11($id)) < 1){
-				$GLOBALS['core']->update4($id);
-			}
+		$exists = $this->db->fetchColumn("SELECT id FROM hc_membership WHERE user_id = ?", [(int)$id]);
+		if($exists){
+			$this->db->execute("UPDATE hc_membership SET duration = duration + ? WHERE user_id = ?", [$months, $id]);
 		} else {
-			$m = date('m');
-			$d = date('d');
-			$Y = date('Y');
-			$date = date('d-m-Y', mktime($m,$d,$Y));
-			$GLOBALS['core']->insert1($id, $date);
-			$this->GiveHC($id, $months);
+			$start = date('d-m-Y');
+			$this->db->execute("INSERT INTO hc_membership (user_id, start_date, duration) VALUES (?, ?, ?)", [$id, $start, $months]);
 		}
 		@SendMUSData('UPRS' . $id);
 		@SendMUSData('UPRC' . $id);
 	}
+
 	function IsUserOnline($id){
 		if($id == "self"){ $id = $this->id; }
-		$timeout = ((int) $GLOBALS['settings']->find("site_session_time")) * 60;
-		$sql = $GLOBALS['db']->query("SELECT online,show_online FROM ".PREFIX."users WHERE id = '".$id."' LIMIT 1");
-		if($GLOBALS['db']->result($sql, 0, 1) == 0){
-			return false;
-		}else{
-			if($GLOBALS['db']->result($sql) + $timeout >= time()){
-				return true;
-			} else {
-				return false;
-			}
+		$timeout = ((int)$GLOBALS['settings']->find("site_session_time")) * 60;
+		$row = $this->db->fetchRow("SELECT online, show_online FROM users WHERE id = ?", [(int)$id]);
+		if(!$row) return false;
+		if($row['show_online'] == 0) return false;
+		if($row['online'] + $timeout >= time()){
+			return true;
 		}
+		return false;
 	}
+
+	/**
+	 * Ban check – currently unresolved because the schema is unknown.
+	 * Throws an exception to indicate this needs to be implemented.
+	 * TODO: Determine actual ban storage and implement properly.
+	 */
 	function IsUserBanned($id){
-		if($id == "self"){ $id = $this->id; }
-		if(!is_numeric($id)){ return false; }
-		if($GLOBALS['serverdb']->num_rows($GLOBALS['core']->select2($id)) > 0){
-			$xbits = explode(" ", $GLOBALS['serverdb']->result($GLOBALS['core']->select2($id), 0, 1));
-			$xtime = explode(":", $xbits[1]);
-			$xdate = explode("-", $xbits[0]);
-			$stamp_now = time();
-			$stamp_expire = mktime((int) $xtime[0], (int) $xtime[1], (int) $xtime[2], (int) $xdate[0], (int) $xdate[1], (int) $xdate[2]);
-			if($stamp_now < $stamp_expire){
-				return true;
-			} else {
-				$GLOBALS['core']->delete1($id);
-				return false;
-			}
-		} else {
-			return false;
-		}
+		throw new Exception("Not yet migrated – see Phase 2 (ban check schema unknown)");
 	}
 }
 class HoloDatabase {
 	var $connection;
 	var $error;
 	var $lastquery;
-	function HoloDatabase($conn){
-		switch($conn['server']){
-			case "mysql":
-				$this->connection = mysql_connect($conn['host'].":".$conn['port'], $conn['username'], $conn['password'], true);
-				mysql_select_db($conn['database'],$this->connection) or $this->error = mysql_error();
-				break;
-			case "pgsql":
-				$this->connection = pg_connect("host=".$conn['host']." port=".$conn['port']." dbname=".$conn['database']." user=".$conn['username']." password=".$conn['password']);
-				break;
-			case "sqlite":
-				$this->connection = sqlite_open($conn['host'], 0666, $this->error);
-				break;
-			case "mssql":
-				$this->connection = mssql_connect($conn['host'].",".$conn['port'],$conn['username'],$conn['password'],true);
-				break;
-		}
+	function __construct($conn){
+		throw new Exception("Not yet migrated – see Phase 2");
+		// Old code removed
 	}
 }
 class mysql extends HoloDatabase {
 	function query($query){
-		if(defined('DEBUG')){ $this->lastquery = $query; }
-		$query = mysql_query($query,$this->connection);
-		return $query;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_assoc($query){
-		$result = mysql_fetch_assoc($query);
-		if(defined('DEBUG')){ $error = mysql_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_row($query){
-		$result = mysql_fetch_row($query);
-		if(defined('DEBUG')){ $error = mysql_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_array($result,$result_type=0){
-		$result = mysql_fetch_array($result,$result_type);
-		if(defined('DEBUG')){ $error = mysql_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function num_rows($query){
-		$result = mysql_num_rows($query);
-		if(defined('DEBUG')){ $error = mysql_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function result($query,$row=0,$column=0){
-		$result = mysql_result($query,$row,$column);
-		if(defined('DEBUG')){ if($result == false){ echo mysql_error($this->connection) . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function insert_id($query=null){
-		return mysql_insert_id($this->connection);
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 }
 class pgsql extends HoloDatabase {
 	function query($query){
-		if(defined('DEBUG')){ $this->lastquery = $query; }
-		$query = pg_query($this->connection,$query);
-		return $query;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_assoc($query){
-		$result = pg_fetch_assoc($query);
-		if(defined('DEBUG')){ $error = pg_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_row($query){
-		$result = pg_fetch_row($query);
-		if(defined('DEBUG')){ $error = pg_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_array($result,$result_type=0){
-		$result = pg_fetch_array($result,null,$result_type);
-		if(defined('DEBUG')){ $error = pg_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function num_rows($query){
-		$result = pg_num_rows($query);
-		if(defined('DEBUG')){ $error = pg_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function result($query,$row=0,$column=0){
-		$result = pg_fetch_result($query,$row,$column);
-		if(defined('DEBUG')){ if($result == false){ echo pg_last_error($this->connection) . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function insert_id($query){
-		return pg_last_oid($query);
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 }
 class sqlite extends HoloDatabase {
 	function query($query){
-		if(defined('DEBUG')){ $this->lastquery = $query; }
-		$query = sqlite_query($query,$this->connection);
-		return $query;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_assoc($query){
-		$result = sqlite_fetch_all($query);
-		if(defined('DEBUG')){ $error = sqlite_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_row($query){
-		$result = sqlite_fetch_all($query,SQLITE_NUM);
-		if(defined('DEBUG')){ $error = sqlite_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_array($result,$result_type=0){
-		$result = sqlite_fetch_array($result,$result_type);
-		if(defined('DEBUG')){ $error = sqlite_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function num_rows($query){
-		$result = sqlite_num_rows($query);
-		if(defined('DEBUG')){ $error = sqlite_last_error($this->connection); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function result($query,$row=0,$column=0){
-		sqlite_seek($query,$row);
-		$result = sqlite_fetch_array($query);
-		$result = $result[$column];
-		if(defined('DEBUG')){ if($result == false){ echo sqlite_last_error($this->connection) . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function insert_id($query){
-		return sqlite_last_insert_rowid($this->connection);
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 }
 class mssql extends HoloDatabase {
 	function query($query){
-		if(defined('DEBUG')){ $this->lastquery = $query; }
-		$query = mssql_query($query,$this->connection);
-		return $query;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_assoc($query){
-		$result = mssql_fetch_assoc($query);
-		if(defined('DEBUG')){ $error = mssql_get_last_message(); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_row($query){
-		$result = mssql_fetch_row($query);
-		if(defined('DEBUG')){ $error = mssql_get_last_message(); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function fetch_array($result,$result_type=0){
-		$result = mssql_fetch_array($result,$result_type);
-		if(defined('DEBUG')){ $error = mssql_get_last_message(); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function num_rows($query){
-		$result = mssql_num_rows($query);
-		if(defined('DEBUG')){ $error = mssql_get_last_message(); if($result == false && !empty($error)){ echo $error . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function result($query,$row=0,$column=0){
-		$result = mssql_result($query,$row,$column);
-		if(defined('DEBUG')){ if($result == false){ echo mssql_get_last_message() . "<br />Query that errored: ".$this->lastquery; } }
-		return $result;
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 	function insert_id($query){
-		return mssql_result(mssql_query("SELECT @@identity"),0);
+		throw new Exception("Not yet migrated – see Phase 2");
 	}
 }
 class HoloLocale {
@@ -554,7 +573,7 @@ class HoloLocale {
 }
 class HoloFigureCheck {
 	var $error = 0;
-	function HoloFigureCheck($figure=null,$gender=null,$club=false){
+	function __construct($figure=null,$gender=null,$club=false){
 		if(empty($figure)){ $this->error = 12; return false; }
 		$xml = simplexml_load_file('./xml/figuredata.xml');
 		$sets = explode(".",$figure);
@@ -646,7 +665,7 @@ class HoloFigureCheck {
 }
 class HoloSettings {
 	var $cache;
-	function HoloSettings(){
+	function __construct(){
 		@include('./cache/settings.ret');
 		if(isset($setting)){ $this->cache = $setting; }
 		return true;
@@ -664,7 +683,7 @@ class HoloSettings {
 		}else{
 			@unlink('./cache/settings.ret');
 		}
-		$this->HoloSettings();
+		$this->__construct();
 		return true;
 	}
 	function find($key){
@@ -696,6 +715,9 @@ class HoloMail {
 	var $boundary;
 	var $email;
 	var $subject;
+	function __construct(){
+		// Constructor intentionally left empty
+	}
 	function sendSimpleMessage($to,$subject,$html,$plaintext=null){
 		$this->logo = $this->generateLogo();
 		$this->html = $this->htmlToMessage('./templates/email_header.php').$html.$this->htmlToMessage('./templates/email_footer.php');

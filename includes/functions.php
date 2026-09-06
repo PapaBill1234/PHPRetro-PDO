@@ -1,4 +1,5 @@
 <?php
+// FILE: includes/functions.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -42,22 +43,17 @@ switch($type){
 case "sso":
 	$data = GenerateTicket("random",8)."-".GenerateTicket("random",4)."-".GenerateTicket("random",4)."-".GenerateTicket("random",4)."-".GenerateTicket("random",12);
 	return $data;
-break; case "remember":
-	$data = GenerateTicket("random",6)."-".md5(GenerateTicket("random",20))."-".md5(GenerateTicket("random",20));
+case "remember":
+	$data = GenerateTicket("random",6)."-".bin2hex(random_bytes(10))."-".bin2hex(random_bytes(10));
 	return $data;
-break; case "random":
-	$data = "";
-	$possible = "0123456789abcdef"; 
-	$i = 0;
-	while ($i < $length) { 
-		$char = substr($possible, mt_rand(0, strlen($possible)-1), 1);
-		$data .= $char;
-		$i++;
-	}
-	return $data;
-break;
+case "random":
+	if($length < 1) return '';
+	$bytes = ceil($length / 2);
+	$hex = bin2hex(random_bytes($bytes));
+	return substr($hex, 0, $length);
+default:
+	return '';
 }
-	return $data;
 }
 function SendMUSData($data){
 $ip = $GLOBALS['settings']->find("hotel_ip");
@@ -78,7 +74,8 @@ socket_connect($sock, $ip, $port);
 socket_close($sock);
 }
 function GetOnlineCount(){
-	return $GLOBALS['db']->result($GLOBALS['core']->select14());
+	$db = new Database();
+	return $db->fetchColumn("SELECT COUNT(*) FROM users WHERE online > ?", [time() - 300]); // approximate
 }
 function HotelStatus(){
 	if($GLOBALS['settings']->find("site_status_image") == 2){
@@ -129,8 +126,12 @@ function formatItem($type,$data,$pre){
 	return $str;
 }
 function groupURL($id){
-	$data = new home_sql;
-	$row = $GLOBALS['serverdb']->fetch_row($data->select14($id));
-	if($row[10] != ""){ return PATH."/groups/".$row[10]; }else{ return PATH."/groups/".$row[0]."/id"; }
+	$db = new Database();
+	$row = $db->fetchRow("SELECT id, name_seo FROM groups WHERE id = ?", [$id]);
+	if($row && !empty($row['name_seo'])){
+		return PATH."/groups/".$row['name_seo'];
+	} else {
+		return PATH."/groups/".$id."/id";
+	}
 }
 ?>

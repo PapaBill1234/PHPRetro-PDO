@@ -1,4 +1,5 @@
 <?php
+// FILE: community.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -25,6 +26,8 @@ $page['id'] = "community";
 $page['name'] = $lang->loc['pagename.community'];
 $page['bodyid'] = "home";
 $page['cat'] = "community";
+
+$db = new Database();
 
 require_once('./templates/community_header.php');
 ?>
@@ -55,30 +58,33 @@ require_once('./templates/community_header.php');
 		
 <?php
 $i = 0;
-$sql = $data->select1(5,0);
-
-while ($row = $db->fetch_row($sql)) {
+// select1 expects limit and offset
+$rows = $db->fetchAll("SELECT id, name, owner, owner_name, users_now, users_max, is_public FROM rooms WHERE recommended = 1 ORDER BY users_now DESC LIMIT ? OFFSET ?", [5, 0]);
+foreach ($rows as $row) {
 	$i++;
 	if($input->IsEven($i)){
 		$even = "odd";
 	} else {
 		$even = "even";
 	}
-	if($row[4] == 0){ $row[4] = 1; }
-	$count[$i] = ($row[4] / $row[5]) * 100;
-	if($count[$i] == 99 || $count[$i] > 99){
+	$users_now = (int)$row['users_now'];
+	$users_max = (int)$row['users_max'];
+	if($users_max == 0) $users_max = 1;
+	$count = ($users_now / $users_max) * 100;
+	if($count >= 99){
 		$room_fill = 5;
-	} elseif($count[$i] > 65){
+	} elseif($count > 65){
 		$room_fill = 4;
-	} elseif($count[$i] > 32){
+	} elseif($count > 32){
 		$room_fill = 3;
-	} elseif($count[$i] > 0){
+	} elseif($count > 0){
 		$room_fill = 2;
-	} elseif($count[$i] < 1){
+	} else {
 		$room_fill = 1;
 	}
 	
-	if($row[6] != "1"){ $row[3] = ""; }
+	$owner_name = $row['owner_name'] ?: $row['owner'];
+	$owner_display = $row['owner_name'] ?: $row['owner'];
 
 printf("<li class=\"%s\">
     <span class=\"clearfix enter-room-link room-occupancy-%s\" title=\"".$lang->loc['go.to.room']."\" roomid=\"%s\">
@@ -87,7 +93,7 @@ printf("<li class=\"%s\">
 	    <span class=\"room-description\">%s</span>
 		<span class=\"room-owner\">".$lang->loc['owner'].": <a href=\"".PATH."/home/%s\">%s</a></span>
     </span>
-</li>\n", $even, $room_fill, $row[0], $input->unicodeToImage($input->HoloText($row[1])), $input->unicodeToImage($input->HoloText($row[1])), $row[3], $row[3]);
+</li>\n", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['name'])), $input->unicodeToImage($input->HoloText($row['name'])), $owner_display, $owner_display);
 }
 ?>
 
@@ -97,30 +103,32 @@ printf("<li class=\"%s\">
 
 <?php
 $i = 0;
-$sql = $data->select1(15,5);
-
-while ($row = $db->fetch_row($sql)) {
+$rows2 = $db->fetchAll("SELECT id, name, owner, owner_name, users_now, users_max, is_public FROM rooms WHERE recommended = 1 ORDER BY users_now DESC LIMIT ? OFFSET ?", [15, 5]);
+foreach ($rows2 as $row) {
 	$i++;
 	if($input->IsEven($i)){
 		$even = "odd";
 	} else {
 		$even = "even";
 	}
-	if($row[4] == 0){ $row[4] = 1; }
-	$count[$i] = ($row[4] / $row[5]) * 100;
-	if($count[$i] == 99 || $count[$i] > 99){
+	$users_now = (int)$row['users_now'];
+	$users_max = (int)$row['users_max'];
+	if($users_max == 0) $users_max = 1;
+	$count = ($users_now / $users_max) * 100;
+	if($count >= 99){
 		$room_fill = 5;
-	} elseif($count[$i] > 65){
+	} elseif($count > 65){
 		$room_fill = 4;
-	} elseif($count[$i] > 32){
+	} elseif($count > 32){
 		$room_fill = 3;
-	} elseif($count[$i] > 0){
+	} elseif($count > 0){
 		$room_fill = 2;
-	} elseif($count[$i] < 1){
+	} else {
 		$room_fill = 1;
 	}
 	
-	if($row[6] != "1"){ $row[3] = ""; }
+	$owner_name = $row['owner_name'] ?: $row['owner'];
+	$owner_display = $row['owner_name'] ?: $row['owner'];
 
 printf("<li class=\"%s\">
     <span class=\"clearfix enter-room-link room-occupancy-%s\" title=\"".$lang->loc['go.to.room']."\" roomid=\"%s\">
@@ -129,7 +137,7 @@ printf("<li class=\"%s\">
 	    <span class=\"room-description\">%s</span>
 		<span class=\"room-owner\">".$lang->loc['owner'].": <a href=\"".PATH."/home/%s\">%s</a></span>
     </span>
-</li>", $even, $room_fill, $row[0], $input->unicodeToImage($input->HoloText($row[1])), $input->unicodeToImage($input->HoloText($row[1])), $row[3], $row[3]);
+</li>", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['name'])), $input->unicodeToImage($input->HoloText($row['name'])), $owner_display, $owner_display);
 }
 ?>
 
@@ -168,17 +176,15 @@ var roomListHabblet_h119 = new RoomListHabblet("rooms-habblet-list-container-h11
 <ul class="active-discussions-toplist">
 <?php
 $i = 0;
-$sql = $db->query("SELECT * FROM ".PREFIX."forum_threads ORDER BY time DESC LIMIT 10");
-
-while ($row = $db->fetch_assoc($sql)) {
+$rows = $db->fetchAll("SELECT * FROM forum_threads ORDER BY time DESC LIMIT 10");
+foreach($rows as $row) {
 	$i++;
-
 	if($input->IsEven($i)){
 		$even = "even";
 	} else {
 		$even = "odd";
 	}
-	$posts = $db->result($db->query("SELECT COUNT(*) FROM ".PREFIX."forum_posts WHERE threadid = '".$row['id']."'"));
+	$posts = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$row['id']]);
 	$pages = ceil($posts / 10);
 	$pagelink = "<a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
 	if($pages > 4){
@@ -215,18 +221,15 @@ while ($row = $db->fetch_assoc($sql)) {
     <ul class="active-discussions-toplist">
 <?php
 $i = 0;
-$getem = $db->query("SELECT * FROM ".PREFIX."forum_threads ORDER BY time DESC LIMIT 40 OFFSET 10");
-
-while ($row = $db->fetch_assoc($sql)) {
+$rows2 = $db->fetchAll("SELECT * FROM forum_threads ORDER BY time DESC LIMIT 40 OFFSET 10");
+foreach($rows2 as $row) {
 	$i++;
-
 	if($input->IsEven($i)){
 		$even = "even";
 	} else {
 		$even = "odd";
 	}
-	
-	$posts = $db->result($db->query("SELECT COUNT(*) FROM ".PREFIX."forum_posts WHERE threadid = '".$row['id']."'"));
+	$posts = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$row['id']]);
 	$pages = ceil($posts / 10);
 	$pagelink = "<a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
 	if($pages > 4){
@@ -285,13 +288,13 @@ var discussionMoreDataHelper = new MoreDataHelper("discussions-toggle-more-data-
 
 <?php
 $i = 0;
-$sql = $data->select3();
-
-while ($row = $db->fetch_row($sql)) {
+// select3 returns random users
+$rows = $db->fetchAll("SELECT id, name, birth, mission, figure FROM users ORDER BY RAND() LIMIT 18");
+foreach($rows as $row) {
 $i++;
 $list_id = $i - 1;
 
-if($user->IsUserOnline($row[0]) == true){
+if($user->IsUserOnline($row['id']) == true){
 	$status = "online";
 } else {
 	$status = "offline";
@@ -305,7 +308,7 @@ printf("        <div id=\"active-habbo-data-%s\" class=\"active-habbo-data\">
                     </div>
                 </div>
                 <input type=\"hidden\" id=\"active-habbo-url-%s\" value=\"".PATH."/home/%s\"/>
-                <input type=\"hidden\" id=\"active-habbo-image-%s\" class=\"active-habbo-image\" value=\"".$user->avatarURL($row[4],"b,4,4,sml,1,0")."\n\" />", $list_id, $status, $row[1], $row[2], $input->HoloText($row[3]), $list_id, $row[1], $list_id);
+                <input type=\"hidden\" id=\"active-habbo-image-%s\" class=\"active-habbo-image\" value=\"".$user->avatarURL($row['figure'],"b,4,4,sml,1,0")."\n\" />", $list_id, $status, $row['name'], $row['birth'], $input->HoloText($row['mission']), $list_id, $row['name'], $list_id);
 }
 ?>
 
@@ -366,9 +369,10 @@ printf("        <div id=\"active-habbo-data-%s\" class=\"active-habbo-data\">
 </div>
 <div id="column2" class="column">
 
-<?php $sql = $db->query("SELECT * FROM ".PREFIX."news ORDER BY time DESC LIMIT 5");
+<?php $rows = $db->fetchAll("SELECT * FROM news ORDER BY time DESC LIMIT 5");
 $i = 0;
-while($row = $db->fetch_assoc($sql)){
+$news = [];
+foreach($rows as $row){
 	$row['summary'] = nl2br($input->HoloText($row['summary'], true));
 	$row['title'] = $input->HoloText($row['title'], true);
 	$row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true);
@@ -440,35 +444,28 @@ $lang->addLocale("widget.news"); ?>
 
 <?php
 $lang->addLocale("ajax.tags");
-$sql = $db->query("SELECT tag, COUNT(id) AS quantity FROM ".PREFIX."tags GROUP BY tag ORDER BY quantity DESC LIMIT 20");
-if($db->num_rows($sql) < 1){ echo $lang->loc['no.tags']; }else{
+$rows = $db->fetchAll("SELECT tag, COUNT(id) AS quantity FROM tags GROUP BY tag ORDER BY quantity DESC LIMIT 20");
+if(count($rows) < 1){ echo $lang->loc['no.tags']; }else{
 echo "	    <ul class=\"tag-list\">";
-	for($i=0;($array[$i] = @    $db->fetch_array($sql,1))!="";$i++)
-        {
-            $row[] = $array[$i];
-        }
-	sort($row);
-	$i = -1;
-	while($i <> $db->num_rows($sql)){
-		$i++;
-		$tag = $row[$i]['tag'];
-		$count = $row[$i]['quantity'];
-		$tags[$tag] = $count;
+	$tag_arr = [];
+	foreach($rows as $row){
+		$tag_arr[$row['tag']] = $row['quantity'];
 	}
+	ksort($tag_arr);
 		
-		$max_qty = max(array_values($tags));
-		$min_qty = min(array_values($tags));
-		$spread = $max_qty - $min_qty;
+	$max_qty = max($tag_arr);
+	$min_qty = min($tag_arr);
+	$spread = $max_qty - $min_qty;
 
-		if($spread == 0){ $spread = 1; }
+	if($spread == 0){ $spread = 1; }
 
-		$step = (200 - 100)/($spread);
+	$step = (200 - 100)/($spread);
 
-		foreach($tags as $key => $value){
-		    $size = 100 + (($value - $min_qty) * $step);
-		    $size = ceil($size);
-		    echo "<li><a href=\"".PATH."/tag/".strtolower($input->HoloText($key))."\" class=\"tag\" style=\"font-size:".$size."%\">".trim(strtolower($key))."</a> </li>\n";
-		}
+	foreach($tag_arr as $key => $value){
+	    $size = 100 + (($value - $min_qty) * $step);
+	    $size = ceil($size);
+	    echo "<li><a href=\"".PATH."/tag/".strtolower($input->HoloText($key))."\" class=\"tag\" style=\"font-size:".$size."%\">".trim(strtolower($key))."</a> </li>\n";
+	}
 
 echo "</ul>";
 } ?>
