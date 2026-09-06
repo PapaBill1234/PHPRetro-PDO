@@ -1,4 +1,5 @@
 <?php
+// FILE: logout.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -19,7 +20,7 @@ require_once('./includes/core.php');
 $lang->addLocale("landing.logout");
 
 $user->destroy();
-$reason = $_GET['reason'];
+$reason = isset($_GET['reason']) ? $_GET['reason'] : '';
 
 $page['name'] = $lang->loc['pagename.home'];
 $page['bodyid'] = "landing";

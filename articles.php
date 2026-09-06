@@ -1,4 +1,5 @@
 <?php
+// FILE: articles.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -21,20 +22,25 @@ require_once('./includes/session.php');
 $data = new community_sql;
 $lang->addLocale("community.news");
 
-$id = $input->FilterText($_GET['id']);
-$category = $input->stringToURL($input->HoloText($_GET['category'],true),true,false);
-$archive = $_GET['archive'];
-$pagenum = $_GET['pageNumber'];
-if(!isset($_GET['pageNumber'])){ $pagenum = 1; }
+$db = new Database(); // new PDO wrapper
 
-if(!isset($id) || $id == ""){ $id = $db->result($db->query("SELECT MAX(id) AS count FROM ".PREFIX."news LIMIT 1")); }
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$category = isset($_GET['category']) ? $input->stringToURL($input->HoloText($_GET['category'], true), true, false) : '';
+$archive = isset($_GET['archive']) ? $_GET['archive'] : '';
+$pagenum = isset($_GET['pageNumber']) ? (int)$_GET['pageNumber'] : 1;
 
-$news_row = $db->fetch_assoc($db->query("SELECT * FROM ".PREFIX."news WHERE id = '".$id."' LIMIT 1"));
-foreach ($news_row as &$value) {
-    $value = $input->HoloText($value, true);
+if(!$id) {
+    $id = $db->fetchColumn("SELECT MAX(id) FROM news LIMIT 1");
+}
+
+$news_row = $db->fetchRow("SELECT * FROM news WHERE id = ?", [$id]);
+if ($news_row) {
+    foreach ($news_row as &$value) {
+        $value = $input->HoloText($value, true);
+    }
 }
 $page['id'] = "news";
-$page['name'] = $lang->loc['pagename.news']." - ".$news_row['title'];
+$page['name'] = $lang->loc['pagename.news']." - ".($news_row['title'] ?? '');
 $page['bodyid'] = "news";
 $page['cat'] = "community";
 
@@ -51,8 +57,8 @@ require_once('./templates/community_header.php');
 							<h2 class="title"><?php echo $lang->loc['pagename.news']; ?>
 							</h2>
 						<div id="article-archive">
-<?php if(isset($_GET['archive']) && $archive = "true"){
-$count = $db->result($db->query("SELECT COUNT(*) FROM ".PREFIX."news"));
+<?php if(isset($_GET['archive']) && $archive == "true"){
+$count = $db->fetchColumn("SELECT COUNT(*) FROM news");
 $pages = ceil($count / 20); ?>
 <div id="article-paging" class="clearfix">
         <?php if(($pagenum + 1) <= $pages){ ?><a href="<?php echo PATH; ?>/articles/archive?pageNumber=<?php echo $pagenum + 1; ?>" class="older">&lt;&lt; <?php echo $lang->loc['older']; ?></a><?php } ?>
@@ -60,14 +66,14 @@ $pages = ceil($count / 20); ?>
 </div>
 <?php } ?>
 <?php
-if((!isset($archive) || $archive == "false") && (!isset($_GET['category']) || $_GET['category'] = "")){
+if((!isset($archive) || $archive == "false") && (!isset($_GET['category']) || $_GET['category'] == "")){
 $time['stop'] = time() - 60*60*24;
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE time > ".$time['stop']." ORDER BY id DESC"); 
-if($db->num_rows($sql) > 0){ ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE time > ? ORDER BY id DESC", [$time['stop']]);
+if(count($rows) > 0){ ?>
 <h2><?php echo $lang->loc['today']; ?></h2>
 <ul>
 
-<?php while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+<?php foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -77,12 +83,12 @@ if($db->num_rows($sql) > 0){ ?>
 </ul>
 <?php }
 $time['start'] = time() - 60*60*24; $time['stop'] = time() - 60*60*24*2;
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE time < ".$time['start']." AND time > ".$time['stop']." ORDER BY id DESC"); 
-if($db->num_rows($sql) > 0){ ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE time < ? AND time > ? ORDER BY id DESC", [$time['start'], $time['stop']]);
+if(count($rows) > 0){ ?>
 <h2><?php echo $lang->loc['yesterday']; ?></h2>
 <ul>
 
-<?php while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+<?php foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -92,12 +98,12 @@ if($db->num_rows($sql) > 0){ ?>
 </ul>
 <?php }
 $time['start'] = time() - 60*60*24*2; $time['stop'] = time() - 60*60*24*7;
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE time < ".$time['start']." AND time > ".$time['stop']." ORDER BY id DESC"); 
-if($db->num_rows($sql) > 0){ ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE time < ? AND time > ? ORDER BY id DESC", [$time['start'], $time['stop']]);
+if(count($rows) > 0){ ?>
 <h2><?php echo $lang->loc['this.week']; ?></h2>
 <ul>
 
-<?php while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+<?php foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -107,12 +113,12 @@ if($db->num_rows($sql) > 0){ ?>
 </ul>
 <?php }
 $time['start'] = time() - 60*60*24*7; $time['stop'] = time() - 60*60*24*14;
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE time < ".$time['start']." AND time > ".$time['stop']." ORDER BY id DESC"); 
-if($db->num_rows($sql) > 0){ ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE time < ? AND time > ? ORDER BY id DESC", [$time['start'], $time['stop']]);
+if(count($rows) > 0){ ?>
 <h2><?php echo $lang->loc['last.week']; ?></h2>
 <ul>
 
-<?php while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+<?php foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -122,12 +128,12 @@ if($db->num_rows($sql) > 0){ ?>
 </ul>
 <?php }
 $time['start'] = time() - 60*60*24*14; $time['stop'] = time() - 60*60*24*30;
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE time < ".$time['start']." AND time > ".$time['stop']." ORDER BY id DESC"); 
-if($db->num_rows($sql) > 0){ ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE time < ? AND time > ? ORDER BY id DESC", [$time['start'], $time['stop']]);
+if(count($rows) > 0){ ?>
 <h2><?php echo $lang->loc['this.month']; ?></h2>
 <ul>
 
-<?php while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+<?php foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -136,15 +142,14 @@ if($db->num_rows($sql) > 0){ ?>
 
 </ul>
 <?php }
-}elseif(isset($_GET['archive']) && $archive = "true"){ ?>
+}elseif(isset($_GET['archive']) && $archive == "true"){ ?>
 <h2><?php echo $lang->loc['pagename.news']; ?></h2>
 <ul>
 
 <?php
-$sql = "SELECT * FROM ".PREFIX."news ORDER BY time DESC LIMIT 20";
-if($pagenum > 1){ $sql = $sql." OFFSET ".($pagenum - 1) * 20; }
-$sql = $db->query($sql);
-while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+$offset = ($pagenum - 1) * 20;
+$rows = $db->fetchAll("SELECT * FROM news ORDER BY time DESC LIMIT ? OFFSET ?", [20, $offset]);
+foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>/in/archive<?php if($pagenum > 1){ echo $pagenum; } ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>
@@ -157,8 +162,8 @@ while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($
 <ul>
 
 <?php
-$sql = $db->query("SELECT * FROM ".PREFIX."news WHERE categories LIKE '%".$category."%'");
-while($row = $db->fetch_assoc($sql)){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
+$rows = $db->fetchAll("SELECT * FROM news WHERE categories LIKE ?", ['%'.$category.'%']);
+foreach($rows as $row){ $row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true); ?>
 	<li>		
 		<a href="<?php echo PATH; ?>/articles/<?php echo $row['id']."-".$row['title_safe']; ?>/in/category/<?php echo $category; ?>" class="article-<?php echo $row['id']; ?>"><?php echo stripslashes($row['title']); ?>&nbsp;&raquo;</a>
 	</li>

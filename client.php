@@ -1,4 +1,5 @@
 <?php
+// FILE: client.php
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
@@ -23,7 +24,7 @@ if(isset($_SESSION['reauthenticate']) && $_SESSION['reauthenticate'] == "true"){
 	$_SESSION['page'] = $_SERVER["REQUEST_URI"];
 	header("Location: ".PATH."/account/reauthenticate"); exit;
 }else{
-	$user = new HoloUser($user->name,$user->password,true);
+	$user = new HoloUser($user->name, $user->password, true);
 	$_SESSION['user'] = $user;
 }
 
@@ -39,9 +40,9 @@ if(isset($_GET['wide']) && $_GET['wide'] == "false"){
 
 require_once('./templates/client_header.php');
 
-$forwardid = $input->HoloText($_GET['forwardId']);
-$roomid = $input->HoloText($_GET['roomId']);
-$shortcut = $_GET['shortcut'];
+$forwardid = isset($_GET['forwardId']) ? $input->HoloText($_GET['forwardId']) : '';
+$roomid = isset($_GET['roomId']) ? $input->HoloText($_GET['roomId']) : '';
+$shortcut = isset($_GET['shortcut']) ? $_GET['shortcut'] : '';
 switch($shortcut){
 	case "roomomatic": $shortcut = "1"; break;
 	default: unset($_GET['shortcut']); break;
