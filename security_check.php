@@ -30,18 +30,14 @@ $db = new Database();
 if($type == "token"){
 	$_SESSION = array();
 	$token = isset($_COOKIE['rememberme_token']) ? $_COOKIE['rememberme_token'] : '';
-	// Look up token using hash_equals for timing safety
-	$rows = $db->fetchAll("SELECT id, remember_token FROM users WHERE remember_token IS NOT NULL");
-	$id = null;
-	foreach($rows as $row){
-		if(hash_equals($row['remember_token'], $token)){
-			$id = $row['id'];
-			break;
-		}
-	}
-	if($id){
-		$user = new HoloUser(null, null); // empty user
-		if($user->loadUserById($id)){
+	$tokenHash = $token === '' ? '' : hash('sha256', $token);
+	$row = $tokenHash === '' ? false : $db->fetchRow(
+		"SELECT id FROM users WHERE remember_token_hash = ? AND remember_token_expires_at > ? LIMIT 1",
+		[$tokenHash, time()]
+	);
+	if($row){
+		$user = new HoloUser();
+		if($user->loginFromToken((int)$row['id'])){
 			$_SESSION['user'] = $user;
 			$_SESSION['reauthenticate'] = "true";
 		} else {
@@ -52,7 +48,7 @@ if($type == "token"){
 		if(isset($user) && is_object($user)){
 			$user->destroy();
 		} else {
-			$user = new HoloUser(null, null);
+			$user = new HoloUser();
 			$user->destroy();
 		}
 	}

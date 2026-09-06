@@ -188,18 +188,18 @@ class HoloUser {
 			return false;
 		}
 
-		// Fetch user by username only
-		$row = $this->db->fetchRow("SELECT * FROM users WHERE name = ?", [$name]);
+		// Polaris stores the login name in users.username.
+		$row = $this->db->fetchRow("SELECT * FROM users WHERE username = ?", [$name]);
 		if(!$row){
 			$this->error = 2;
 			return false;
 		}
 		$id = (int)$row['id'];
 
-		// Ban check – temporarily disabled pending resolution (see TODO)
-		// TODO: Determine actual ban storage mechanism and implement properly.
-		// For now, we skip ban check; IsUserBanned() throws an exception.
-		// if($this->IsUserBanned($id)) { ... }
+		if($this->IsUserBanned($id)){
+			$this->error = 3;
+			return false;
+		}
 
 		// Password verification
 		$stored_hash = $row['password'];
@@ -208,7 +208,7 @@ class HoloUser {
 			$verified = true;
 		} else {
 			// Check legacy sha1
-			$legacy_hash = sha1($password . strtolower($name));
+			$legacy_hash = sha1($password . strtolower($row['username']));
 			if($legacy_hash === $stored_hash){
 				// Rehash and update
 				$new_hash = password_hash($password, PASSWORD_DEFAULT);
@@ -222,12 +222,16 @@ class HoloUser {
 		}
 
 		// Successful login
-		$this->ip = $_SERVER['REMOTE_ADDR'];
+		$this->ip = $_SERVER['REMOTE_ADDR'] ?? null;
 		if($rememberme == "true"){
 			$token = GenerateTicket("remember");
-			$this->db->execute("UPDATE users SET remember_token = ? WHERE id = ?", [$token, $id]);
-			setcookie("rememberme", "true", time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
-			setcookie("rememberme_token", $token, time()+60*60*24*$GLOBALS['settings']->find("site_cookie_time"), "/");
+			$expiresAt = time() + (60 * 60 * 24 * (int)$GLOBALS['settings']->find("site_cookie_time"));
+			$this->db->execute(
+				"UPDATE users SET remember_token_hash = ?, remember_token_expires_at = ? WHERE id = ?",
+				[hash('sha256', $token), $expiresAt, $id]
+			);
+			setcookie("rememberme", "true", $expiresAt, "/");
+			setcookie("rememberme_token", $token, $expiresAt, "/");
 		}
 		if($updateuser == true){
 			$this->updateUser($id);
@@ -235,22 +239,22 @@ class HoloUser {
 		// Populate user array from fetched row
 		$this->user = [
 			$row['id'],
-			$row['name'],
+			$row['username'],
 			$row['password'],
 			$row['rank'],
 			null, // unknown
-			$row['birth'] ?? null,
-			$row['figure'] ?? null,
-			$row['sex'] ?? null,
-			$row['mission'] ?? null,
+			$row['account_day_of_birth'] ?? null,
+			$row['look'] ?? null,
+			$row['gender'] ?? null,
+			$row['motto'] ?? null,
 			$row['credits'] ?? null,
-			$row['tickets'] ?? null,
-			$row['ticket_sso'] ?? null,
+			$row['points'] ?? null,
+			$row['auth_ticket'] ?? null,
 			$row['pixels'] ?? null
 		];
 		$this->id = $id;
-		$this->name = $row['name'];
-		$this->figure = $row['figure'] ?? null;
+		$this->name = $row['username'];
+		$this->figure = $row['look'] ?? null;
 		$this->password = $password; // plaintext for potential refresh
 		$this->logged_in = true;
 		$this->time = time();
@@ -258,37 +262,40 @@ class HoloUser {
 	}
 
 	/**
-	 * Load user data by ID without password verification.
-	 * Used for token-based authentication (remember-me, SSO).
+	 * Complete a previously validated token login without requiring a password.
 	 */
-	public function loadUserById($id) {
-		$db = new Database();
-		$row = $db->fetchRow("SELECT * FROM users WHERE id = ?", [(int)$id]);
+	public function loginFromToken($id) {
+		$row = $this->db->fetchRow("SELECT * FROM users WHERE id = ?", [(int)$id]);
 		if (!$row) {
+			$this->error = 2;
+			return false;
+		}
+		if ($this->IsUserBanned((int)$row['id'])) {
+			$this->error = 3;
 			return false;
 		}
 		$this->id = (int)$row['id'];
-		$this->name = $row['name'];
+		$this->name = $row['username'];
 		$this->user = [
 			$row['id'],
-			$row['name'],
+			$row['username'],
 			$row['password'],
 			$row['rank'],
 			null,
-			$row['birth'] ?? null,
-			$row['figure'] ?? null,
-			$row['sex'] ?? null,
-			$row['mission'] ?? null,
+			$row['account_day_of_birth'] ?? null,
+			$row['look'] ?? null,
+			$row['gender'] ?? null,
+			$row['motto'] ?? null,
 			$row['credits'] ?? null,
-			$row['tickets'] ?? null,
-			$row['ticket_sso'] ?? null,
+			$row['points'] ?? null,
+			$row['auth_ticket'] ?? null,
 			$row['pixels'] ?? null
 		];
-		$this->figure = $row['figure'] ?? null;
+		$this->figure = $row['look'] ?? null;
 		$this->logged_in = true;
 		$this->error = 0;
 		$this->time = time();
-		$this->ip = $_SERVER['REMOTE_ADDR'];
+		$this->ip = $_SERVER['REMOTE_ADDR'] ?? null;
 		return true;
 	}
 
@@ -356,12 +363,11 @@ class HoloUser {
 	}
 
 	function updateUser($id){
-		$lastvisit = $this->db->fetchColumn("SELECT online FROM users WHERE id = ?", [$id]);
-		$this->db->execute("UPDATE users SET lastvisit = ?, online = ?, ipaddress_last = ? WHERE id = ?",
-			[$lastvisit, time(), $_SERVER['REMOTE_ADDR'], $id]);
+		$now = time();
+		$this->db->execute("UPDATE users SET last_login = ?, last_online = ?, ip_current = ? WHERE id = ?",
+			[$now, $now, $_SERVER['REMOTE_ADDR'] ?? '', $id]);
 		$sso = GenerateTicket("sso");
-		$this->db->execute("UPDATE users SET ticket_sso = ? WHERE id = ?", [$sso, $id]);
-		$this->db->execute("UPDATE users SET last_online = ? WHERE id = ?", [date('d-m-Y H:i:s'), $id]);
+		$this->db->execute("UPDATE users SET auth_ticket = ? WHERE id = ?", [$sso, $id]);
 	}
 
 	function GetUserBadge($id){
@@ -387,46 +393,55 @@ class HoloUser {
 
 	function HCDaysLeft($id){
 		if($id == "self"){ $id = $this->id; }
-		$row = $this->db->fetchRow("SELECT start_date, duration FROM hc_membership WHERE user_id = ? LIMIT 1", [(int)$id]);
+		$row = $this->db->fetchRow(
+			"SELECT timestamp_start, duration FROM users_subscriptions
+			 WHERE user_id = ? AND subscription_type = 'hc' AND active = 1
+			 ORDER BY timestamp_start + duration DESC LIMIT 1",
+			[(int)$id]
+		);
 		if(!$row) return 0;
-		$days_left = (int)$row['duration'] * 31;
-		$tmp = explode("-", $row['start_date']);
-		$day = $tmp[0]; $month = $tmp[1]; $year = $tmp[2];
-		$then = mktime(0,0,0,$month,$day,$year,0);
-		$now = time();
-		$difference = $now - $then;
-		if($difference < 0) $difference = 0;
-		$days_expired = floor($difference/60/60/24);
-		$days_left = $days_left - $days_expired;
-		return ($days_left > 0) ? $days_left : 0;
+		$secondsLeft = ((int)$row['timestamp_start'] + (int)$row['duration']) - time();
+		return ($secondsLeft > 0) ? (int)ceil($secondsLeft / 86400) : 0;
 	}
 
 	function IsHCMember($id){
 		if($id == "self"){ $id = $this->id; }
 		if($this->HCDaysLeft($id) > 0){
 			return true;
-		} else {
-			// Check if they have a record but expired
-			$exists = $this->db->fetchColumn("SELECT id FROM hc_membership WHERE user_id = ?", [(int)$id]);
-			if($exists){
-				$this->db->execute("DELETE FROM hc_membership WHERE user_id = ?", [(int)$id]);
-				@SendMUSData('UPRS' . $id);
-			}
-			return false;
 		}
+		return false;
 	}
 
 	function GiveHC($id, $months){
 		if($id == "self"){ $id = $this->id; }
-		$exists = $this->db->fetchColumn("SELECT id FROM hc_membership WHERE user_id = ?", [(int)$id]);
-		if($exists){
-			$this->db->execute("UPDATE hc_membership SET duration = duration + ? WHERE user_id = ?", [$months, $id]);
+		$id = (int)$id;
+		$duration = (int)$months * 31 * 86400;
+		if($duration <= 0){ return false; }
+
+		$row = $this->db->fetchRow(
+			"SELECT id, timestamp_start, duration FROM users_subscriptions
+			 WHERE user_id = ? AND subscription_type = 'hc' AND active = 1
+			 ORDER BY timestamp_start + duration DESC LIMIT 1",
+			[$id]
+		);
+		$now = time();
+		if($row){
+			$currentExpiry = (int)$row['timestamp_start'] + (int)$row['duration'];
+			$newDuration = max($currentExpiry, $now) - $now + $duration;
+			$this->db->execute(
+				"UPDATE users_subscriptions SET timestamp_start = ?, duration = ? WHERE id = ?",
+				[$now, $newDuration, (int)$row['id']]
+			);
 		} else {
-			$start = date('d-m-Y');
-			$this->db->execute("INSERT INTO hc_membership (user_id, start_date, duration) VALUES (?, ?, ?)", [$id, $start, $months]);
+			$this->db->execute(
+				"INSERT INTO users_subscriptions (user_id, subscription_type, timestamp_start, duration, active)
+				 VALUES (?, 'hc', ?, ?, 1)",
+				[$id, $now, $duration]
+			);
 		}
 		@SendMUSData('UPRS' . $id);
 		@SendMUSData('UPRC' . $id);
+		return true;
 	}
 
 	function IsUserOnline($id){
@@ -441,13 +456,20 @@ class HoloUser {
 		return false;
 	}
 
-	/**
-	 * Ban check – currently unresolved because the schema is unknown.
-	 * Throws an exception to indicate this needs to be implemented.
-	 * TODO: Determine actual ban storage and implement properly.
-	 */
 	function IsUserBanned($id){
-		throw new Exception("Not yet migrated – see Phase 2 (ban check schema unknown)");
+		$row = $this->db->fetchRow(
+			"SELECT ban_reason, ban_expire FROM bans
+			 WHERE user_id = ? AND type IN ('account', 'super')
+			 AND (ban_expire = 0 OR ban_expire > ?)
+			 ORDER BY ban_expire DESC LIMIT 1",
+			[(int)$id, time()]
+		);
+		if(!$row){ return false; }
+		$this->banned = array(
+			'reason' => $row['ban_reason'],
+			'expire' => ((int)$row['ban_expire'] === 0) ? 'Never' : date('d-m-Y H:i:s', (int)$row['ban_expire'])
+		);
+		return true;
 	}
 }
 class HoloDatabase {
