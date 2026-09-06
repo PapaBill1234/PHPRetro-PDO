@@ -59,7 +59,7 @@ require_once('./templates/community_header.php');
 <?php
 $i = 0;
 // select1 expects limit and offset
-$rows = $db->fetchAll("SELECT id, name, owner, owner_name, users_now, users_max, is_public FROM rooms WHERE recommended = 1 ORDER BY users_now DESC LIMIT ? OFFSET ?", [5, 0]);
+$rows = $db->fetchAll("SELECT id, name, owner_id, owner_name, users, users_max, is_public FROM rooms WHERE is_staff_picked = '1' ORDER BY users DESC LIMIT ? OFFSET ?", [5, 0]);
 foreach ($rows as $row) {
 	$i++;
 	if($input->IsEven($i)){
@@ -67,7 +67,7 @@ foreach ($rows as $row) {
 	} else {
 		$even = "even";
 	}
-	$users_now = (int)$row['users_now'];
+	$users_now = (int)$row['users'];
 	$users_max = (int)$row['users_max'];
 	if($users_max == 0) $users_max = 1;
 	$count = ($users_now / $users_max) * 100;
@@ -83,8 +83,8 @@ foreach ($rows as $row) {
 		$room_fill = 1;
 	}
 	
-	$owner_name = $row['owner_name'] ?: $row['owner'];
-	$owner_display = $row['owner_name'] ?: $row['owner'];
+	$owner_name = $row['owner_name'];
+	$owner_display = $row['owner_name'];
 
 printf("<li class=\"%s\">
     <span class=\"clearfix enter-room-link room-occupancy-%s\" title=\"".$lang->loc['go.to.room']."\" roomid=\"%s\">
@@ -93,7 +93,7 @@ printf("<li class=\"%s\">
 	    <span class=\"room-description\">%s</span>
 		<span class=\"room-owner\">".$lang->loc['owner'].": <a href=\"".PATH."/home/%s\">%s</a></span>
     </span>
-</li>\n", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['name'])), $input->unicodeToImage($input->HoloText($row['name'])), $owner_display, $owner_display);
+</li>\n", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['username'])), $input->unicodeToImage($input->HoloText($row['username'])), $owner_display, $owner_display);
 }
 ?>
 
@@ -103,7 +103,7 @@ printf("<li class=\"%s\">
 
 <?php
 $i = 0;
-$rows2 = $db->fetchAll("SELECT id, name, owner, owner_name, users_now, users_max, is_public FROM rooms WHERE recommended = 1 ORDER BY users_now DESC LIMIT ? OFFSET ?", [15, 5]);
+$rows2 = $db->fetchAll("SELECT id, name, owner_id, owner_name, users, users_max, is_public FROM rooms WHERE is_staff_picked = '1' ORDER BY users DESC LIMIT ? OFFSET ?", [15, 5]);
 foreach ($rows2 as $row) {
 	$i++;
 	if($input->IsEven($i)){
@@ -111,7 +111,7 @@ foreach ($rows2 as $row) {
 	} else {
 		$even = "even";
 	}
-	$users_now = (int)$row['users_now'];
+	$users_now = (int)$row['users'];
 	$users_max = (int)$row['users_max'];
 	if($users_max == 0) $users_max = 1;
 	$count = ($users_now / $users_max) * 100;
@@ -127,8 +127,8 @@ foreach ($rows2 as $row) {
 		$room_fill = 1;
 	}
 	
-	$owner_name = $row['owner_name'] ?: $row['owner'];
-	$owner_display = $row['owner_name'] ?: $row['owner'];
+	$owner_name = $row['owner_name'];
+	$owner_display = $row['owner_name'];
 
 printf("<li class=\"%s\">
     <span class=\"clearfix enter-room-link room-occupancy-%s\" title=\"".$lang->loc['go.to.room']."\" roomid=\"%s\">
@@ -137,7 +137,7 @@ printf("<li class=\"%s\">
 	    <span class=\"room-description\">%s</span>
 		<span class=\"room-owner\">".$lang->loc['owner'].": <a href=\"".PATH."/home/%s\">%s</a></span>
     </span>
-</li>", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['name'])), $input->unicodeToImage($input->HoloText($row['name'])), $owner_display, $owner_display);
+</li>", $even, $room_fill, $row['id'], $input->unicodeToImage($input->HoloText($row['username'])), $input->unicodeToImage($input->HoloText($row['username'])), $owner_display, $owner_display);
 }
 ?>
 
@@ -176,7 +176,7 @@ var roomListHabblet_h119 = new RoomListHabblet("rooms-habblet-list-container-h11
 <ul class="active-discussions-toplist">
 <?php
 $i = 0;
-$rows = $db->fetchAll("SELECT * FROM forum_threads ORDER BY time DESC LIMIT 10");
+$rows = $db->fetchAll("SELECT id, guild_id, subject, posts_count FROM guilds_forums_threads ORDER BY updated_at DESC LIMIT 10");
 foreach($rows as $row) {
 	$i++;
 	if($input->IsEven($i)){
@@ -184,26 +184,26 @@ foreach($rows as $row) {
 	} else {
 		$even = "odd";
 	}
-	$posts = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$row['id']]);
+	$posts = (int) $row['posts_count'];
 	$pages = ceil($posts / 10);
-	$pagelink = "<a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
+	$pagelink = "<a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
 	if($pages > 4){
 		$pageat = $pages - 2;
 		$pagelink .= "\n...";
 		while($pageat <= $pages){
-			$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
+			$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
 			$pageat++;
 		}
 	}elseif($pages != 1){
 		$pageat = 2;
 		while($pageat <= $pages){
-			$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
+			$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
 			$pageat++;
 		}
 	}
 
 	printf("<li class=\"%s\" >
-	<a href=\"".groupURL($row['groupid'])."/discussions/%s/id\" class=\"topic\">
+	<a href=\"".groupURL($row['guild_id'])."/discussions/%s/id\" class=\"topic\">
 		<span>%s</span>
 
 	</a>
@@ -212,7 +212,7 @@ foreach($rows as $row) {
 			 %s
 		 <span class=\"grey\">)</span>
 	 </div>
-</li>", $even, $row['id'], $input->HoloText($row['title']), $pagelink);
+</li>", $even, $row['id'], $input->HoloText($row['subject']), $pagelink);
 }
 ?>
 
@@ -221,7 +221,7 @@ foreach($rows as $row) {
     <ul class="active-discussions-toplist">
 <?php
 $i = 0;
-$rows2 = $db->fetchAll("SELECT * FROM forum_threads ORDER BY time DESC LIMIT 40 OFFSET 10");
+$rows2 = $db->fetchAll("SELECT id, guild_id, subject, posts_count FROM guilds_forums_threads ORDER BY updated_at DESC LIMIT 40 OFFSET 10");
 foreach($rows2 as $row) {
 	$i++;
 	if($input->IsEven($i)){
@@ -229,26 +229,26 @@ foreach($rows2 as $row) {
 	} else {
 		$even = "odd";
 	}
-	$posts = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$row['id']]);
+	$posts = (int) $row['posts_count'];
 	$pages = ceil($posts / 10);
-	$pagelink = "<a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
+	$pagelink = "<a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link secondary\">1</a>";
 	if($pages > 4){
 		$pageat = $pages - 2;
 		$pagelink .= "\n...";
 		while($pageat <= $pages){
-			$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
+			$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
 			$pageat++;
 		}
 	}elseif($pages != 1){
 		$pageat = 2;
 		while($pageat <= $pages){
-			$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
+			$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link secondary\">".$pageat."</a>";
 			$pageat++;
 		}
 	}
 
 	printf("<li class=\"%s\" >
-	<a href=\"".groupURL($row['groupid'])."/discussions/%s/id\" class=\"topic\">
+	<a href=\"".groupURL($row['guild_id'])."/discussions/%s/id\" class=\"topic\">
 		<span>%s</span>
 
 	</a>
@@ -257,7 +257,7 @@ foreach($rows2 as $row) {
 			 %s
 		 <span class=\"grey\">)</span>
 	 </div>
-</li>", $even, $row['id'], $input->HoloText($row['title']), $pagelink);
+</li>", $even, $row['id'], $input->HoloText($row['subject']), $pagelink);
 }
 ?>
 
@@ -289,7 +289,7 @@ var discussionMoreDataHelper = new MoreDataHelper("discussions-toggle-more-data-
 <?php
 $i = 0;
 // select3 returns random users
-$rows = $db->fetchAll("SELECT id, name, birth, mission, figure FROM users ORDER BY RAND() LIMIT 18");
+$rows = $db->fetchAll("SELECT id, username, account_day_of_birth, motto, look FROM users ORDER BY RAND() LIMIT 18");
 foreach($rows as $row) {
 $i++;
 $list_id = $i - 1;
@@ -308,7 +308,7 @@ printf("        <div id=\"active-habbo-data-%s\" class=\"active-habbo-data\">
                     </div>
                 </div>
                 <input type=\"hidden\" id=\"active-habbo-url-%s\" value=\"".PATH."/home/%s\"/>
-                <input type=\"hidden\" id=\"active-habbo-image-%s\" class=\"active-habbo-image\" value=\"".$user->avatarURL($row['figure'],"b,4,4,sml,1,0")."\n\" />", $list_id, $status, $row['name'], $row['birth'], $input->HoloText($row['mission']), $list_id, $row['name'], $list_id);
+                <input type=\"hidden\" id=\"active-habbo-image-%s\" class=\"active-habbo-image\" value=\"".$user->avatarURL($row['look'],"b,4,4,sml,1,0")."\n\" />", $list_id, $status, $row['username'], $row['account_day_of_birth'], $input->HoloText($row['motto']), $list_id, $row['username'], $list_id);
 }
 ?>
 
@@ -369,16 +369,19 @@ printf("        <div id=\"active-habbo-data-%s\" class=\"active-habbo-data\">
 </div>
 <div id="column2" class="column">
 
-<?php $rows = $db->fetchAll("SELECT * FROM news ORDER BY time DESC LIMIT 5");
+<?php $rows = $db->fetchAll("SELECT id, title, text, button_text, button_type, button_link, image FROM hotelview_news ORDER BY id DESC LIMIT 5");
 $i = 0;
 $news = [];
-foreach($rows as $row){
-	$row['summary'] = nl2br($input->HoloText($row['summary'], true));
-	$row['title'] = $input->HoloText($row['title'], true);
-	$row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true);
-	$row['date'] = date('M j, Y', $row['time']);
-	$news[$i] = $row;
-	$i++;
+foreach ($rows as $row) {
+    $row['summary'] = nl2br($input->HoloText($row['text'], true));
+    $row['title'] = $input->HoloText($row['title'], true);
+    $row['title_safe'] = $input->stringToURL($row['title'], true, true);
+    $row['header_image'] = $input->HoloText($row['image'], true);
+    $row['date'] = '';
+    $news[$i++] = $row;
+}
+while (count($news) < 5) {
+    $news[] = ['id' => 0, 'title' => '', 'title_safe' => '', 'summary' => '', 'header_image' => '', 'date' => ''];
 }
 $lang->addLocale("widget.news"); ?>
 				<div class="habblet-container news-promo">
@@ -444,7 +447,7 @@ $lang->addLocale("widget.news"); ?>
 
 <?php
 $lang->addLocale("ajax.tags");
-$rows = $db->fetchAll("SELECT tag, COUNT(id) AS quantity FROM tags GROUP BY tag ORDER BY quantity DESC LIMIT 20");
+$rows = []; // Polaris stores room tags as a denormalized rooms.tags field; no tag cloud query is available.
 if(count($rows) < 1){ echo $lang->loc['no.tags']; }else{
 echo "	    <ul class=\"tag-list\">";
 	$tag_arr = [];

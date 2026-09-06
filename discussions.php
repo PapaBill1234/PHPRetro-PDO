@@ -31,25 +31,34 @@ $db = new Database();
 function millisecondsToMinutes($int){
 	return ceil($int / 60000);
 }
+
+function canPostToGuildForum(array $guild, array $member, int $userId): bool {
+    if ($userId === 0) {
+        return false;
+    }
+    return match ($guild['post_messages']) {
+        'EVERYONE' => true,
+        'MEMBERS' => $member['level_id'] > 0,
+        'ADMINS' => $member['level_id'] > 1,
+        'OWNER' => $guild['user_id'] === $userId,
+        default => false,
+    };
+}
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
-if(isset($_GET['alias']) && !isset($_GET['id'])){
-	$alias = $_GET['alias']; // assume string
-	$group_id = $db->fetchColumn("SELECT id FROM groups WHERE name_seo = ?", [$alias]);
-	if($group_id){
-		$id = (int)$group_id;
-	}else{
-		$id = 0;
-	}
-}
-
-$grouprow = $db->fetchRow("SELECT id, name, name_seo, description, type, allow_members, owner, owner_name, forum_enabled, forum_type, tag FROM groups WHERE id = ?", [$id]);
+// Polaris guilds have no SEO alias; routes must supply the numeric guild id.
+$grouprow = $db->fetchRow("SELECT id, user_id, name, description, state, forum, read_forum, post_messages, post_threads, mod_forum, badge FROM guilds WHERE id = ?", [$id]);
 if(!$grouprow){ $lang->clearLocale; require_once('./error.php'); exit; }
 
-$memberrow = $db->fetchRow("SELECT user_id, group_id, rank, is_favorite FROM user_groups WHERE user_id = ? AND group_id = ?", [$user->id, $grouprow['id']]);
+$memberrow = $db->fetchRow("SELECT user_id, guild_id, level_id FROM guilds_members WHERE user_id = ? AND guild_id = ?", [$user->id, $grouprow['id']]);
 if(!$memberrow){
-	$memberrow = ['user_id'=>null, 'group_id'=>null, 'rank'=>0, 'is_favorite'=>0];
+	$memberrow = ['user_id' => null, 'guild_id' => null, 'level_id' => 0];
 }
+$memberrow['rank'] = (int) $memberrow['level_id'];
+$memberrow['is_favorite'] = 0; // Polaris guilds_members has no favorite marker.
+$grouprow['forum_enabled'] = $grouprow['forum'];
+$grouprow['allow_members'] = $grouprow['state'];
+$grouprow['tag'] = $grouprow['badge'];
 
 $page['id'] = "home";
 $page['type'] = "groups";
@@ -91,12 +100,9 @@ $page['discussion.post'] = true;
 $lang->addLocale("groups.discussion.showtopic");
 $lang->addLocale("groups.discussion.topic");
 $threadid = (int) $_GET['thread'];
-$threadrow = $db->fetchRow("SELECT * FROM forum_threads WHERE id = ? LIMIT 1", [$threadid]);
+$threadrow = $db->fetchRow("SELECT id, guild_id, opener_id, subject, posts_count, created_at, updated_at, state, pinned, locked, admin_id FROM guilds_forums_threads WHERE id = ? LIMIT 1", [$threadid]);
 if(!$threadrow){ $lang->clearLocale; require_once('./error.php'); exit; }
-if(!isset($_SESSION['threadviewed'][$threadrow['id']]) || $_SESSION['threadviewed'][$threadrow['id']] != true){ 
-    $db->execute("UPDATE forum_threads SET views = views + 1 WHERE id = ?", [$threadrow['id']]);
-    $_SESSION['threadviewed'][$threadrow['id']] = true; 
-}
+// Polaris does not store per-thread view counters. Do not write a nonexistent column.
 ?>
 	<div id="mypage-content">
         <table border="0" cellpadding="0" cellspacing="0" width="100%" class="content-1col">
@@ -106,29 +112,29 @@ if(!isset($_SESSION['threadviewed'][$threadrow['id']]) || $_SESSION['threadviewe
                         <div id="group-postlist-container">
 
     <div class="postlist-header clearfix">
-<?php if($user->id != 0 && ((($grouprow['forum_type'] == 2 && $memberrow['rank'] > 1) || ($grouprow['forum_type'] == 1 && $memberrow['rank'] > 0)) || ($grouprow['forum_type'] == 0)) && $threadrow['open'] == "1"){ ?>
+<?php if($user->id != 0 && canPostToGuildForum($grouprow, $memberrow, (int) $user->id) && (int) $threadrow['locked'] === 0){ ?>
                     <a href="#" id="create-post-message" class="create-post-link verify-email"><?php echo $lang->loc['post.reply']; ?></a>
                     <input type="hidden" id="email-verfication-ok" value="<?php echo (int) $user->user("email_verified") == 1 ? "1" : "0"; ?>"/>
-<?php }elseif($threadrow['open'] == "0"){ ?>
+<?php }elseif((int) $threadrow['locked'] === 1){ ?>
 <span class="topic-closed"><img src="<?php echo PATH; ?>/web-gallery/images/groups/status_closed.gif" title="<?php echo $lang->loc['closed.thread']; ?>"> <?php echo $lang->loc['closed.thread']; ?></span>
 <?php }
-if($memberrow['rank'] > 1 || $threadrow['starterid'] == $user->id){
+if($memberrow['rank'] > 1 || $threadrow['opener_id'] == $user->id){
 ?>
                 <a href="#" id="edit-topic-settings" class="edit-topic-settings-link"><?php echo $lang->loc['edit.thread']; ?> &raquo;</a>
                 <input type="hidden" id="settings_dialog_header" value="<?php echo $lang->loc['edit.thread.settings']; ?>"/>
 <?php } ?>
 <?php
 if(isset($_GET['page'])){ $pagenum = (int) $_GET['page']; }else{ $pagenum = 1; }
-$total = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$threadrow['id']]);
+$total = (int) $threadrow['posts_count'];
 $pages = ceil($total / 10);
 if($pagenum == "-1"){ $pagenum = $pages; }
 $end = 9; if(($pagenum + $end) > $pages){ $end = $pages - $pagenum; }
 $links = "";
 if($pages == 0){ $links = "0"; }else{
-	if($pagenum != 1){ $links .= "<a href=\"".groupURL($threadrow['groupid'])."/discussions/".$threadrow['id']."/id/page/".($pagenum - 1)."\" >&lt;&lt;</a>\n"; }
+	if($pagenum != 1){ $links .= "<a href=\"".groupURL($threadrow['guild_id'])."/discussions/".$threadrow['id']."/id/page/".($pagenum - 1)."\" >&lt;&lt;</a>\n"; }
 	$links .= $pagenum."\n";
-	$i = 0; while($i < $end){ $i++; $links .= "<a href=\"".groupURL($threadrow['groupid'])."/discussions/".$threadrow['id']."/id/page/".($pagenum + $i)."\">".($pagenum + $i)."</a>\n"; }
-	if($pagenum + 9 < $pages){ $links .= "<a href=\"".groupURL($threadrow['groupid'])."/discussions/".$threadrow['id']."/id/page/".($pagenum + 1)."\" >&gt;&gt;</a>\n"; }
+	$i = 0; while($i < $end){ $i++; $links .= "<a href=\"".groupURL($threadrow['guild_id'])."/discussions/".$threadrow['id']."/id/page/".($pagenum + $i)."\">".($pagenum + $i)."</a>\n"; }
+	if($pagenum + 9 < $pages){ $links .= "<a href=\"".groupURL($threadrow['guild_id'])."/discussions/".$threadrow['id']."/id/page/".($pagenum + 1)."\" >&gt;&gt;</a>\n"; }
 }
 $offset = ($pagenum - 1) * 10;
 ?>
@@ -139,26 +145,26 @@ $offset = ($pagenum - 1) * 10;
     </div>
 <table border="0" cellpadding="0" cellspacing="0" width="100%" class="group-postlist-list" id="group-postlist-list">
 <?php
-$rows = $db->fetchAll("SELECT * FROM forum_posts WHERE threadid = ? ORDER BY time ASC LIMIT ? OFFSET ?", [$threadrow['id'], 10, $offset]);
-$firstid = $db->fetchColumn("SELECT id FROM forum_posts WHERE threadid = ? ORDER BY time ASC LIMIT 1", [$threadrow['id']]);
+$rows = $db->fetchAll("SELECT id, thread_id, user_id, message, created_at, state, admin_id FROM guilds_forums_comments WHERE thread_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?", [$threadrow['id'], 10, $offset]);
+$firstid = $db->fetchColumn("SELECT id FROM guilds_forums_comments WHERE thread_id = ? ORDER BY created_at ASC LIMIT 1", [$threadrow['id']]);
 $i = 0;
 foreach($rows as $row){
-$posterrow = $db->fetchRow("SELECT id, name, figure FROM users WHERE id = ?", [$row['posterid']]);
+$posterrow = $db->fetchRow("SELECT id, username, motto, look FROM users WHERE id = ?", [$row['user_id']]);
 if(!$posterrow){ continue; }
 if($user->IsUserOnline($posterrow['id']) == true){ $online = "online_anim"; }else{ $online = "offline"; }
-$posts = $db->fetchColumn("SELECT COUNT(id) FROM forum_posts WHERE posterid = ?", [$posterrow['id']]);
-if($row['id'] == $firstid){ $row['title'] = $threadrow['title']; }else{ $row['title'] = "RE: ".$threadrow['title']; }
+$posts = $db->fetchColumn("SELECT COUNT(id) FROM guilds_forums_comments WHERE user_id = ?", [$posterrow['id']]);
+if($row['id'] == $firstid){ $row['subject'] = $threadrow['subject']; }else{ $row['subject'] = "RE: ".$threadrow['subject']; }
 if($input->IsEven($i)){ $even = "even"; }else{ $even = "odd"; }
 ?>
 
 <tr class="post-list-index-<?php echo $even; ?>">
 	<td class="post-list-row-container">
-		<a href="<?php echo PATH; ?>/home/<?php echo $posterrow['id']; ?>/id" class="post-list-creator-link post-list-creator-info"><?php echo $input->HoloText($posterrow['name']); ?></a>
+		<a href="<?php echo PATH; ?>/home/<?php echo $posterrow['id']; ?>/id" class="post-list-creator-link post-list-creator-info"><?php echo $input->HoloText($posterrow['username']); ?></a>
 
             <img alt="<?php echo $online; ?>" src="<?php echo PATH; ?>/web-gallery/images/myhabbo/habbo_<?php echo $online; ?>.gif" />
 		<div class="post-list-posts post-list-creator-info"><?php echo $lang->loc['message']; ?>: <?php echo $posts; ?></div>
 		<div class="clearfix">
-            <div class="post-list-creator-avatar"><img src="<?php echo $user->avatarURL($posterrow['figure'],"b,2,2,,1,0"); ?>" alt="" /></div>
+            <div class="post-list-creator-avatar"><img src="<?php echo $user->avatarURL($posterrow['look'],"b,2,2,,1,0"); ?>" alt="" /></div>
             <div class="post-list-group-badge">
                 <?php if($user->GetUserGroup($posterrow['id']) != false){ ?><a href="<?php echo groupURL($user->GetUserGroup($posterrow['id'])); ?>"><img src="<?php echo PATH; ?>/habbo-imaging/badge/<?php echo $user->GetUserGroupBadge($posterrow['id']); ?>.gif" /></a><?php } ?>
             </div>
@@ -166,20 +172,19 @@ if($input->IsEven($i)){ $even = "even"; }else{ $even = "odd"; }
 				<?php if($user->GetUserBadge($posterrow['id']) != false){ ?><img src="<?php echo $settings->find("site_c_images_path").$settings->find("site_badges_path").$user->GetUserBadge($posterrow['id']).".gif"; ?>" /><?php } ?>
 			</div>
         </div>
-        <div class="post-list-motto post-list-creator-info"><?php $input->unicodeToImage($user->user("mission")); ?></div>
+        <div class="post-list-motto post-list-creator-info"><?php $input->unicodeToImage($posterrow['motto']); ?></div>
 	</td>
 	<td class="post-list-message" valign="top" colspan="2">
-                    <?php if($user->id != 0 && ((($grouprow['forum_type'] == 2 && $memberrow['rank'] > 1) || ($grouprow['forum_type'] == 1 && $memberrow['rank'] > 0)) || ($grouprow['forum_type'] == 0)) && $threadrow['open'] == "1"){ ?><a href="#" class="quote-post-link verify-email" id="quote-post-<?php echo $row['id']; ?>-message"><?php echo $lang->loc['quote'] ?></a><?php } ?>
-                    <?php if(($row['posterid'] == $user->id || $memberrow['rank'] > 1) && $threadrow['open'] == "1" && $row['message'] != $lang->loc['post.deleted']){ ?><a href="#" class="edit-post-link verify-email" id="edit-post-<?php echo $row['id']; ?>-message"><?php echo $lang->loc['edit']; ?></a><?php } ?>
-        <span class="post-list-message-header"><?php echo $input->HoloText($row['title']); ?></span><br />
-        <span class="post-list-message-time"><?php echo date('M j, Y (g:i A)',$row['time']); ?></span>
+                    <?php if($user->id != 0 && canPostToGuildForum($grouprow, $memberrow, (int) $user->id) && (int) $threadrow['locked'] === 0){ ?><a href="#" class="quote-post-link verify-email" id="quote-post-<?php echo $row['id']; ?>-message"><?php echo $lang->loc['quote'] ?></a><?php } ?>
+                    <?php if(($row['user_id'] == $user->id || $memberrow['rank'] > 1) && (int) $threadrow['locked'] === 0 && $row['message'] != $lang->loc['post.deleted']){ ?><a href="#" class="edit-post-link verify-email" id="edit-post-<?php echo $row['id']; ?>-message"><?php echo $lang->loc['edit']; ?></a><?php } ?>
+        <span class="post-list-message-header"><?php echo $input->HoloText($row['subject']); ?></span><br />
+        <span class="post-list-message-time"><?php echo date('M j, Y (g:i A)',$row['created_at']); ?></span>
         <div class="post-list-report-element">
-                <?php if($row['posterid'] != $user->id){ ?><a href="#" id="report-post-<?php echo $row['id']; ?>" class="create-report-button report-post"></a><?php } ?>
-				<?php if(($row['posterid'] == $user->id || $memberrow['rank'] > 1) && $threadrow['open'] == "1"){ ?><a href="#" id="delete-post-<?php echo $row['id']; ?>" class="delete-button delete-post"></a><?php } ?>
+                <?php if($row['user_id'] != $user->id){ ?><a href="#" id="report-post-<?php echo $row['id']; ?>" class="create-report-button report-post"></a><?php } ?>
+				<?php if(($row['user_id'] == $user->id || $memberrow['rank'] > 1) && (int) $threadrow['locked'] === 0){ ?><a href="#" id="delete-post-<?php echo $row['id']; ?>" class="delete-button delete-post"></a><?php } ?>
         </div>
         <div class="post-list-content-element">
-			<?php if($row['edit_time'] != 0){ ?><span class="post-list-message-edited"><?php echo $lang->loc['last.edited']; ?>: <?php echo date('M j, Y (g:i A)',$row['edit_time']); ?></span><br /><?php } ?>
-            <?php echo $input->bbcode_format(nl2br($input->HoloText($row['message']))); ?>
+			            <?php echo $input->bbcode_format(nl2br($input->HoloText($row['message']))); ?>
                 <input type="hidden" id="<?php echo $row['id']; ?>-message" value="<?php echo $input->HoloText($row['message']); ?>" />
         </div>
         <div>
@@ -295,9 +300,9 @@ document.observe("dom:loaded", function() {
 <div id="new-post-preview" style="display:none;">
 </div>
     <div class="postlist-footer clearfix">
-<?php if($user->id != 0 && ((($grouprow['forum_type'] == 2 && $memberrow['rank'] > 1) || ($grouprow['forum_type'] == 1 && $memberrow['rank'] > 0)) || ($grouprow['forum_type'] == 0)) && $threadrow['open'] == "1"){ ?>
+<?php if($user->id != 0 && canPostToGuildForum($grouprow, $memberrow, (int) $user->id) && (int) $threadrow['locked'] === 0){ ?>
                     <a href="#" id="create-post-message" class="create-post-link verify-email"><?php echo $lang->loc['post.reply']; ?></a>
-<?php }elseif($threadrow['open'] == "0"){ ?>
+<?php }elseif((int) $threadrow['locked'] === 1){ ?>
 <span class="topic-closed"><img src="<?php echo PATH; ?>/web-gallery/images/groups/status_closed.gif" title="<?php echo $lang->loc['closed.thread']; ?>"> <?php echo $lang->loc['closed.thread']; ?></span>
 <?php }elseif($user->id == 0){ ?>
 <p style="padding: 0 10px 10px 10px">
@@ -347,15 +352,15 @@ $lang->addLocale("groups.discussion.threads");
 <div id="group-topiclist-container">
 
 <div class="topiclist-header clearfix">
-<?php if($user->id == 0 && $grouprow['forum_type'] == 0){ ?>
+<?php if($user->id == 0 && $grouprow['post_messages'] === 'EVERYONE'){ ?>
             <?php echo $lang->loc['sign.in.to.post']; ?>
-<?php }elseif((($grouprow['forum_type'] == 2 && $memberrow['rank'] > 1) || ($grouprow['forum_type'] == 1 && $memberrow['rank'] > 0)) || ($grouprow['forum_type'] == 0)){ ?>
+<?php }elseif(canPostToGuildForum($grouprow, $memberrow, (int) $user->id)){ ?>
         <input type="hidden" id="email-verfication-ok" value="<?php echo (int) $user->user("email_verified") == 1 ? "1" : "0"; ?>"/>
         <a href="#" id="newtopic-upper" class="new-button verify-email newtopic-icon" style="float:left"><b><span></span><?php echo $lang->loc['new.post']; ?></b><i></i></a>
 <?php } ?>
 <?php
 if(isset($_GET['page']) && is_numeric($_GET['page'])){ $pagenum = (int) $_GET['page']; }else{ $pagenum = 1; }
-$total = $db->fetchColumn("SELECT COUNT(*) FROM forum_threads WHERE groupid = ?", [$id]);
+$total = $db->fetchColumn("SELECT COUNT(*) FROM guilds_forums_threads WHERE guild_id = ?", [$id]);
 $pages = ceil($total / 10);
 $end = 9; if(($pagenum + $end) > $pages){ $end = $pages - $pagenum; }
 $links = "";
@@ -380,67 +385,67 @@ $offset = ($pagenum - 1) * 10;
 	</tr>
 	
 <?php
-$rows = $db->fetchAll("SELECT * FROM forum_threads WHERE groupid = ? ORDER BY sticky ASC, time DESC LIMIT ? OFFSET ?", [$id, 10, $offset]);
+$rows = $db->fetchAll("SELECT id, guild_id, opener_id, subject, posts_count, created_at, updated_at, state, pinned, locked, admin_id FROM guilds_forums_threads WHERE guild_id = ? ORDER BY pinned DESC, updated_at DESC LIMIT ? OFFSET ?", [$id, 10, $offset]);
 $i = 0;
 foreach($rows as $row){
 if($input->IsEven($i)){ $even = "even"; }else{ $even = "odd"; }
-$lastpost = $db->fetchRow("SELECT id,posterid,time FROM forum_posts WHERE threadid = ? ORDER BY time DESC LIMIT 1", [$row['id']]);
-$firstpost = $db->fetchRow("SELECT id,posterid,time FROM forum_posts WHERE threadid = ? ORDER BY time ASC LIMIT 1", [$row['id']]);
-$replies = $db->fetchColumn("SELECT COUNT(*) FROM forum_posts WHERE threadid = ?", [$row['id']]) - 1;
+$lastpost = $db->fetchRow("SELECT id, user_id, created_at FROM guilds_forums_comments WHERE thread_id = ? ORDER BY created_at DESC LIMIT 1", [$row['id']]);
+$firstpost = $db->fetchRow("SELECT id, user_id, created_at FROM guilds_forums_comments WHERE thread_id = ? ORDER BY created_at ASC LIMIT 1", [$row['id']]);
+$replies = max(0, (int) $row['posts_count'] - 1);
 $newthread = false;
-if($lastpost && $lastpost['time'] > $user->user("online")){ $new = true; if($replies == 0){ $newthread = true; } }else{ $new = false; }
-$lastposter = $db->fetchRow("SELECT id, name FROM users WHERE id = ?", [$lastpost['posterid']]);
-$threadstarter = $db->fetchRow("SELECT id, name FROM users WHERE id = ?", [$row['starterid']]);
+if($lastpost && $lastpost['created_at'] > $user->user("last_online")){ $new = true; if($replies == 0){ $newthread = true; } }else{ $new = false; }
+$lastposter = $db->fetchRow("SELECT id, username FROM users WHERE id = ?", [$lastpost['user_id']]);
+$threadstarter = $db->fetchRow("SELECT id, username FROM users WHERE id = ?", [$row['opener_id']]);
 
 $posts = $replies + 1;
 $pages = ceil($posts / 10);
-$pagelink = "<a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link\">1</a>\n";
+$pagelink = "<a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/1\" class=\"topiclist-page-link\">1</a>\n";
 if($pages > 4){
 	$pageat = $pages - 2;
 	$pagelink .= "...\n";
 	while($pageat <= $pages){
-		$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link\">".$pageat."</a>\n";
+		$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link\">".$pageat."</a>\n";
 		$pageat++;
 	}
 }elseif($pages != 1){
 	$pageat = 2;
 	while($pageat <= $pages){
-		$pagelink .= " <a href=\"".groupURL($row['groupid'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link\">".$pageat."</a>\n";
+		$pagelink .= " <a href=\"".groupURL($row['guild_id'])."/discussions/".$row['id']."/id/page/".$pageat."\" class=\"topiclist-page-link\">".$pageat."</a>\n";
 		$pageat++;
 	}
 }
 
 $lastposttoday = false;
 $firstposttoday = false;
-if($lastpost && $lastpost['time'] > (time() - 60*60*24)){ $lastposttoday = true; }
-if($firstpost && $firstpost['time'] > (time() - 60*60*24)){ $firstposttoday = true; }
+if($lastpost && $lastpost['created_at'] > (time() - 60*60*24)){ $lastposttoday = true; }
+if($firstpost && $firstpost['created_at'] > (time() - 60*60*24)){ $firstposttoday = true; }
 ?>
 	<tr class="topiclist-row-<?php echo $even; ?>">
 		<td class="topiclist-rowtopic" valign="top">
 			<div class="topiclist-row-content">
-			<a class="topiclist-link <?php if($row['sticky'] == "1"){ ?>icon icon-sticky<?php }elseif($newthread == true){ ?>icon icon-new<?php } ?>" href="<?php echo groupURL($id); ?>/discussions/<?php echo $row['id']; ?>/id"><?php echo $input->HoloText($row['title']); ?></a>
-				<?php if($row['open'] == "0"){ ?><span class="topiclist-row-topicsticky"><img src="<?php echo PATH; ?>/web-gallery/images/groups/status_closed.gif" title="<?php echo $lang->loc['closed']; ?>" alt="<?php echo $lang->loc['closed']; ?>"></span><?php } ?>
+			<a class="topiclist-link <?php if($row['pinned'] == "1"){ ?>icon icon-sticky<?php }elseif($newthread == true){ ?>icon icon-new<?php } ?>" href="<?php echo groupURL($id); ?>/discussions/<?php echo $row['id']; ?>/id"><?php echo $input->HoloText($row['subject']); ?></a>
+				<?php if((int) $row['locked'] === 1){ ?><span class="topiclist-row-topicsticky"><img src="<?php echo PATH; ?>/web-gallery/images/groups/status_closed.gif" title="<?php echo $lang->loc['closed']; ?>" alt="<?php echo $lang->loc['closed']; ?>"></span><?php } ?>
 			(<?php echo $lang->loc['page']; ?>
                     <?php echo $pagelink; ?>
             )
 			<br />
-			<span><a class="topiclist-row-openername" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($threadstarter['name']); ?>"><?php echo $input->HoloText($threadstarter['name']); ?></a></span>
+			<span><a class="topiclist-row-openername" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($threadstarter['username']); ?>"><?php echo $input->HoloText($threadstarter['username']); ?></a></span>
 			
-				<span class="latestpost<?php if($firstposttoday == true){ ?>-today<?php } ?>"><?php if($firstposttoday == true){ echo $lang->loc['today']; }else{ echo date('M n, Y',$firstpost['time']); } ?></span>
-			<span class="latestpost">(<?php echo date('g:i A',$firstpost['time']); ?>)</span>
+				<span class="latestpost<?php if($firstposttoday == true){ ?>-today<?php } ?>"><?php if($firstposttoday == true){ echo $lang->loc['today']; }else{ echo date('M n, Y',$firstpost['created_at']); } ?></span>
+			<span class="latestpost">(<?php echo date('g:i A',$firstpost['created_at']); ?>)</span>
 				<?php if($new == true){ ?><span class="topiclist-row-topicnew"><?php echo $lang->loc['new']; ?> <img src="<?php echo PATH; ?>/web-gallery/images/discussions/New_arrow.gif" alt="<?php echo $lang->loc['new']; ?>"/></span><?php } ?>
 			</div>
 
 		</td>
 		<td class="topiclist-lastpost" valign="top">
 		    <a class="lastpost-page-link" href="<?php echo groupURL($id); ?>/discussions/<?php echo $row['id']; ?>/id/page/<?php echo $pages; ?>">
-				<span class="lastpost<?php if($lastposttoday == true){ ?>-today<?php } ?>"><?php if($lastposttoday == true){ echo $lang->loc['today']; }else{ echo date('M n, Y',$lastpost['time']); } ?></span>
-            <span class="lastpost">(<?php echo date('g:i A',$lastpost['time']); ?>)</span></a><br />
-			<span class="topiclist-row-writtenby"><?php echo $lang->loc['by']; ?>:</span> <a class="topiclist-row-openername" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($lastposter['name']); ?>"><?php echo $input->HoloText($lastposter['name']); ?></a>
+				<span class="lastpost<?php if($lastposttoday == true){ ?>-today<?php } ?>"><?php if($lastposttoday == true){ echo $lang->loc['today']; }else{ echo date('M n, Y',$lastpost['created_at']); } ?></span>
+            <span class="lastpost">(<?php echo date('g:i A',$lastpost['created_at']); ?>)</span></a><br />
+			<span class="topiclist-row-writtenby"><?php echo $lang->loc['by']; ?>:</span> <a class="topiclist-row-openername" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($lastposter['username']); ?>"><?php echo $input->HoloText($lastposter['username']); ?></a>
 
 		</td>
  		<td class="topiclist-replies" valign="top"><?php echo $replies; ?></td>
- 		<td class="topiclist-views" valign="top"><?php echo $row['views']; ?></td>
+		<td class="topiclist-views" valign="top"><?php echo '—'; ?></td>
 	</tr>
 <?php
 $i++;
@@ -448,7 +453,7 @@ $i++;
 ?>
 </table>
 <div class="topiclist-footer clearfix">
-<?php if($user->id != 0 && ((($grouprow['forum_type'] == 2 && $memberrow['rank'] > 1) || ($grouprow['forum_type'] == 1 && $memberrow['rank'] > 0)) || ($grouprow['forum_type'] == 0))){ ?>
+<?php if($user->id != 0 && canPostToGuildForum($grouprow, $memberrow, (int) $user->id)){ ?>
         <a href="#" id="newtopic-lower" class="new-button verify-email newtopic-icon" style="float:left"><b><span></span><?php echo $lang->loc['new.post']; ?></b><i></i></a>
 <?php } ?>
 
