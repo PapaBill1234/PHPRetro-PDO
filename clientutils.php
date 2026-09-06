@@ -120,28 +120,9 @@ break;
 case "error":
 $lang->addLocale("client.connectionfailed");
 if($settings->find("client_log_errors") == "1"){
-	$db->execute("INSERT INTO client_errors (ip,userid,error_type,os,error_id,hookerror,error_message,hookmsgb,lastexecute,lastmessage,server_errors,lastroom,mus_errorcode,client_process_list,client_errors,neterr_cast,neterr_res,client_uptime) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-		[
-			$_SERVER["REMOTE_ADDR"],
-			$user->id,
-			isset($_GET['error']) ? $_GET['error'] : '',
-			isset($_GET['os']) ? $_GET['os'] : '',
-			isset($_GET['error_id']) ? $_GET['error_id'] : '',
-			isset($_GET['hookerror']) ? $_GET['hookerror'] : '',
-			isset($_GET['hookmsga']) ? $_GET['hookmsga'] : '',
-			isset($_GET['hookmsgb']) ? $_GET['hookmsgb'] : '',
-			isset($_GET['lastexecute']) ? $_GET['lastexecute'] : '',
-			isset($_GET['lastmessage']) ? $_GET['lastmessage'] : '',
-			isset($_GET['server_errors']) ? $_GET['server_errors'] : '',
-			isset($_GET['lastroom']) ? $_GET['lastroom'] : '',
-			isset($_GET['mus_errorcode']) ? $_GET['mus_errorcode'] : '',
-			isset($_GET['client_process_list']) ? $_GET['client_process_list'] : '',
-			isset($_GET['client_errors']) ? $_GET['client_errors'] : '',
-			isset($_GET['neterr_cast']) ? $_GET['neterr_cast'] : '',
-			isset($_GET['neterr_res']) ? $_GET['neterr_res'] : '',
-			isset($_GET['client_uptime']) ? $_GET['client_uptime'] : ''
-		]
-	);
+    // TODO(phase4): Polaris CleanDB.sql has no client_errors table. Client error
+    // telemetry needs a dedicated Polaris migration before it can be persisted.
+    error_log('Polaris client error telemetry is not configured.');
 }
 ?>
 				<div class="habblet-container ">		

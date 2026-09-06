@@ -27,20 +27,14 @@ $page['bodyid'] = "home";
 $page['cat'] = "credits";
 require_once('./templates/community_header.php');
 
-$db = new Database();
 $data = new credits_sql;
-$this['month'] = date('m');
-$this['year'] = date('Y');
-$this['time'] = mktime(0,0,0,$this['month'],1,$this['year']);
-$this['next_time'] = strtotime("+1 Month",$this['time']);
-// Use prepared statement – assume select3 expects time parameter
-$row = $db->fetchRow("SELECT name, desc, image FROM collectibles WHERE time = ?", [$this['time']]);
-if(empty($row['name'])){ 
-    $row['name'] = $lang->loc['no.collectables']; 
-    $row['desc'] = $lang->loc['no.collectables.desc']; 
-    $row['image'] = ""; 
-    $nocollectable = true; 
-}
+// Polaris CleanDB.sql has no collectables/collectibles equivalent. Do not invent one.
+$row = [
+    'name' => $lang->loc['no.collectables'],
+    'desc' => $lang->loc['no.collectables.desc'],
+    'image' => '',
+];
+$nocollectable = true;
 ?>
 <div id="container">
 	<div id="content" style="position: relative" class="clearfix">
@@ -90,8 +84,8 @@ Collectibles.init(<?php echo $this['next_time'] - time(); ?>);
 							</h2>
 						<ul id="collectibles-list">
 		<?php
-		// select4 expects time parameter
-		$rows = $db->fetchAll("SELECT name, desc, image, time FROM collectibles WHERE time < ? ORDER BY time DESC", [$this['time']]);
+		// Polaris has no collectables table; the showroom remains empty pending a migration.
+		$rows = [];
 		$i = 0;
 		foreach($rows as $row) {
         $i++;
