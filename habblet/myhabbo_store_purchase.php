@@ -18,6 +18,7 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
+$database = new Database();
 $data = new home_sql;
 $lang->addLocale("homes.store.purchase");
 $lang->addLocale("ajax.buttons");
@@ -54,6 +55,7 @@ $db->query("INSERT INTO ".PREFIX."homes (ownerid,itemid,location) VALUES ('".$us
 }
 $credits = $user->user("credits") - $row['price'];
 $data->update1($user->id,$credits);
+$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'purchase', -(int) $row['price'], $credits, 'MyHabbo store purchase', (string) $row['id'], time()]);
 $user->refresh();
 @SendMUSData('UPRC' . $user->id);
 echo "OK";
