@@ -33,12 +33,12 @@ require_once('./templates/community_header.php');
 <div class="box-content">
 <?php if ($guild['badge'] !== '') { ?><p><img src="<?php echo $input->HoloText($guild['badge']); ?>" alt="" /></p><?php } ?>
 <p><?php echo nl2br($input->HoloText($guild['description'])); ?></p>
-<p><?php echo $lang->loc['page.owner']; ?>: <?php echo $input->HoloText($guild['owner_username'] ?: ''); ?></p>
-<?php if ($membership) { ?><p><?php echo $lang->loc['member']; ?> (<?php echo (int) $membership['level_id']; ?>)</p><?php } ?>
+<p><?php echo Owner: <?php echo $input->HoloText($guild['owner_username'] ?: ''); ?></p>
+<?php if ($membership) { ?><p><?php echo Membership level (<?php echo (int) $membership['level_id']; ?>)</p><?php } ?>
 </div></div></div></div>
 <div id="column2" class="column"><div class="habblet-container"><div class="cbb clearfix default">
 <h2 class="title"><?php echo $lang->loc['pagename.groups']; ?></h2>
-<div class="box-content"><p><?php echo $lang->loc['groups.desc']; ?></p></div>
+<div class="box-content"></div>
 </div></div></div>
 </div></div>
 <?php require_once('./templates/community_footer.php'); ?>
