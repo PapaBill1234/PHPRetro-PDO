@@ -16,7 +16,6 @@
 \+================================================================*/
 
 require_once('./includes/core.php');
-$data = new forgot_sql;
 $lang->addLocale("landing.forgot");
 
 $page['name'] = $lang->loc['pagename.forgot.password'];
@@ -25,64 +24,36 @@ $page['bodyid'] = "";
 session_start();
 
 require_once('./templates/login_header.php');
-	$mailer = new HoloMail;
-	if(isset($_POST['actionForgot'])){
-		$lang->addLocale("forgot.email");
-		$forgot_name = $input->FilterText($_POST['forgottenpw-username']);
-		$forgot_mail = $input->FilterText($_POST['forgottenpw-email']);
-		$sql = $serverdb->query("SELECT id,name,email FROM ".PREFIX."users WHERE name = '".$forgot_name."' AND email = '".$forgot_mail."' AND email_verified = '1'");
-		if($serverdb->num_rows($sql) > 0){
-		  $password = "";
-		  $length = 8;
-		  $possible = "0123456789qwertyuiopasdfghjkzxcvbnm";
-		  $i = 0;
-		  while ($i < $length) {
-			$char = substr($possible, mt_rand(0, strlen($possible)-1), 1);
-			if (!strstr($password, $char)) {
-			  $password .= $char;
-			  $i++;
-			}
-		  }
-		$row = $db->fetch_row($sql);
-		$hashed_pass = $input->HoloHash($password, $row[1]);
-		$success = $lang->loc['forgot.mail.send'];
-		$data->update1($row[0], $hashed_pass);
-		$subject = $lang->loc['forgot.mail.subject'];
-		$html = 
-		'<h1>'.$lang->loc['forgot.mail.header'].'</h1>
-		
-		<p>
-		'.$lang->loc['hello'].' <b>'.$forgot_name.'</b>'.$lang->loc['your.password'].'<br /><b>'.$password.'</b><br />'.$lang->loc['please.change'].'
-		</p>';
-		$mailer->sendSimpleMessage($forgot_mail,$subject,$html);
-		}else{
-			$result = $lang->loc['forgot.error.invalid'];
-		}
-	}elseif(isset($_POST['actionList'])){
-		$lang->addLocale("forgot.email");
-		$forgot_mail = $_POST['ownerEmailAddress'];
-		if($serverdb->num_rows($serverdb->query("SELECT name FROM ".PREFIX."users WHERE email = '".$forgot_mail."'")) > 0){
-			$plain_text = SHORTNAME."\n\n".$lang->loc['list.of.accounts']."\n\n".$lang->loc['hello']." ".$forgot_mail.",\n\n".$lang->loc['forgot.email.all.accounts'].$forgot_mail.":\n";
-			$html = 
-			$lang->loc['list.of.accounts']."
-			
-			<p>
-			".$lang->loc['hello']." <b>".$forgot_mail."</b></p>
-			
-			<p>".$lang->loc['forgot.email.all.accounts']." <b>".$forgot_mail."</b>:</p><blockquote>";
-					$sql = $serverdb->query("SELECT name FROM ".PREFIX."users WHERE email = '".$forgot_mail."'");
-					while($row = $db->fetch_row($sql)){
-						$plain_text .= $lang->loc['account'].": ".$row[0]."\n\n";
-						$html .= "<p>".$lang->loc['account'].": <b>".$row[0]."</b><br /></p>\n";
-					}
-					$plain_text .= "\n\n\n* * *\n\n".$lang->loc['forgot.email.footer'];
-					$html .= "</blockquote>";
-		$subject = $lang->loc['forgot.name.subject'];
-		$mailer->sendSimpleMessage($forgot_mail,$subject,$html,$plain_text);
-		$success = $lang->loc['forgot.mail.send'];
-	}else{
-		$result2 = $lang->loc['forgot.error.invalid'];
-	}
+$db = new Database();
+$mailer = new HoloMail;
+if (isset($_POST['actionForgot'])) {
+    $lang->addLocale("forgot.email");
+    $forgotName = trim((string) ($_POST['forgottenpw-username'] ?? ''));
+    $forgotMail = trim((string) ($_POST['forgottenpw-email'] ?? ''));
+    $account = $db->fetchRow("SELECT id, username, mail FROM users WHERE username = ? AND mail = ? AND mail_verified = '1' LIMIT 1", [$forgotName, $forgotMail]);
+    if ($account) {
+        $password = bin2hex(random_bytes(8));
+        $db->execute("UPDATE users SET password = ? WHERE id = ?", [password_hash($password, PASSWORD_DEFAULT), (int) $account['id']]);
+        $success = $lang->loc['forgot.mail.send'];
+        $html = '<h1>' . $lang->loc['forgot.mail.header'] . '</h1><p>' . $lang->loc['hello'] . ' <b>' . $input->HoloText($account['username']) . '</b>' . $lang->loc['your.password'] . '<br /><b>' . $password . '</b><br />' . $lang->loc['please.change'] . '</p>';
+        $mailer->sendSimpleMessage($account['mail'], $lang->loc['forgot.mail.subject'], $html);
+    } else { $result = $lang->loc['forgot.error.invalid']; }
+} elseif (isset($_POST['actionList'])) {
+    $lang->addLocale("forgot.email");
+    $forgotMail = trim((string) ($_POST['ownerEmailAddress'] ?? ''));
+    $accounts = $db->fetchAll("SELECT username FROM users WHERE mail = ? ORDER BY username ASC", [$forgotMail]);
+    if ($accounts) {
+        $safeMail = $input->HoloText($forgotMail);
+        $plainText = SHORTNAME . "\n\n" . $lang->loc['list.of.accounts'] . "\n\n" . $lang->loc['hello'] . ' ' . $forgotMail . ",\n\n" . $lang->loc['forgot.email.all.accounts'] . $forgotMail . ":\n";
+        $html = $lang->loc['list.of.accounts'] . '<p>' . $lang->loc['hello'] . ' <b>' . $safeMail . '</b></p><p>' . $lang->loc['forgot.email.all.accounts'] . ' <b>' . $safeMail . '</b>:</p><blockquote>';
+        foreach ($accounts as $account) {
+            $plainText .= $lang->loc['account'] . ': ' . $account['username'] . "\n\n";
+            $html .= '<p>' . $lang->loc['account'] . ': <b>' . $input->HoloText($account['username']) . '</b><br /></p>';
+        }
+        $plainText .= "\n\n\n* * *\n\n" . $lang->loc['forgot.email.footer'];
+        $mailer->sendSimpleMessage($forgotMail, $lang->loc['forgot.name.subject'], $html . '</blockquote>', $plainText);
+        $success = $lang->loc['forgot.mail.send'];
+    } else { $result2 = $lang->loc['forgot.error.invalid']; }
 }
 
 if(!isset($success)){
