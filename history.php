@@ -1,16 +1,7 @@
 <?php
-// FILE: history.php
-require_once('./includes/core.php');
-require_once('./includes/session.php');
-$lang->addLocale("credits.history");
-$page['id'] = "history";
-$page['name'] = $lang->loc['pagename.history'];
-$page['bodyid'] = "home";
-$page['cat'] = "credits";
-require_once('./templates/community_header.php');
+require_once('./includes/core.php'); require_once('./includes/session.php');
+$database = new Database(); $transactions = $database->fetchAll('SELECT type, amount, balance_after, description, reference_id, created_at FROM phpretro_transactions WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100', [$user->id]);
+$page['id'] = 'history'; $page['name'] = 'Transaction history'; $page['bodyid'] = 'home'; $page['cat'] = 'credits'; require_once('./templates/community_header.php');
 ?>
-<div id="container"><div id="content" class="clearfix"><div id="column1" class="column">
-<div class="habblet-container"><div class="cbb clearfix default"><h2 class="title"><?php echo $lang->loc['pagename.history']; ?></h2>
-<div class="box-content"><p><?php echo $lang->loc['pagename.history']; ?></p></div>
-</div></div></div></div></div>
+<div id="container"><div id="content" class="clearfix"><div id="column1" class="column"><div class="habblet-container"><div class="cbb clearfix default"><h2 class="title">Transaction history</h2><div class="box-content"><table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Balance</th><th>Description</th></tr><?php foreach ($transactions as $transaction) { ?><tr><td><?php echo date('Y-m-d H:i', (int) $transaction['created_at']); ?></td><td><?php echo HoloText($transaction['type']); ?></td><td><?php echo (int) $transaction['amount']; ?></td><td><?php echo (int) $transaction['balance_after']; ?></td><td><?php echo HoloText($transaction['description']); ?></td></tr><?php } ?></table><?php if ($transactions === []) { ?><p>No transactions have been recorded yet.</p><?php } ?></div></div></div></div></div></div>
 <?php require_once('./templates/community_footer.php'); ?>
