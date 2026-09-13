@@ -16,7 +16,6 @@
 \+================================================================*/
 
 require_once('./includes/core.php');
-$data = new register_sql;
 $lang->addLocale("landing.email");
 
 $page['name'] = $lang->loc['pagename.email.verify'];
@@ -26,37 +25,10 @@ session_start();
 
 require_once('./templates/login_header.php');
 
-if(isset($_GET['key'])){
-	$key = $input->FilterText($_GET['key']);
-	$sql = $db->query("SELECT * FROM ".PREFIX."verify WHERE key_hash = '".$key."' LIMIT 1");
-	if($db->num_rows($sql) > 0){
-		$row = $db->fetch_assoc($sql);
-		$email_verify_status = $serverdb->result($serverdb->query("SELECT email_verified FROM ".PREFIX."users WHERE id = '".$row['id']."' LIMIT 1"));
-		if($email_verify_status == "1"){ $reward = false; }else{ $reward = true; }
-		$serverdb->query("UPDATE ".PREFIX."users SET email = '".$row['email']."' WHERE id = '".$row['id']."' LIMIT 1");
-		$serverdb->query("UPDATE ".PREFIX."users SET email_verified = '1' WHERE id = '".$row['id']."' LIMIT 1");
-		if($reward == true){ $data->update1($row['id'],$settings->find("email_verify_reward")); $db->query("INSERT INTO ".PREFIX."transactions (userid,time,amount,descr) VALUES ('".$row['id']."','".time()."','".$settings->find("email_verify_reward")."','Verifying your email address')"); @$user->refresh(); @SendMUSData('UPRC' . $user->id); }
-		$db->query("DELETE FROM ".PREFIX."verify WHERE key_hash = '".$key."' LIMIT 1");
-		$sucess = "1";
-	}else{
-		$sucess = "0";
-	}
-}else{
-	$sucess = "0";
-}
-if(isset($_GET['remove'])){
-	$key = $input->FilterText($_GET['remove']);
-	$sql = $db->query("SELECT * FROM ".PREFIX."verify WHERE key_hash = '".$key."' LIMIT 1");
-	if($db->num_rows($sql) > 0){
-		$row = $db->fetch_assoc($sql);
-		$serverdb->query("UPDATE ".PREFIX."users SET email = '', newsletter = '0' WHERE id = '".$row['id']."' LIMIT 1");
-		$serverdb->query("UPDATE ".PREFIX."users SET email_verified = '-1' WHERE id = '".$row['id']."' LIMIT 1");
-		$db->query("DELETE FROM ".PREFIX."verify WHERE key_hash = '".$key."' LIMIT 1");
-		$sucess = "2";
-	}else{
-		$sucess = "0";
-	}
-}
+// Polaris has mail_verified but no verified token-table equivalent for the legacy verify flow.
+// Do not reuse users.secret_key without a documented Polaris contract.
+$sucess = "0";
+
 if($sucess == "1"){
 ?>
 			<div id="process-content">
