@@ -18,6 +18,7 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
+$database = new Database();
 $data = new credits_sql;
 $lang->addLocale("redeem.voucher");
 
@@ -34,7 +35,7 @@ if($db->num_rows($sql) > 0){
 		$data->update1($user->id,$credits);
 		$data->delete1($voucher);
 		$user->refresh();
-		$db->query("INSERT INTO ".PREFIX."transactions (time,amount,descr,userid) VALUES ('".time()."', '".$row[1]."', 'Credit voucher redeem', '".$user->id."');");
+		$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'voucher_redeem', (int) $row[1], $credits, 'Credit voucher redeem', $voucher, time()]);
 		$result = $lang->loc['redeemed.1']." ".$row[1]." ".$lang->loc['redeemed.2'];
 		@SendMUSData('UPRC' . $user->id);
 	}else{
@@ -42,7 +43,7 @@ if($db->num_rows($sql) > 0){
 		$data->insert1($user->id,$row[1]);
 		$data->delete1($voucher);
 		$user->refresh();
-		$db->query("INSERT INTO ".PREFIX."transactions (time,amount,descr,userid) VALUES ('".time()."', '0', 'Furniture voucher redeem', '".$user->id."');");
+		$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'voucher_redeem', 0, $credits, 'Furniture voucher redeem', $voucher, time()]);
 		$result = $lang->loc['redeemed.1']." ".$lang->loc['redeemed.3'];
 		@SendMUSData('UPRH' . $user->id);
 	}

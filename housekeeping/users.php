@@ -25,6 +25,7 @@ $page['rank'] = 6;
 require_once('../includes/core.php');
 require_once('./includes/hksession.php');
 $data = new housekeeping_sql;
+$database = new Database();
 $lang->addLocale("housekeeping.users");
 
 if(isset($_POST['search'])){
@@ -52,7 +53,12 @@ if(!is_numeric($_POST['rank']) || ((int) $_POST['rank'] < 1 || (int) $_POST['ran
 if((int) $_POST['id'] == (int) $user->id && $user->user("rank") == "7" && $_POST['rank'] != "7"){ $error = $lang->loc['error.derank.admin']; }
 if((int) $row[3] >= (int) $user->user("rank") && $user->user("rank") != "7"){ $error = $lang->loc['error.higher.rank']; }
 if(empty($error)){
+	$previousCredits = (int) $database->fetchColumn('SELECT credits FROM users WHERE id = ?', [(int) $_POST['id']]);
 	$data->update2($_POST['id'],$_POST['rank'],$_POST['motto'],$_POST['credits'],$_POST['birth'],$_POST['email']);
+	$newCredits = (int) $_POST['credits'];
+	if ($newCredits !== $previousCredits) {
+		$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [(int) $_POST['id'], 'admin_grant', $newCredits - $previousCredits, $newCredits, 'Housekeeping credit adjustment', (string) $user->id, time()]);
+	}
 	$message = $lang->loc['message.saved.details'];
 }
 @SendMUSData('UPRA' . $id);

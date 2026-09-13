@@ -18,6 +18,7 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
+$database = new Database();
 $data = new group_purchase_sql;
 $lang->addLocale("group.purchasegroup");
 
@@ -39,6 +40,7 @@ if(empty($name) || empty($desc)){
 		$data->insert1($name, $desc, $user->id, date('M n, Y'));
 		$id = $serverdb->result($data->select2($user->id, $name), 0);
 		$data->insert2($user->id, $id);
+		$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'purchase', -10, $user->user('credits') - 10, 'Group purchase', (string) $id, time()]);
 		$user->refresh();
 		$db->query("INSERT INTO ".PREFIX."transactions (userid,descr,time,amount) VALUES ('".$user->id."','Group purchase','".time()."','-10')");
 		@SendMUSData('UPRC' . $user->id);
