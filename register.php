@@ -1,288 +1,86 @@
 <?php
-/*================================================================+\
-|| # PHPRetro - An extendable virtual hotel site and management
-|+==================================================================
-|| # Copyright (C) 2009 Yifan Lu. All rights reserved.
-|| # http://www.yifanlu.com
-|| # Parts Copyright (C) 2009 Meth0d. All rights reserved.
-|| # http://www.meth0d.org
-|| # All images, scripts, and layouts
-|| # Copyright (C) 2009 Sulake Ltd. All rights reserved.
-|+==================================================================
-|| # PHPRetro is provided "as is" and comes without
-|| # warrenty of any kind. PHPRetro is free software!
-|| # License: GNU Public License 3.0
-|| # http://opensource.org/licenses/gpl-license.php
-\+================================================================*/
-
 require_once('./includes/core.php');
-$data = new register_sql;
 $lang->addLocale("landing.register");
 
 $page['name'] = $lang->loc['pagename.register'];
-if(isset($_GET['registerCancel']) && $_GET['registerCancel'] == "true"){
-session_unset();
-header("Location: ".PATH."/"); exit;
-}
-
-if(session_is_registered(username)){ header("Location: ".PATH."/"); exit; }
-//Referral
-if(isset($_GET['referral'])){
-	$referral = $input->FilterText($_GET['referral']);
-	if($serverdb->num_rows($data->select1($referral)) > 0){
-		$refer = true;
-		$referrow = $db->fetch_row($data->select1($referral));
-	}
-}
-$figure = $input->FilterText($_GET['figure']);
-$gender = $input->FilterText($_GET['gender']);
-if(isset($_POST['bean_avatarName'])){
-
-$name = $input->FilterText($_POST['bean_avatarName']);
-$password = $input->FilterText($_POST['password']);
-$retypedpassword = $input->FilterText($_POST['retypedPassword']);
-$day = $input->FilterText($_POST['bean_day']);
-$month = $input->FilterText($_POST['bean_month']);
-$year = $input->FilterText($_POST['bean_year']);
-$email = $input->FilterText($_POST['bean_email']);
-$retypedemail = $input->FilterText($_POST['bean_retypedEmail']);
-$accept_tos = $_POST['bean_termsOfServiceSelection'];
-if((!isset($_POST['bean_figure']) || !isset($_POST['bean_gender'])) && isset($_POST['randomFigure'])){
-	$_POST['bean_gender'] = substr($_POST['randomFigure'], 0, 1);
-	$_POST['bean_figure'] = substr($_POST['randomFigure'], 2);
-}
-$figure = $input->FilterText($_POST['bean_figure']);
-$gender = $input->FilterText($_POST['bean_gender']);
-$newsletter = $input->FilterText($_POST['bean_marketing']);
-$referid = $input->FilterText($_POST['referral']);
-if(isset($_POST['referral'])){
-	$referral = $input->FilterText($_POST['referral']);
-	if($serverdb->num_rows($data->select1($referral)) > 0){
-		$refer = true;
-		$referrow = $db->fetch_row($data->select1($referral));
-	}
-}
-$_SESSION['bean_avatarName'] = $_POST['bean_avatarName'];
-$_SESSION['password'] = $_POST['password'];
-$_SESSION['retypedPassword'] = $_POST['retypedPassword'];
-$_SESSION['bean_day'] = $_POST['bean_day'];
-$_SESSION['bean_month'] = $_POST['bean_month'];
-$_SESSION['bean_year'] = $_POST['bean_year'];
-$_SESSION['bean_email'] = $_POST['bean_email'];
-$_SESSION['bean_retypedEmail'] = $_POST['bean_retypedEmail'];
-$_SESSION['bean_termsOfServiceSelection'] = $_POST['bean_termsOfServiceSelection'];
-$_SESSION['bean_figure'] = $_POST['bean_figure'];
-$_SESSION['bean_gender'] = $_POST['bean_gender'];
-$_SESSION['bean_marketing'] = $_POST['bean_marketing'];
-$_SESSION['referral'] = $_POST['referral'];
-}elseif(isset($_SESSION['bean_avatarName'])){
-$name = $input->FilterText($_SESSION['bean_avatarName']);
-$password = $input->FilterText($_SESSION['password']);
-$retypedpassword = $input->FilterText($_SESSION['retypedPassword']);
-$day = $input->FilterText($_SESSION['bean_day']);
-$month = $input->FilterText($_SESSION['bean_month']);
-$year = $input->FilterText($_SESSION['bean_year']);
-$email = $input->FilterText($_SESSION['bean_email']);
-$retypedemail = $input->FilterText($_SESSION['bean_retypedEmail']);
-$accept_tos = $_SESSION['bean_termsOfServiceSelection'];
-$figure = $input->FilterText($_SESSION['bean_figure']);
-$gender = $input->FilterText($_SESSION['bean_gender']);
-$newsletter = $input->FilterText($_SESSION['bean_marketing']);
-$referid = $input->FilterText($_SESSION['referral']);
-if(isset($_SESSION['referral'])){
-	$referral = $input->FilterText($_SESSION['referral']);
-	if($serverdb->num_rows($data->select1($referral)) > 0){
-		$refer = true;
-		$referrow = $db->fetch_row($data->select1($referral));
-	}
-}
-}
-
-if(isset($_POST['bean_avatarName']) || isset($_SESSION['bean_avatarName'])){
-
-// Start validating the stuff the user has submitted
-$filter = preg_replace("/[^a-z\d\-=\?!@:\.]/i", "", $name);
-$email_check = preg_match("/^[a-z0-9_\.-]+@([a-z0-9]+([\-]+[a-z0-9]+)*\.)+[a-z]{2,7}$/i", $email);
-
-// If this variable stays false, we're safe and can add the user. If not, it means that
-// we've encountered errors and we can not proceed, so instead show the errors and do not
-// add the user to the database.
+$refer = false;
 $failure = false;
-$lang->addLocale("register.errors");
+$error = [];
+$name = $password = $retypedpassword = $email = $retypedemail = $figure = $gender = '';
+$day = $month = $year = 0;
 
-	// Name validation
-	if($serverdb->num_rows($serverdb->query("SELECT id,name,email FROM ".PREFIX."users WHERE name = '".$name."' LIMIT 1")) > 0){
-		$error['name'] = $lang->loc['error.2'];
-		$failure = true;
-	} elseif($filter != $name){
-		$error['name'] = $lang->loc['error.3'];
-		$failure = true;
-	} elseif(strlen($name) > 24){
-		$error['name'] = $lang->loc['error.4'];
-		$failure = true;
-	} elseif(strlen($name) < 1){
-		$error['name'] = $lang->loc['error.5'];
-		$failure = true;
-	}
+if (isset($_POST['bean_avatarName'])) {
+    $name = trim((string) $_POST['bean_avatarName']);
+    $password = (string) ($_POST['password'] ?? '');
+    $retypedpassword = (string) ($_POST['retypedPassword'] ?? '');
+    $email = trim((string) ($_POST['bean_email'] ?? ''));
+    $retypedemail = trim((string) ($_POST['bean_retypedEmail'] ?? ''));
+    $day = (int) ($_POST['bean_day'] ?? 0);
+    $month = (int) ($_POST['bean_month'] ?? 0);
+    $year = (int) ($_POST['bean_year'] ?? 0);
+    $figure = (string) ($_POST['bean_figure'] ?? '');
+    $gender = (string) ($_POST['bean_gender'] ?? '');
+    $acceptTos = (string) ($_POST['bean_termsOfServiceSelection'] ?? '');
+    $lang->addLocale("register.errors");
 
-	// MOD- Names validation
-	$first = substr($name, 0, 4);
-	if (strnatcasecmp($first,"MOD-") == false) {
-		$error['name'] = $lang->loc['error.6'];
-		$failure = true;
-	}
+    if (!preg_match('/^[a-z0-9\-=?!@:.]+$/i', $name) || strlen($name) < 1 || strlen($name) > 24 || strncasecmp($name, 'MOD-', 4) === 0) {
+        $error['name'] = $lang->loc['error.3'];
+        $failure = true;
+    }
+    if ($password !== $retypedpassword || strlen($password) < 6) {
+        $error['password'] = $lang->loc['error.7'];
+        $failure = true;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $email !== $retypedemail) {
+        $error['mail'] = $lang->loc['error.9'];
+        $failure = true;
+    }
+    if (!checkdate($month, $day, $year)) {
+        $error['dob'] = $lang->loc['error.11'];
+        $failure = true;
+    }
+    if ($acceptTos !== 'true') {
+        $error['tos'] = $lang->loc['error.12'];
+        $failure = true;
+    }
 
-	// Password validation
-	if($password !== $retypedpassword){
-		$error['password'] = $lang->loc['error.7'];
-		$failure = true;
-	} elseif(strlen($password) < 6){
-		$error['password'] = $lang->loc['error.8'];
-		$failure = true;
-	/*} elseif(strlen($password) > 20){
-		$error['password'] = "Please shorten your password to 20 characters or less!";
-		$failure = true;*/
-	}
+    if (!$failure) {
+        $db = new Database();
+        if ($db->fetchRow("SELECT id FROM users WHERE username = ? LIMIT 1", [$name])) {
+            $error['name'] = $lang->loc['error.2'];
+            $failure = true;
+        }
+    }
 
-	// E-Mail validation
-	if(strlen($email) < 6){
-		$error['mail'] = $lang->loc['error.9'];
-		$failure = true;
-	} elseif($email_check !== 1){
-		$error['mail'] = $lang->loc['error.9'];
-		$failure = true;
-	} elseif($email !== $retypedemail){
-		$error['mail'] = $lang->loc['error.10'];
-		$failure = true;
-	}
+    if (!$failure) {
+        $db = new Database();
+        $createdAt = time();
+        $db->execute(
+            "INSERT INTO users (username, password, mail, mail_verified, account_created, account_day_of_birth, last_login, last_online, look, gender, credits, ip_register, ip_current)
+             VALUES (?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$name, password_hash($password, PASSWORD_DEFAULT), $email, $createdAt, mktime(0, 0, 0, $month, $day, $year), $createdAt, $createdAt, $figure, $gender, (int) $settings->find('register_start_credits'), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)]
+        );
+        $userId = (int) $db->insertId();
 
-	// Date of birth validation
-	if($day < 1 || $day > 31 || $month > 12 || $month < 1 || $year < 1920 || $year > 2008){
-		$error['dob'] = $lang->loc['error.11'];
-		$failure = true;
-	}
-	
-	// captcha check
-	if(($_SESSION['register-captcha-bubble'] == strtolower($_POST['bean_captchaResponse']) && !empty($_SESSION['register-captcha-bubble'])) || $settings->find("site_capcha") == "0") {
-		unset($_SESSION['register-captcha-bubble']);
-	} else {
-		$error['captcha'] = $lang->loc['error.1'];
-		$failure = true;
-	}
+        if ($settings->find('email_verify_enabled') === '1') {
+            $token = bin2hex(random_bytes(32));
+            $now = time();
+            $db->execute("DELETE FROM phpretro_email_verification_tokens WHERE user_id = ? AND used_at IS NULL", [$userId]);
+            $db->execute(
+                "INSERT INTO phpretro_email_verification_tokens (user_id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?)",
+                [$userId, hash('sha256', $token), $now, $now + 86400]
+            );
+            $lang->addLocale("email.confirmationemail");
+            $verificationUrl = PATH . '/email?token=' . rawurlencode($token);
+            $html = '<p><a href="' . $input->HoloText($verificationUrl) . '">' . $input->HoloText($verificationUrl) . '</a></p>';
+            (new HoloMail())->sendSimpleMessage($email, $lang->loc['email.subject'] . ' ' . SHORTNAME, $html);
+        } else {
+            $db->execute("UPDATE users SET mail_verified = '1' WHERE id = ?", [$userId]);
+        }
 
-	// Terms of Service validation
-	if($accept_tos !== "true"){
-		$error['tos'] = $lang->loc['error.12'];
-		$failure = true;
-	}
-
-	// validate figure
-	$check = new HoloFigureCheck($figure,$gender,false);
-	if($check->error > 0){
-		$failure = true;
-	}
-	
-	// Newsletter
-	if($newsletter == "true"){
-		$newsletter = "1";
-	}else{
-		$newsletter = "0";
-	}
-	
-	// Finally, if everything's OK we add the user to the database, log him in, etc
-	if($failure == false){
-		$scredits = $settings->find("register_start_credits");
-		
-		$dob = $day . "-" . $month . "-" . $year;
-
-		$password = $input->HoloHash($password, $name);
-
-		
-		$data->insert1($name,$password,$dob,$figure,$gender,$scredits);
-		$row = $serverdb->fetch_row($data->select3($name));
-		$serverdb->query("INSERT INTO ".PREFIX."users (id,name,lastvisit,online,ipaddress_last,newsletter,email_verified,show_home,email_friendrequest,email_minimail,email,show_online) VALUES ('".$row[0]."','".$row[1]."','".time()."','".time()."','".$_SERVER[REMOTE_ADDR]."','".$newsletter."','0','1','1','1','".$email."','1')");
-		if($scredits > 0){
-			$db->query("INSERT INTO ".PREFIX."transactions (userid,time,amount,descr) VALUES ('".$row[0]."','".time()."','".$scredits."','Welcome to " . $sitename . "!')");
-		}
-		
-		if($settings->find("email_verify_enabled") == "1"){
-		$hash = "";
-		$length = 8;
-		$possible = "0123456789qwertyuiopasdfghjkzxcvbnm";
-		$i = 0;
-		while ($i < $length) {
-		$char = substr($possible, mt_rand(0, strlen($possible)-1), 1);
-		if (!strstr($hash, $char)) {
-		  $hash .= $char;
-		  $i++;
-		}
-		}
-		$hash = sha1($hash);
-		$num = $key;
-		$db->query("INSERT INTO ".PREFIX."verify (id,email,key_hash) VALUES ('".$row[0]."','".$email."','".$hash."')");
-		$lang->addLocale("email.confirmationemail");
-		if($settings->find("email_verify_reward") != "0"){ $reward_text = $lang->loc['email.reward']." ".$settings->find("email_verify_reward")." ".$lang->loc['credits']; }else{ $reward_text = ""; }
-		$subject = $lang->loc['email.subject']." ".SHORTNAME;
-		$to = $email;
-		$html = 
-		'<h1 style="font-size: 16px">'.$lang->loc['email.verify.1'].'</h1>
-
-		<p>
-		'.$reward_text.'
-		'.$lang->loc['email.verify.2'].' <a href="'.PATH.'/email?key='.$hash.'">'.$lang->loc['email.verify.2.b'].'</a>
-		</p>
-
-		<p>
-		'.$lang->loc['email.verify.3'].'
-		</p>
-
-		<blockquote>
-		<p>
-		<b>'.$lang->loc['email.verify.4'].'</b> '.$name.'<br>
-		<b>'.$lang->loc['email.verify.5'].'</b> '.$dob.'
-		</p>
-		</blockquote>
-
-		<p>
-		'.$lang->loc['email.verify.6'].'
-		</p>
-
-		<p>'.$lang->loc['email.verify.7'] .'<br><br>
-		'.$lang->loc['email.verify.8'].'<p>
-		'.PATH.'/</p>
-
-		<p>
-		'.$lang->loc['email.verify.9'].' <a href="'.PATH.'/email?remove='.$hash.'">'.$lang->loc['email.verify.9.b'].'</a>.
-		</p>
-
-		<p>
-		'.$lang->loc['email.verify.11'].'<a href="'.PATH.'/help">'.$lang->loc['email.verify.12'].'</a>.
-		</p>';
-		$mailer = new HoloMail;
-		$mailer->sendSimpleMessage($to,$subject,$html);
-		}else{
-			$serverdb->query("UPDATE ".PREFIX."users SET email_verified = '1' WHERE id = '".$row[0]."' LIMIT 1");
-		}
-		
-		// Referral
-		if($refer == true){
-			$data->update1($referrow[0],$settings->find("register_referral_rewards"));
-			$db->query("INSERT INTO ".PREFIX."transactions (userid,time,amount,descr) VALUES ('".$referrow[0]."','".time()."','".$settings->find("register_referral_rewards")."','Referring a user.')");
-			$data->insert2($row[0],$referrow[0]);
-			$_SESSION['referral'] = $referrow[0];
-		}
-
-		$user = new HoloUser($name,$password,true);
-		$_SESSION['user'] = $user;
-
-		header("Location: ".PATH."/security_check?page=./welcome");
-
-		exit; // cut off the script
-
-		// And we're done!
-	}
-
-
+        header("Location: " . PATH . "/");
+        exit;
+    }
 }
 
 require_once('./templates/register_header.php');
