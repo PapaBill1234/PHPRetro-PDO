@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'savedetails') {
     if ($before === false) { $notice = 'User not found.'; }
     else { $credits = (int) ($_POST['credits'] ?? $before['credits']); $database->execute('UPDATE users SET mail = ?, rank = ?, credits = ?, pixels = ?, points = ? WHERE id = ?', [trim((string) ($_POST['mail'] ?? '')), (int) ($_POST['rank'] ?? 1), $credits, (int) ($_POST['pixels'] ?? 0), (int) ($_POST['points'] ?? 0), $id]);
         if ($credits !== (int) $before['credits']) { $database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$id, 'admin_grant', $credits - (int) $before['credits'], $credits, 'Housekeeping credit adjustment', (string) $id, time()]); }
-        $notice = 'User updated.';
+        AdminAudit::log($database, (int) $user->id, 'user_updated', 'user', $id); $notice = 'User updated.';
     } $action = 'edit';
 }
 $user = null; if ($action === 'edit') { $user = $database->fetchRow('SELECT id, username, mail, rank, credits, pixels, points, online FROM users WHERE id = ?', [(int) ($_GET['id'] ?? $_POST['id'] ?? 0)]); }
