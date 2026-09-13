@@ -12,3 +12,4 @@ ob_start(); if($action==='create'||$action==='edit'){?><form method="post"><inpu
 $page['name'] = 'News'; $page['category'] = 'tools'; require_once('./templates/housekeeping_header.php');
 ?>
 <div class="page_title"><span class="page_name">News</span></div><div class="page_main"><div class="center"><?php if ($notice !== '') { ?><div class="clean-ok"><?php echo $e($notice); ?></div><?php } ?><?php echo $content; ?></div></div><?php require_once('./templates/housekeeping_footer.php'); ?>
+
