@@ -23,10 +23,9 @@ $page['name'] = $lang->loc['page.error'];
 $page['no_client_js'] = true;
 require_once('./templates/client_header.php');
 
-// Use new Database
+// HabForge/Nitro has no client-to-backend error-reporting endpoint or payload convention.
 $db = new Database();
-
-$key = isset($_GET['key']) ? $input->HoloText($_GET['key']) : '';
+$key = isset($_GET['key']) ? (string) $_GET['key'] : '';
 ?>
 <body id="popup" class="process-template client_error">
 <div id="container">
@@ -119,10 +118,30 @@ $lang->addLocale("client.oldshockwave");
 break;
 case "error":
 $lang->addLocale("client.connectionfailed");
-if($settings->find("client_log_errors") == "1"){
-    // TODO(phase4): Polaris CleanDB.sql has no client_errors table. Client error
-    // telemetry needs a dedicated Polaris migration before it can be persisted.
-    error_log('Polaris client error telemetry is not configured.');
+if ($settings->find("client_log_errors") == "1") {
+    $reportedType = isset($_GET['error_type']) ? (string) $_GET['error_type'] : (isset($_GET['error']) ? (string) $_GET['error'] : 'unknown');
+    $reportedMessage = isset($_GET['message']) ? (string) $_GET['message'] : (isset($_GET['error_message']) ? (string) $_GET['error_message'] : (isset($_GET['hookmsga']) ? (string) $_GET['hookmsga'] : 'Client error page displayed.'));
+    $reportedStack = isset($_GET['stack_trace']) ? (string) $_GET['stack_trace'] : (isset($_GET['stack']) ? (string) $_GET['stack'] : null);
+    $reportedUrl = isset($_GET['url']) ? substr((string) $_GET['url'], 0, 255) : substr((string) ($_SERVER['REQUEST_URI'] ?? ''), 0, 255);
+    $reportedVersion = isset($_GET['client_version']) ? substr((string) $_GET['client_version'], 0, 50) : null;
+    $reportedUserId = isset($user->id) && ctype_digit((string) $user->id) && (int) $user->id > 0 ? (int) $user->id : null;
+
+    $db->execute(
+        "INSERT INTO phpretro_client_errors
+            (user_id, ip, error_type, message, stack_trace, user_agent, url, client_version, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            $reportedUserId,
+            substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+            substr($reportedType, 0, 50),
+            $reportedMessage,
+            $reportedStack,
+            isset($_SERVER['HTTP_USER_AGENT']) ? substr((string) $_SERVER['HTTP_USER_AGENT'], 0, 255) : null,
+            $reportedUrl,
+            $reportedVersion,
+            time(),
+        ]
+    );
 }
 ?>
 				<div class="habblet-container ">		
