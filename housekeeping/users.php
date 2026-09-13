@@ -10,7 +10,27 @@ require_once('../includes/core.php');
 require_once('./includes/hksession.php');
 require_once('../includes/AdminAudit.php');
 $database = new Database();
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['bulk_action'] ?? '') === 'set_rank') { $ids = array_values(array_filter(array_map('intval', (array) ($_POST['user_ids'] ?? [])))); $rank = (int) ($_POST['bulk_rank'] ?? 1); foreach ($ids as $bulkId) { $database->execute('UPDATE users SET rank = ? WHERE id = ?', [$rank, $bulkId]); AdminAudit::log($database, (int) $user->id, 'bulk_rank_change', 'user', $bulkId, 'Rank set to '.$rank); } }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['bulk_action'] ?? '') === 'set_rank') {
+    $ids = array_values(array_filter(array_map('intval', (array) ($_POST['user_ids'] ?? []))));
+    $rank = (int) ($_POST['bulk_rank'] ?? 1);
+    $actorId = (int) $user->id;
+    $actorRank = (int) $user->user('rank');
+
+    // TODO: wrap this batch in a transaction so a mid-loop failure cannot leave partial rank changes.
+    foreach ($ids as $bulkId) {
+        if ($bulkId === $actorId || $rank >= $actorRank) {
+            continue;
+        }
+        $target = $database->fetchRow('SELECT rank FROM users WHERE id = ?', [$bulkId]);
+        if ($target === false || (int) $target['rank'] >= $actorRank) {
+            continue;
+        }
+        $affected = $database->execute('UPDATE users SET rank = ? WHERE id = ?', [$rank, $bulkId]);
+        if ($affected > 0) {
+            AdminAudit::log($database, $actorId, 'bulk_rank_change', 'user', $bulkId, 'Rank set to '.$rank);
+        }
+    }
+}
 $e = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); $notice = ''; $action = $_GET['do'] ?? 'list';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'savedetails') {
     $id = (int) ($_POST['id'] ?? 0); $before = $database->fetchRow('SELECT credits FROM users WHERE id = ?', [$id]);

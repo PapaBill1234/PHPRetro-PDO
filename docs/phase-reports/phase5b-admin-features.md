@@ -29,4 +29,6 @@ rg -n "CREATE TABLE IF NOT EXISTS \`users\`" references/schema/CleanDB.sql
 ```
 
 ## Open review items
-PHP lint was not available in this environment. Validate login/TOTP, staff-session invalidation, bulk actions, and audit coverage in a PHP-enabled test environment before merge.
+Bulk rank changes now reject self-targeting, target ranks at or above the actor, and requested ranks at or above the actor; they audit only rows actually updated. FAQ, news, vouchers, and collectibles now audit only confirmed writes, with created-item IDs recorded.
+
+Known limitations retained for a follow-up: bulk ban/rank loops are not transactional, so a mid-batch failure can be partial; the housekeeping staff-session check preserves a fail-open compatibility path if the Phase 5b tables are unavailable. Both locations now carry TODO comments. PHP lint and a PHP-enabled validation pass remain required before merge.

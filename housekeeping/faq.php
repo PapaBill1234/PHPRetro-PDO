@@ -5,14 +5,17 @@ require_once('../includes/AdminAudit.php');
 $database = new Database(); $action = $_GET['do'] ?? 'list'; $notice = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int) ($_POST['id'] ?? 0);
-    if ($action === 'delete') { $database->execute('DELETE FROM phpretro_faq WHERE id = ?', [$id]); $notice = 'FAQ entry removed.'; }
+    $affected = 0;
+    if ($action === 'delete') { $affected = $database->execute('DELETE FROM phpretro_faq WHERE id = ?', [$id]); $notice = $affected > 0 ? 'FAQ entry removed.' : 'FAQ entry not found.'; }
     else {
         $category = trim((string) ($_POST['category'] ?? 'general')); $question = trim((string) ($_POST['question'] ?? '')); $answer = trim((string) ($_POST['answer'] ?? ''));
         $order = (int) ($_POST['sort_order'] ?? 0); $active = isset($_POST['active']) ? 1 : 0;
         if ($question === '' || $answer === '') { $notice = 'Question and answer are required.'; }
-        elseif ($id > 0) { $database->execute('UPDATE phpretro_faq SET category = ?, question = ?, answer = ?, sort_order = ?, active = ? WHERE id = ?', [$category, $question, $answer, $order, $active, $id]); $notice = 'FAQ entry updated.'; }
-        else { $database->execute('INSERT INTO phpretro_faq (category, question, answer, sort_order, active) VALUES (?, ?, ?, ?, ?)', [$category, $question, $answer, $order, $active]); $notice = 'FAQ entry created.'; }
-    } if ($_SERVER['REQUEST_METHOD'] === 'POST') { AdminAudit::log($database, (int) $user->id, 'faq_'.$action, 'faq', $id ?: null); } $action = 'list';
+        elseif ($id > 0) { $affected = $database->execute('UPDATE phpretro_faq SET category = ?, question = ?, answer = ?, sort_order = ?, active = ? WHERE id = ?', [$category, $question, $answer, $order, $active, $id]); $notice = $affected > 0 ? 'FAQ entry updated.' : 'FAQ entry unchanged or not found.'; }
+        else { $affected = $database->execute('INSERT INTO phpretro_faq (category, question, answer, sort_order, active) VALUES (?, ?, ?, ?, ?)', [$category, $question, $answer, $order, $active]); $id = (int) $database->insertId(); $notice = 'FAQ entry created.'; }
+    }
+    if ($affected > 0) { AdminAudit::log($database, (int) $user->id, 'faq_'.$action, 'faq', $id); }
+    $action = 'list';
 }
 $entry = ['id'=>0,'category'=>'general','question'=>'','answer'=>'','sort_order'=>0,'active'=>1];
 if ($action === 'edit') { $loaded = $database->fetchRow('SELECT id, category, question, answer, sort_order, active FROM phpretro_faq WHERE id = ?', [(int) ($_GET['id'] ?? 0)]); if ($loaded !== false) { $entry = $loaded; } }

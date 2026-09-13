@@ -52,7 +52,7 @@ if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_S
         $staffSession = (new Database())->fetchRow('SELECT id FROM phpretro_staff_sessions WHERE user_id = ? AND session_hash = ? AND revoked_at IS NULL', [(int) $_SESSION['hk_user']->id, hash('sha256', session_id())]);
         if ($staffSession === false) { unset($_SESSION['hk_user']); session_destroy(); header('Location: '.PATH.'/housekeeping/'); exit; }
         (new Database())->execute('UPDATE phpretro_staff_sessions SET last_activity = ? WHERE id = ?', [time(), (int) $staffSession['id']]);
-    } catch (Throwable $exception) { /* migration not applied yet: preserve existing housekeeping bootstrap */ }
+    } catch (Throwable $exception) { /* TODO: fail closed after migrations are mandatory; this compatibility path currently permits the request. */ }
 }
 
 if($user->error == 1 && $page['bypass_user_check'] != true && $_COOKIE['rememberme'] == "true" && $page['housekeeping'] != true){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; header("Location: ".PATH."/security_check_token"); }
