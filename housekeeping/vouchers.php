@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($v[0] === '' || strlen($v[0]) > 10) { $notice = 'Code is required and must be no longer than 10 characters.'; }
     elseif ($id > 0) { $database->execute('UPDATE vouchers SET code=?, credits=?, points=?, points_type=?, catalog_item_id=?, amount=?, `limit`=? WHERE id=?', [$v[0],$v[1],$v[2],$v[3],$v[4],$v[5],$v[6],$id]); $notice = 'Voucher updated.'; }
     else { $database->execute('INSERT INTO vouchers (code, credits, points, points_type, catalog_item_id, amount, `limit`) VALUES (?, ?, ?, ?, ?, ?, ?)', $v); $notice = 'Voucher created.'; }
-  } $action = 'list';
+  } if ($_SERVER['REQUEST_METHOD'] === 'POST') { AdminAudit::log($database, (int) $user->id, 'voucher_'.$action, 'voucher', $id ?: null); } $action = 'list';
 }
 $voucher = ['id'=>0,'code'=>'','credits'=>0,'points'=>0,'points_type'=>0,'catalog_item_id'=>0,'amount'=>1,'redemption_limit'=>-1];
 if ($action === 'edit') { $loaded = $database->fetchRow('SELECT id, code, credits, points, points_type, catalog_item_id, amount, `limit` AS redemption_limit FROM vouchers WHERE id=?', [(int) ($_GET['id'] ?? 0)]); if ($loaded !== false) { $voucher = $loaded; } }
