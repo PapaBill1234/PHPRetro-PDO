@@ -56,8 +56,11 @@ if(!empty($_POST['username'])){
         $phase5bDb = new Database();
         $twoFactorRank = (int) ($phase5bDb->fetchColumn('SELECT setting_value FROM phpretro_site_settings WHERE setting_key = ?', ['staff_2fa_rank']) ?: 5);
         $totp = $phase5bDb->fetchRow('SELECT secret_base32, enabled FROM phpretro_staff_totp WHERE user_id = ?', [(int) $user->id]);
-        if ((int) $user->user('rank') >= $twoFactorRank && (!$totp || (int) $totp['enabled'] !== 1 || !Totp::verify($totp['secret_base32'], trim((string) ($_POST['totp_code'] ?? ''))))) {
-            $login_error = 'Staff two-factor authentication is required.';
+        if ((int) $user->user('rank') >= $twoFactorRank && (!$totp || (int) $totp['enabled'] !== 1)) {
+            $_SESSION['staff_2fa_pending_user'] = $user; $_SESSION['staff_2fa_pending_at'] = time(); unset($_SESSION['login']);
+            header('Location: '.PATH.'/housekeeping/twofactor'); exit;
+        } elseif ((int) $user->user('rank') >= $twoFactorRank && !Totp::verify($totp['secret_base32'], trim((string) ($_POST['totp_code'] ?? '')))) {
+            $login_error = 'Invalid authenticator code.';
         } else {
             unset($_SESSION['login']); $_SESSION['hk_user'] = $user;
             $hash = hash('sha256', session_id()); $phase5bDb->execute('INSERT INTO phpretro_staff_sessions (user_id, session_hash, ip, created_at, last_activity) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE last_activity = VALUES(last_activity), ip = VALUES(ip), revoked_at = NULL', [(int) $user->id, $hash, $_SERVER['REMOTE_ADDR'] ?? '', time(), time()]);
