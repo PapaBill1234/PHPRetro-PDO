@@ -1,7 +1,7 @@
 <?php
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
-if($_GET['do'] == "savedetails" || $_GET['do'] == "savebadges"){
+if(($_GET['do'] ?? '') == "savedetails" || ($_GET['do'] ?? '') == "savebadges"){
 $page['rank'] = 7;
 }else{
 $page['rank'] = 6;
