@@ -18,6 +18,7 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
+$database = new Database();
 $data = new credits_sql;
 $lang->addLocale("collectables.buy");
 $lang->addLocale("ajax.buttons");
@@ -33,7 +34,7 @@ $credits = $user->user("credits") - 25;
 $data->update1($user->id,$credits);
 $data->insert1($user->id,$furni_id);
 $user->refresh();
-$db->query("INSERT INTO ".PREFIX."transactions (userid,amount,time,descr) VALUES ('".$user->id."','25','".time()."','Bought a collectable')");
+$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'purchase', -25, $credits, 'Bought a collectable', (string) $furni_id, time()]);
 @SendMUSData('UPRC' . $user->id);
 @SendMUSData('UPRH' . $user->id);
 $message = $lang->loc['collectable.bought']." ".$input->HoloText($serverdb->result($data->select3($this['time']), 0)).".";
