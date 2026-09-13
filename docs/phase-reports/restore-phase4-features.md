@@ -58,12 +58,16 @@ No existing client-to-backend error-reporting endpoint or payload convention was
 
 ## php -l results
 
-Not run locally by design: work was performed directly on GitHub and no repository checkout or source file was saved to the local machine. Run:
+Not run: the available execution environment has no PHP executable. The attempted command, `php -l -`, returned:
+
+```text
+The term 'php' is not recognized as a name of a cmdlet, function, script file, or executable program.
+```
+
+No repository checkout or source file was saved locally. Run the following in CI or the target deployment environment before merge:
 
 ```bash
 php -l articles.php
 php -l collectables.php
 php -l clientutils.php
 ```
-
-before deployment or merge.
