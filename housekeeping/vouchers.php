@@ -4,6 +4,7 @@ $page['housekeeping'] = true;
 $page['rank'] = 5;
 require_once('../includes/core.php');
 require_once('./includes/hksession.php');
+require_once('../includes/AdminAudit.php');
 $database = new Database(); $e = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); $notice = ''; $action = $_GET['do'] ?? 'list';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $id = (int) ($_POST['id'] ?? 0);
