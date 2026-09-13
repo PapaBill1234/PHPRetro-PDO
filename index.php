@@ -254,39 +254,8 @@ document.observe("dom:loaded", function() {
 						<div class="habblet box-content" id="tag-cloud-slim">
     <span class="tags-habbos-like"><?php echo $lang->loc['tags']; ?></span>
 <?php
-$lang->addLocale("ajax.tags");
-$sql = $db->query("SELECT tag, COUNT(id) AS quantity FROM ".PREFIX."tags GROUP BY tag ORDER BY quantity DESC LIMIT 20");
-if($db->num_rows($sql) < 1){ echo $lang->loc['no.tags']; }else{
-echo "	    <ul class=\"tag-list\">";
-	for($i=0;($array[$i] = @    $db->fetch_array($sql,1))!="";$i++)
-        {
-            $row[] = $array[$i];
-        }
-	sort($row);
-	$i = -1;
-	while($i <> $db->num_rows($sql)){
-		$i++;
-		$tag = $row[$i]['tag'];
-		$count = $row[$i]['quantity'];
-		$tags[$tag] = $count;
-	}
-		
-		$max_qty = max(array_values($tags));
-		$min_qty = min(array_values($tags));
-		$spread = $max_qty - $min_qty;
-
-		if($spread == 0){ $spread = 1; }
-
-		$step = (200 - 100)/($spread);
-
-		foreach($tags as $key => $value){
-		    $size = 100 + (($value - $min_qty) * $step);
-		    $size = ceil($size);
-		    echo "<li><a href=\"".PATH."/tag/".strtolower($input->HoloText($key))."\" class=\"tag\" style=\"font-size:".$size."%\">".trim(strtolower($key))."</a> </li>\n";
-		}
-
-echo "</ul>";
-}
+// Polaris stores tags only as denormalized rooms.tags; there is no compatible aggregate tag table.
+echo $lang->loc['no.tags'];
 ?>
 </div>
 	
