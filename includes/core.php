@@ -47,6 +47,14 @@ require('./includes/version.php');
 
 if($page['housekeeping'] != true){ if(is_object($_SESSION['user'])){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'])){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
 
+if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_SESSION['hk_user'])) {
+    try {
+        $staffSession = (new Database())->fetchRow('SELECT id FROM phpretro_staff_sessions WHERE user_id = ? AND session_hash = ? AND revoked_at IS NULL', [(int) $_SESSION['hk_user']->id, hash('sha256', session_id())]);
+        if ($staffSession === false) { unset($_SESSION['hk_user']); session_destroy(); header('Location: '.PATH.'/housekeeping/'); exit; }
+        (new Database())->execute('UPDATE phpretro_staff_sessions SET last_activity = ? WHERE id = ?', [time(), (int) $staffSession['id']]);
+    } catch (Throwable $exception) { /* migration not applied yet: preserve existing housekeeping bootstrap */ }
+}
+
 if($user->error == 1 && $page['bypass_user_check'] != true && $_COOKIE['rememberme'] == "true" && $page['housekeeping'] != true){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; header("Location: ".PATH."/security_check_token"); }
 
 $phase5bMaintenance = false;
