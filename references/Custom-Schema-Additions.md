@@ -89,3 +89,51 @@ one-time SQL script you run manually alongside Polaris's own schema setup, or
 register these as Polaris migrations — that's Polaris's own internal system and
 mixing in project-specific tables there risks conflicts with future Polaris
 updates.
+
+## 4. phpretro_email_verification_tokens — restores email verification
+
+~~~sql
+CREATE TABLE IF NOT EXISTS `phpretro_email_verification_tokens` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `token_hash` CHAR(64) NOT NULL,
+  `created_at` INT NOT NULL,
+  `expires_at` INT NOT NULL,
+  `used_at` INT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idx_token_hash` (`token_hash`),
+  INDEX `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+~~~
+
+Store only SHA-256 token hashes. A token is valid only while unused and before expires_at.
+
+## 5. phpretro_transactions — restores transaction/purchase history
+
+~~~sql
+CREATE TABLE IF NOT EXISTS `phpretro_transactions` (
+  `id` INT NOT NULL AUTO_INCREMENT, `user_id` INT NOT NULL, `type` VARCHAR(50) NOT NULL, `amount` INT NOT NULL, `balance_after` INT NOT NULL, `description` VARCHAR(255) NOT NULL DEFAULT '', `reference_id` VARCHAR(100) NULL, `created_at` INT NOT NULL, PRIMARY KEY (`id`), INDEX `idx_user_id_created` (`user_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+~~~
+
+## 6. phpretro_faq — restores FAQ content
+
+~~~sql
+CREATE TABLE IF NOT EXISTS `phpretro_faq` (
+  `id` INT NOT NULL AUTO_INCREMENT, `category` VARCHAR(100) NOT NULL DEFAULT 'general', `question` VARCHAR(255) NOT NULL, `answer` TEXT NOT NULL, `sort_order` INT NOT NULL DEFAULT 0, `active` TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY (`id`), INDEX `idx_category_sort` (`category`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+~~~
+
+## 7. MyHabbo personal layout customization
+
+~~~sql
+CREATE TABLE IF NOT EXISTS `phpretro_myhabbo_layouts` (
+  `id` INT NOT NULL AUTO_INCREMENT, `user_id` INT NOT NULL, `column_number` TINYINT NOT NULL, `widget_key` VARCHAR(50) NOT NULL, `position` INT NOT NULL DEFAULT 0, `visible` TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY (`id`), UNIQUE INDEX `idx_user_column_position` (`user_id`, `column_number`, `position`), INDEX `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `phpretro_myhabbo_guestbook` (
+  `id` INT NOT NULL AUTO_INCREMENT, `profile_user_id` INT NOT NULL, `author_user_id` INT NOT NULL, `message` TEXT NOT NULL, `created_at` INT NOT NULL, PRIMARY KEY (`id`), INDEX `idx_profile_user_id` (`profile_user_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+~~~
+
+Layouts are a simplified reconstruction; inspect real widgets before implementation.
