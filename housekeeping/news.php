@@ -4,6 +4,7 @@ $page['housekeeping'] = true;
 $page['rank'] = 5;
 require_once('../includes/core.php');
 require_once('./includes/hksession.php');
+require_once('../includes/AdminAudit.php');
 $database=new Database(); $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); $notice=''; $action=$_GET['do']??'list';
 if($_SERVER['REQUEST_METHOD']==='POST'){ $id=(int)($_POST['id']??0); if($action==='delete'){$database->execute('DELETE FROM phpretro_news WHERE id = ?',[$id]);$notice='Article removed.';}else{$v=[trim((string)($_POST['title']??'')),trim((string)($_POST['summary']??'')),trim((string)($_POST['story']??'')),trim((string)($_POST['author']??'')),trim((string)($_POST['categories']??'')),trim((string)($_POST['images']??''))];if(in_array('',array_slice($v,0,4),true)){$notice='Title, summary, story, and author are required.';}elseif($id>0){$database->execute('UPDATE phpretro_news SET title=?, summary=?, story=?, author=?, categories=?, images=? WHERE id=?',[...$v,$id]);$notice='Article updated.';}else{$database->execute('INSERT INTO phpretro_news (title,summary,story,author,categories,images,time) VALUES (?,?,?,?,?,?,?)',[...$v,time()]);$notice='Article created.';}}$action='list';}
 $item=['id'=>0,'title'=>'','summary'=>'','story'=>'','author'=>'','categories'=>'','images'=>'']; if($action==='edit'){ $loaded=$database->fetchRow('SELECT id,title,summary,story,author,categories,images FROM phpretro_news WHERE id=?',[(int)($_GET['id']??0)]);if($loaded!==false){$item=$loaded;}}
