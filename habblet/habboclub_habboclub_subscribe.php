@@ -18,6 +18,7 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
+$database = new Database();
 $data = new credits_sql;
 $lang->addLocale("club.buy");
 $lang->addLocale("ajax.buttons");
