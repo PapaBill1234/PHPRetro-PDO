@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($question === '' || $answer === '') { $notice = 'Question and answer are required.'; }
         elseif ($id > 0) { $database->execute('UPDATE phpretro_faq SET category = ?, question = ?, answer = ?, sort_order = ?, active = ? WHERE id = ?', [$category, $question, $answer, $order, $active, $id]); $notice = 'FAQ entry updated.'; }
         else { $database->execute('INSERT INTO phpretro_faq (category, question, answer, sort_order, active) VALUES (?, ?, ?, ?, ?)', [$category, $question, $answer, $order, $active]); $notice = 'FAQ entry created.'; }
-    } $action = 'list';
+    } if ($_SERVER['REQUEST_METHOD'] === 'POST') { AdminAudit::log($database, (int) $user->id, 'faq_'.$action, 'faq', $id ?: null); } $action = 'list';
 }
 $entry = ['id'=>0,'category'=>'general','question'=>'','answer'=>'','sort_order'=>0,'active'=>1];
 if ($action === 'edit') { $loaded = $database->fetchRow('SELECT id, category, question, answer, sort_order, active FROM phpretro_faq WHERE id = ?', [(int) ($_GET['id'] ?? 0)]); if ($loaded !== false) { $entry = $loaded; } }
