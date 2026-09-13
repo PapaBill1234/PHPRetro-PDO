@@ -38,3 +38,15 @@ CREATE TABLE IF NOT EXISTS `phpretro_client_errors` (
   PRIMARY KEY (`id`),
   INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `phpretro_email_verification_tokens` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `token_hash` CHAR(64) NOT NULL,
+  `created_at` INT NOT NULL,
+  `expires_at` INT NOT NULL,
+  `used_at` INT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idx_token_hash` (`token_hash`),
+  INDEX `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
