@@ -25,9 +25,25 @@ session_start();
 
 require_once('./templates/login_header.php');
 
-// Polaris has mail_verified but no verified token-table equivalent for the legacy verify flow.
-// Do not reuse users.secret_key without a documented Polaris contract.
+$db = new Database();
 $sucess = "0";
+if (isset($_GET['token'])) {
+    $token = (string) $_GET['token'];
+    if (preg_match('/^[a-f0-9]{64}$/', $token)) {
+        $now = time();
+        $tokenRow = $db->fetchRow(
+            "SELECT id, user_id FROM phpretro_email_verification_tokens WHERE token_hash = ? AND expires_at > ? AND used_at IS NULL LIMIT 1",
+            [hash('sha256', $token), $now]
+        );
+        if ($tokenRow && $db->execute(
+            "UPDATE phpretro_email_verification_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL",
+            [$now, (int) $tokenRow['id']]
+        ) === 1) {
+            $db->execute("UPDATE users SET mail_verified = '1' WHERE id = ?", [(int) $tokenRow['user_id']]);
+            $sucess = "1";
+        }
+    }
+}
 
 if($sucess == "1"){
 ?>
