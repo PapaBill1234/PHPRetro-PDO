@@ -160,5 +160,3 @@ try {
     $admin->exec('DROP DATABASE `'.$testName.'`');
     putenv('DB_DSN='.$sourceDsn);
 }
-
-

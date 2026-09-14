@@ -71,4 +71,3 @@ function habbletTagCount(Database $database, string $tag): int {
     if ($tag === '' || str_contains($tag, ';')) { return 0; }
     return (int) $database->fetchColumn("SELECT COUNT(*) FROM users_settings s JOIN users u ON u.id = s.user_id WHERE LOCATE(CONCAT(';', ?, ';'), CONCAT(';', s.tags, ';')) > 0", [$tag]);
 }
-
