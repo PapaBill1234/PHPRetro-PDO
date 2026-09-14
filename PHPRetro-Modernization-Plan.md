@@ -1,5 +1,5 @@
 # PHPRetro Modernization Plan
-**Target:** PHP 8.3, PDO + prepared statements, CSRF protection, hardened auth, production-ready.
+**Target:** PHP 8.5, PDO + prepared statements, CSRF protection, hardened auth, production-ready.
 **Source:** https://github.com/Quackster/PHPRetro (2009-era PHP4/5 codebase)
 
 ---
@@ -24,7 +24,7 @@ the previous phases' conventions are already in place.
 
 ## Global conventions (apply to every phase)
 
-- **PHP version target:** 8.3. No `mysql_*`, no `get_magic_quotes_gpc()`, no old-style
+- **PHP version target:** 8.5. No `mysql_*`, no `get_magic_quotes_gpc()`, no old-style
   constructors (`function ClassName()`), no `var $x` — use typed properties.
 - **DB access:** one new class, `Database` (PDO wrapper), replaces `$db` / `$serverdb`
   globals everywhere. No raw SQL string concatenation of variables, ever — bind params only.
@@ -46,9 +46,9 @@ the previous phases' conventions are already in place.
 
 ---
 
-## Phase 1 — PHP 8.3 compatibility pass (make it boot)
+## Phase 1 — PHP 8.5 compatibility pass (make it boot)
 
-**Goal:** App runs on PHP 8.3 without fatal errors. Still uses old `mysql_*`-style DB
+**Goal:** App runs on PHP 8.5 without fatal errors. Still uses old `mysql_*`-style DB
 class internally for now (that's Phase 2) — this phase is purely "stop it from crashing."
 
 **Scope:** `includes/classes.php`, `includes/core.php`, `includes/functions.php`, any file

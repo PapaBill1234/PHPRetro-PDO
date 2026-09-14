@@ -625,7 +625,7 @@ function migrateDB(){
 			case "allow-guests": $_SESSION['settings']['s_site_allow_guests'] = $row['contentvalue']; break;
 			case "newsletter-3from": $_SESSION['settings']['s_email_name'] = $row['contentvalue']; break;
 			case "newsletter-4fromname": $_SESSION['settings']['s_email_from'] = $row['contentvalue']; break;
-			default: continue; break;
+			default: break;
 		}
 	}
 	$query = $db->query("SELECT * FROM cms_system LIMIT 1");
