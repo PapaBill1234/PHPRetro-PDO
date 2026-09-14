@@ -15,59 +15,20 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-if($page['bypass'] != true){
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new me_sql;
-
-$category = $input->FilterText($_POST['eventTypeId']);
-if(!is_numeric($category)){ $category = 1; }
-if($category < 1 || $category > 11){ $category = 1; }
-}else{
-$category = 1;
-}
-$lang->addLocale("events.loadevents");
-
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$lang->addLocale('events.loadevents');
+$category = habbletInt($_POST, 'eventTypeId', 1);
+if ($category < 1 || $category > 11) { $category = 1; }
+$rows = $db->fetchAll('SELECT p.room_id, p.title, p.description, p.start_timestamp, r.owner_name, r.users, r.users_max FROM room_promotions p JOIN rooms r ON r.id = p.room_id WHERE p.category = ? AND p.start_timestamp <= ? AND p.end_timestamp > ? ORDER BY p.start_timestamp DESC, p.room_id', [$category, time(), time()]);
 ?>
 <ul class="habblet-list">
-<?php
-$sql = $data->select19($category);
-while ($row = $db->fetch_row($sql)) {
-	foreach ($row as &$value) {
-		$value = $input->HoloText($value);
-	}
-	$roomrow = $serverdb->fetch_row($data->select13($row[4]));
-	$i++;
-
-	if($input->IsEven($i)){
-		$even = "odd";
-	} else {
-		$even = "even";
-	}
-	
-	if($roomrow[1] == 0){ $roomrow[1] = 1; }
-	$room[$i] = ($roomrow[0] / $roomrow[1]) * 100;
-	
-	if($room[$i] == 99 || $room[$i] > 99){
-		$room_fill = 5;
-	} elseif($room[$i] > 65){
-		$room_fill = 4;
-	} elseif($room[$i] > 32){
-		$room_fill = 3;
-	} elseif($room[$i] > 0){
-		$room_fill = 2;
-	} elseif($room[$i] < 1){
-		$room_fill = 1;
-	}
-
-	printf("<li class=\"%s room-occupancy-%s\" roomid=\"%s\">
-<div title=\"".$lang->loc['go.to.room']."\">
-	<span class=\"event-name\"><a href=\"".PATH."/client?forwardId=2&amp;roomId=%s\" onclick=\"HabboClient.roomForward(this, '%s', 'private'); return false;\">%s</a></span>
-	<span class=\"event-owner\"> by <a href=\"".PATH."/home/%s\">%s</a></span>
-	<p>%s (<span class=\"event-date\">%s</span>)</p>
-</div>
-</li>", $even, $room_fill, $row[4], $row[4], $row[4], $input->HoloText($row[1]), $roomrow[2], $roomrow[2], $input->HoloText($row[2]), $row[6]);
-}
+<?php foreach ($rows as $index => $row) {
+    $ratio = (int) $row['users'] / max(1, (int) $row['users_max']);
+    $fill = $ratio >= .99 ? 5 : ($ratio > .65 ? 4 : ($ratio > .32 ? 3 : ($ratio > 0 ? 2 : 1)));
 ?>
-</ul>
+<li class="<?php echo $index % 2 ? 'odd' : 'even'; ?> room-occupancy-<?php echo $fill; ?>" roomid="<?php echo (int) $row['room_id']; ?>">
+<div><span class="event-name"><a href="<?php echo PATH.'/client?forwardId=2&amp;roomId='.(int) $row['room_id']; ?>"><?php echo $input->HoloText($row['title']); ?></a></span>
+<span class="event-owner"> by <a href="<?php echo PATH.'/home/'.rawurlencode($row['owner_name']); ?>"><?php echo $input->HoloText($row['owner_name']); ?></a></span>
+<p><?php echo $input->HoloText($row['description']); ?> (<span class="event-date"><?php echo date('M j, Y H:i', (int) $row['start_timestamp']); ?></span>)</p></div></li>
+<?php } ?></ul>

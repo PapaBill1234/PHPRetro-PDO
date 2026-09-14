@@ -15,8 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-
-$db->query("INSERT INTO ".PREFIX."alerts (userid,alert,type,time) VALUES ('".$user->id."','clubalert','-1','".time()."')");
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): No alerts table or persistent club reminder dismissal equivalent.
+habbletUnavailable('Club reminder dismissal is unavailable.');

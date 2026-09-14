@@ -15,20 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$lang->addLocale("minimail.undeletemessage");
-
-$id = $input->FilterText($_POST['messageId']);
-$start = $_POST['start'];
-$label = $_POST['label'];
-
-$db->query("UPDATE ".PREFIX."minimail SET deleted = '0' WHERE id = '".$id."' LIMIT 1");
-
-$page['bypass'] = true;
-$label = "trash";
-$sql = $db->query("SELECT COUNT(*) FROM ".PREFIX."minimail WHERE to_id = '".$user->id."' AND deleted = '1'");
-header('X-JSON: {"message":"'.$lang->loc['undelete.message'].'","totalMessages":'.$db->result($sql).'}');
-require('./habblet/minimail_loadMessages.php');
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): No minimail equivalent: messenger_messages/members/offline do not provide subjects, mailbox trash or the legacy conversation/read model. No message is read, sent, reported or deleted here.
+habbletUnavailable('Minimail is unavailable. Please use the hotel messenger.');

@@ -15,28 +15,31 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-
-$slot = $_POST['slot'];
-$figure = $input->FilterText($_POST['figure']);
-$gender = $_POST['gender'];
-
-$check = new HoloFigureCheck($figure,$gender,$user->IsHCMember("self"));
-
-if($check->error > 0){ exit; }
-if(!is_numeric($slot)){ exit; }
-if($slot < 1 || $slot > 5){ exit; }
-
-$sql = $db->query("SELECT COUNT(*) FROM ".PREFIX."wardrobe WHERE userid = '".$user->id."' AND slotid = '".$slot."' LIMIT 1");
-$exists = $db->result($sql);
-
-if($exists > 0){
-	$db->query("UPDATE ".PREFIX."wardrobe SET figure = '".$figure."', gender = '".$gender."' WHERE userid = '".$user->id."' AND slotid = '".$slot."' LIMIT 1");
-} else {
-	$db->query("INSERT INTO ".PREFIX."wardrobe (userid,slotid,figure,gender) VALUES ('".$user->id."','".$slot."','".$figure."','".$gender."')");
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$slot = habbletInt($_POST, 'slot');
+$figure = habbletText($_POST, 'figure');
+$gender = habbletText($_POST, 'gender');
+if ($slot < 1 || $slot > 5 || strlen($figure) > 256 || !preg_match('/^[a-z]{2}-[0-9]+-[0-9]*(?:\.[a-z]{2}-[0-9]+-[0-9]*)*$/D', $figure) || !in_array($gender, ['M', 'F'], true)) {
+    http_response_code(400); echo 'Invalid outfit.'; return;
 }
-header("X-JSON: {\"u\":\"".$user->avatarURL($figure,"s,4,4,sml,1,0")."\",\"f\":\"".$figure."\",\"g\":77}");
-?>
+$club = (int) $db->fetchColumn('SELECT club_expire_timestamp FROM users_settings WHERE user_id = ?', [(int) $user->id]) > time();
+$check = new HoloFigureCheck($figure, $gender, $club);
+if ($check->error > 0) { http_response_code(400); echo 'Invalid outfit.'; return; }
+$db->execute('START TRANSACTION');
+try {
+    // There is no unique (user_id, slot_id) key. Lock the owner before upserting.
+    $db->fetchColumn('SELECT id FROM users WHERE id = ? FOR UPDATE', [(int) $user->id]);
+    $existing = $db->fetchColumn('SELECT id FROM users_wardrobe WHERE user_id = ? AND slot_id = ? ORDER BY id LIMIT 1', [(int) $user->id, $slot]);
+    if ($existing !== false) {
+        $db->execute('UPDATE users_wardrobe SET look = ?, gender = ? WHERE user_id = ? AND slot_id = ?', [$figure, $gender, (int) $user->id, $slot]);
+    } else {
+        $db->execute('INSERT INTO users_wardrobe (user_id, slot_id, look, gender) VALUES (?, ?, ?, ?)', [(int) $user->id, $slot, $figure, $gender]);
+    }
+    $db->execute('COMMIT');
+} catch (Throwable $exception) {
+    $db->execute('ROLLBACK');
+    throw $exception;
+}
+header('X-JSON: '.json_encode(['u' => $user->avatarURL($figure, 's,4,4,sml,1,0'), 'f' => $figure, 'g' => ord($gender)]));
 

@@ -15,24 +15,13 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new me_sql;
-
-if(isset($_POST['motto'])){
-
-	if(strlen($_POST['motto']) > 38){
-		echo $input->HoloText($user->user("mission"));
-	} else {
-		$motto = $input->FilterText($_POST['motto']);
-		$data->update1($user->id, $motto);
-		$user->refresh();
-		echo $input->HoloText($user->user("mission"));
-		@SendMUSData('UPRA' . $user->id);
-	}
-
-} else {
-	echo $input->HoloText($user->user("mission"));
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$motto = habbletText($_POST, 'motto');
+if (isset($_POST['motto']) && is_string($_POST['motto']) && strlen($motto) <= 38) {
+    $db->execute('UPDATE users SET motto = ? WHERE id = ?', [$motto, (int) $user->id]);
+    $user->user[8] = $motto;
+    $_SESSION['user'] = $user;
 }
-?>
+echo $input->HoloText((string) $db->fetchColumn('SELECT motto FROM users WHERE id = ?', [(int) $user->id]));
+// No legacy MUS packet: a supported Polaris live-session integration is still needed.

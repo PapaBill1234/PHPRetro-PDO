@@ -15,31 +15,22 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-
-require_once('../includes/core.php');
-$data = new home_sql;
-$lang->addLocale("avatarinfo");
-
-$ownerid = $_POST['ownerAccountId'];
-$id = $input->FilterText($_POST['anAccountId']);
-
-$row = $db->fetch_row($data->select2($id));
-$badge = $db->fetch_row($data->select9($row[0]));
-if($user->IsUserOnline($row[0]) == true){ $online = "online_anim"; }else{ $online = "offline"; }
+require_once(__DIR__.'/../includes/habblet.php');
+$lang->addLocale('avatarinfo');
+$row = $db->fetchRow('SELECT id, username, look, account_created, online FROM users WHERE id = ?', [habbletInt($_POST, 'anAccountId')]);
+if ($row === false) { http_response_code(404); echo 'Account not found.'; return; }
+$badge = $db->fetchColumn('SELECT badge_code FROM users_badges WHERE user_id = ? AND slot_id > 0 ORDER BY slot_id, id LIMIT 1', [(int) $row['id']]);
+$home = PATH.'/home/'.rawurlencode($row['username']);
 ?>
-<div class="avatar-list-info-container">
-	<div class="avatar-info-basic clearfix">
-		<div class="avatar-list-info-close-container"><a href="#" class="avatar-list-info-close" id="avatar-list-info-close-<?php echo $row[0]; ?>"></a></div>
-		<div class="avatar-info-image">
-			<?php if($badge[0] != "" && $row[6] != "0"){ ?><img src="<?php echo $settings->find("site_c_images_path").$settings->find("site_badges_path").$badge[0].".gif"; ?>"><?php } ?>
-			<img src="<?php echo $user->avatarURL($row[4],"b,4,4,,1,0"); ?>" alt="<?php echo $input->HoloText($row[1]); ?>" />
-		</div>
-<h4><a href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row[1]); ?>"><?php echo $input->HoloText($row[1]); ?></a></h4>
-<p>
-<a href="<?php echo PATH; ?>/client" target="client" onclick="HabboClient.openOrFocus(this); return false;"><img src="<?php echo PATH; ?>/web-gallery/images/myhabbo/profile/habbo_<?php echo $online; ?>.gif" /></a>
-</p>
-<p><?php echo $lang->loc['created.on']; ?>: <b><?php echo $input->HoloText($row[3]); ?></b></p>
-<p><a href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row[1]); ?>" class="arrow"><?php echo $lang->loc['view.habbos.page']; ?></a></p>
-	</div>
-</div>
+<div class="avatar-list-info-container"><div class="avatar-info-basic clearfix">
+<div class="avatar-list-info-close-container"><a href="#" class="avatar-list-info-close" id="avatar-list-info-close-<?php echo (int) $row['id']; ?>"></a></div>
+<div class="avatar-info-image">
+<?php if ($badge !== false && preg_match('/^[A-Za-z0-9_]+$/D', $badge)) { ?>
+<img src="<?php echo $input->HoloText($settings->find('site_c_images_path').$settings->find('site_badges_path').$badge.'.gif'); ?>" alt="" />
+<?php } ?>
+<img src="<?php echo $user->avatarURL($row['look'], 'b,4,4,,1,0'); ?>" alt="<?php echo $input->HoloText($row['username']); ?>" /></div>
+<h4><a href="<?php echo $home; ?>"><?php echo $input->HoloText($row['username']); ?></a></h4>
+<p><img src="<?php echo PATH; ?>/web-gallery/images/myhabbo/profile/habbo_<?php echo $row['online'] === '0' ? 'offline' : 'online_anim'; ?>.gif" alt="" /></p>
+<p><?php echo $lang->loc['created.on']; ?>: <b><?php echo date('M j, Y', (int) $row['account_created']); ?></b></p>
+<p><a href="<?php echo $home; ?>" class="arrow"><?php echo $lang->loc['view.habbos.page']; ?></a></p>
+</div></div>

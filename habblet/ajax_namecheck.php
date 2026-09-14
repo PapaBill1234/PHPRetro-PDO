@@ -15,15 +15,13 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-$data = new register_sql;
+require_once(__DIR__.'/../includes/habblet.php');
 $lang->addLocale("register.ajax.errors");
 
-$name = $input->FilterText($_POST['name']);
+$name = habbletText($_POST, 'name');
 $filter = preg_replace("/[^a-z\d\-=\?!@:\.]/i", "", $name);
 
-if($serverdb->result($data->select2($name)) > 0){
+if($db->fetchColumn('SELECT COUNT(*) FROM users WHERE username = ?', [$name]) > 0){
 	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.2']."\"}");
 } elseif($filter != $name){
 	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.3']."\"}");
@@ -41,4 +39,3 @@ if($serverdb->result($data->select2($name)) > 0){
 }
 
 ?>
-

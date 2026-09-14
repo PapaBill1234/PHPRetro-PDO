@@ -15,20 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['allow_guests'] = true;
-require_once('../includes/core.php');
-
-$type = $input->FilterText($_GET['type']);
-$id = $input->FilterText($_POST['objectId']);
-
-$count = $_SESSION['report_count'];
-if(!is_numeric($count)){ $count = 0; }
-$_SESSION['report_count'] = $count + 1;
-
-if($count > 10){ echo "SPAM"; exit; }
-if(!is_numeric($id)){ echo "ERROR"; exit; }
-
-$db->query("INSERT INTO ".PREFIX."help (username,ip,message,date,subject) VALUES ('".$user->name."','".$_SERVER['REMOTE_ADDR']."','Someone reported abuse on ".$type." id: ".$id."','".time()."','Abuse report on ".$type."')");
-echo "SUCCESS";
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): The object report has no verified object-to-user mapping. phpretro_user_reports requires a real reported_user_id; objectId is not a user ID.
+habbletUnavailable('Reporting this object is unavailable. Please use the user report form.');

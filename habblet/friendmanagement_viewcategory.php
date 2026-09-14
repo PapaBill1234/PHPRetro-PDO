@@ -15,21 +15,16 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-if($page['bypass'] != true){
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-if(!isset($_GET['pageSize'])){ $_GET['pageSize'] = 30; }
-if(!isset($_GET['pageNumber'])){ $_GET['pageNumber'] = 1; }
-$pagenum = $_GET['pageNumber'];
-$pagesize = $input->FilterText($_GET['pageSize']);
-$search = $input->FilterText($_POST['searchString']);
-$data = new profile_sql;
-}
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$pagenum = max(1, min(100000, habbletInt($_GET, 'pageNumber', 1)));
+$pagesize = habbletInt($_GET, 'pageSize', 30);
+if (!in_array($pagesize, [30, 50, 100], true)) { $pagesize = 30; }
+$search = habbletText($_POST, 'searchString');
 $lang->addLocale("friendmanagement");
 
-$sql = $data->select1($user->id, $search);
-$friendcount = $db->num_rows($sql);
+$friendcount = (int) $db->fetchColumn('SELECT COUNT(DISTINCT u.id) FROM messenger_friendships f JOIN users u ON u.id = f.user_two_id WHERE f.user_one_id = ? AND u.username LIKE ?', [(int) $user->id, '%'.$search.'%']);
+$pagenum = min($pagenum, max(1, (int) ceil($friendcount / $pagesize)));
 if($friendcount < 1){ echo "<p class=\"last\" style=\"padding-top: 11px\">".$lang->loc['no.friends']."</p>"; }else{
 ?>
                         <div id="friend-list" class="clearfix">
@@ -115,8 +110,8 @@ if($friendcount < 1){ echo "<p class=\"last\" style=\"padding-top: 11px\">".$lan
 		   $i = 0;
 		   $offset = $pagesize * $pagenum;
 		   $offset = $offset - $pagesize;
-		   $sql = $data->select1($user->id, $search, $pagesize, $offset);
-		   while ($row = $db->fetch_row($sql)) {
+		   $rows = $db->fetchAll('SELECT DISTINCT u.id, u.username, u.last_online FROM messenger_friendships f JOIN users u ON u.id = f.user_two_id WHERE f.user_one_id = ? AND u.username LIKE ? ORDER BY u.username, u.id LIMIT ? OFFSET ?', [(int) $user->id, '%'.$search.'%', $pagesize, $offset]);
+		   foreach ($rows as $row) {
 		           $i++;
 
 		           if($input->IsEven($i)){
@@ -132,7 +127,7 @@ printf("   <tr class=\"%s\">
                </td>
                <td class=\"friend-login\" title=\"%s\">%s</td>
                <td class=\"friend-remove\"><div id=\"remove-friend-button-%s\" class=\"friendmanagement-small-icons friendmanagement-remove remove-friend\"></div></td>
-           </tr>\n", $even, $row[2], $row[3], date('n/j/y g:i A',$row[4]), date('n/j/y g:i A',$row[4]), $row[2]);
+           </tr>\n", $even, $row['id'], $input->HoloText($row['username']), date('n/j/y g:i A',(int) $row['last_online']), date('n/j/y g:i A',(int) $row['last_online']), $row['id']);
 		   }
 		?>
         </tbody>

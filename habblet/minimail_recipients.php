@@ -15,31 +15,8 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new me_sql;
-
-$output = "[";
-$sql = $data->select7($user->id);
-
-while ($row = $db->fetch_row($sql)) {
-	if($row[1] == $user->id){
-		$sql2 = $data->select6($row[0]);
-	} else {
-		$sql2 = $data->select6($row[1]);
-	}
-
-	$row = $db->fetch_row($sql2);
-
-	$name = $row[0];
-	$id = $row[1];
-
-	$output .= "{\"id\":".$id.",\"name\":\"".$name."\"},";
-}
-$output = substr_replace($output,"",-1);
-$output .= "]";
-?>
-/*-secure-
-<?php echo $output; ?>
- */
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$rows = $db->fetchAll('SELECT DISTINCT u.id, u.username AS name FROM messenger_friendships f JOIN users u ON u.id = f.user_two_id WHERE f.user_one_id = ? ORDER BY u.username, u.id', [(int) $user->id]);
+$recipients = array_map(static fn(array $row): array => ['id' => (int) $row['id'], 'name' => $row['name']], $rows);
+echo "/*-secure-\n".json_encode($recipients, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)."\n */";

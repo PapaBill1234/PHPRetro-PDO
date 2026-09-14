@@ -15,11 +15,10 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
+require_once(__DIR__.'/../includes/habblet.php');
 $lang->addLocale("register.ajax.errors");
 
-$password = $input->FilterText($_POST['password']);
+$password = habbletText($_POST, 'password');
 
 if(strlen($password) < 6){
 	echo "register.tooltip.passwordtooshort";
@@ -29,4 +28,3 @@ if(strlen($password) < 6){
 }
 
 ?>
-

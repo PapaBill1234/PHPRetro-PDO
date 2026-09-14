@@ -15,10 +15,8 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-
-$email = $input->FilterText($_POST['email']);
+require_once(__DIR__.'/../includes/habblet.php');
+$email = habbletText($_POST, 'email');
 $email_check = preg_match("/^[a-z0-9_\.-]+@([a-z0-9]+([\-]+[a-z0-9]+)*\.)+[a-z]{2,7}$/i", $email);
 
 if(strlen($email) < 6){
@@ -31,4 +29,3 @@ if(strlen($email) < 6){
 }
 
 ?>
-
