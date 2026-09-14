@@ -15,85 +15,84 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new me_sql;
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+
 $lang->addLocale("searchhabbos.search");
 
 if(isset($_POST['searchString'])) {
-$page = $_POST['pageNumber'];
-$search = $input->FilterText($_POST['searchString']);
-$sql = $data->select8($search);
-$count = $db->num_rows($sql);
+$pageNumber = max(1, min(100000, habbletInt($_POST, 'pageNumber', 1)));
+$i = 0;
+$search = habbletText($_POST, 'searchString');
+$count = (int) $db->fetchColumn('SELECT COUNT(*) FROM users WHERE username LIKE ?', ['%'.$search.'%']);
 $pages = ceil($count / 10);
-if($page == null){ $page = 1; }
+if($pageNumber == null){ $pageNumber = 1; }
 $limit = 10;
-$offset = $page - 1;
+$offset = $pageNumber - 1;
 $offset = $offset * 10;
-$sql = $data->select8($search, $limit, $offset);
-if($db->num_rows($sql) > 0) {
+$rows = $db->fetchAll('SELECT username, look, id, last_online, online FROM users WHERE username LIKE ? ORDER BY username, id LIMIT ? OFFSET ?', ['%'.$search.'%', $limit, $offset]);
+if(count($rows) > 0) {
 echo '<ul class="habblet-list">';
-while($row = $db->fetch_row($sql)) {
-		$i++;
+foreach($rows as $row) {
+        $i++;
 
         if($input->IsEven($i)){
             $even = "odd";
         } else {
             $even = "even";
         }
-		if($user->IsUserOnline($row[2]) == true){
-			$online = "online";
-		}else{
-			$online = "offline";
-		}
-		?>
+        if($row['online'] !== '0'){
+            $online = "online";
+        }else{
+            $online = "offline";
+        }
+        ?>
 
-              <li class="<?php echo $even." ".$online; ?>" homeurl="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row[0]); ?>" style="background-image: url(<?php echo $user->avatarURL($row[1],"s,2,2,sml,1,0"); ?>)">
-	            	    <div class="item">
-	            		    <b><?php echo $input->HoloText($row[0]); ?></b><br />
+              <li class="<?php echo $even." ".$online; ?>" homeurl="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row['username']); ?>" style="background-image: url(<?php echo $user->avatarURL($row['look'],"s,2,2,sml,1,0"); ?>)">
+                        <div class="item">
+                            <b><?php echo $input->HoloText($row['username']); ?></b><br />
 
-	            	    </div>
-	            	    <div class="lastlogin">
-	            	    	<b><?php echo $lang->loc['last.visit']; ?></b><br />
-	            	    		<span title="<?php echo date('n/j/y g:i A',$row[3]); ?>"><?php echo date('n/j/y g:i A',$row[3]); ?></span>
-	            	    </div>
-	            	    <div class="tools">
-	            	    		<a href="#" class="add" avatarid="<?php echo $row[2]; ?>" title="<?php echo $lang->loc['send.request']; ?>"></a>
-	            	    </div>
-	            	    <div class="clear"></div>
-	                </li>
+                        </div>
+                        <div class="lastlogin">
+                            <b><?php echo $lang->loc['last.visit']; ?></b><br />
+                                <span title="<?php echo date('n/j/y g:i A',$row['last_online']); ?>"><?php echo date('n/j/y g:i A',$row['last_online']); ?></span>
+                        </div>
+                        <div class="tools">
+                                <a href="#" class="add" avatarid="<?php echo $row['id']; ?>" title="<?php echo $lang->loc['send.request']; ?>"></a>
+                        </div>
+                        <div class="clear"></div>
+                    </li>
 
-<?php			} ?>
-							    <div id="habblet-paging-avatar-habblet-list-container">
+<?php           } ?>
+                                <div id="habblet-paging-avatar-habblet-list-container">
         <p id="avatar-habblet-list-container-list-paging" class="paging-navigation">
-		            	 <?php if($page > 1) { ?><a href="#" class="avatar-habblet-list-container-list-paging-link" id="avatar-habblet-list-container-list-previous">&laquo;</a><?php } else { ?><span class="disabled">&laquo;</span><?php } ?>
-		<?php           
-		$i = 0;
-		$n = $pages;
-		while ($i <> $n){
-			$i++;
-			if ($i < $page + 8){
-				if($i == $page){ echo "<span class=\"current\">".$i."</span>\n";
-				} else {
-					if ($i + 4 >= $page && $page + 4 >= $i){
-						echo "<a href=\"#\" class=\"avatar-habblet-list-container-list-paging-link\" id=\"avatar-habblet-list-container-list-page-".$i."\">".$i."</a>\n";
-					}
-				}
-			}
-		}
-		?>
-		<?php if($page < $pages) { ?><a href="#" class="avatar-habblet-list-container-list-paging-link" id="avatar-habblet-list-container-list-next">&raquo;</a><?php }else{ ?><span class="disabled">&raquo;</span><?php } ?>
-			        </p>
-        <input type="hidden" id="avatar-habblet-list-container-pageNumber" value="<?php echo $page; ?>"/>
+                         <?php if($pageNumber > 1) { ?><a href="#" class="avatar-habblet-list-container-list-paging-link" id="avatar-habblet-list-container-list-previous">&laquo;</a><?php } else { ?><span class="disabled">&laquo;</span><?php } ?>
+        <?php
+        $i = 0;
+        $n = $pages;
+        while ($i <> $n){
+            $i++;
+            if ($i < $pageNumber + 8){
+                if($i == $pageNumber){ echo "<span class=\"current\">".$i."</span>\n";
+                } else {
+                    if ($i + 4 >= $pageNumber && $pageNumber + 4 >= $i){
+                        echo "<a href=\"#\" class=\"avatar-habblet-list-container-list-paging-link\" id=\"avatar-habblet-list-container-list-page-".$i."\">".$i."</a>\n";
+                    }
+                }
+            }
+        }
+        ?>
+        <?php if($pageNumber < $pages) { ?><a href="#" class="avatar-habblet-list-container-list-paging-link" id="avatar-habblet-list-container-list-next">&raquo;</a><?php }else{ ?><span class="disabled">&raquo;</span><?php } ?>
+                    </p>
+        <input type="hidden" id="avatar-habblet-list-container-pageNumber" value="<?php echo $pageNumber; ?>"/>
         <input type="hidden" id="avatar-habblet-list-container-totalPages" value="<?php echo $pages; ?>"/>
     </div>
-				<?php
-			}else{
-			echo "<div class=\"box-content\">
+                <?php
+            }else{
+            echo "<div class=\"box-content\">
                 ".$lang->loc['not.found']." <br>
        </div>";
-		}
+        }
 }
 
 ?>
