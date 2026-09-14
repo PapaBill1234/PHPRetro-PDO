@@ -113,7 +113,7 @@ Unsafe BBCode parameters (`javascript:` URLs, broken room/group ids, CSS injecti
 ## Validation
 
 - PHP **8.2.33** lint on resume: **293 PHP files, zero failures**. The original checkpoint was also linted on PHP 8.5.10 with the same result.
-- `tests/phase6_habblet_batch2_test.php`: assertions pass against a disposable MariaDB database created from checked-in CREATE definitions, with PHP warnings treated as exceptions. Every batch-2 endpoint is exercised. Coverage includes native permissions, owner protection, cross-group/post attacks, malformed input, atomic rollback, favorite cleanup, real form parameter parsing, previews, counters, hidden-content redaction, captcha, native pagination, deletion cleanup, preserved HTML IDs/classes, `hide_online` on forum authors, and native 50,000 group-size copy.
+- `tests/phase6_habblet_batch2_test.php`: **171 assertions pass** against a disposable MariaDB database created from checked-in CREATE definitions, with PHP warnings treated as exceptions. Every batch-2 endpoint is exercised. Coverage includes native permissions, owner protection, cross-group/post attacks, malformed input, atomic rollback, favorite cleanup, real form parameter parsing, previews, counters, hidden-content redaction, captcha, native pagination, deletion cleanup, preserved HTML IDs/classes, `hide_online` on forum authors, and native 50,000 group-size copy.
 - Batch-1 regression suite: 62 assertions pass.
 - Frozen-list comparison: exactly 39 changed habblets, zero legacy audit matches in those files; 34 remaining matches.
 - `git diff --check` against batch 1 passes.
