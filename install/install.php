@@ -1,4 +1,7 @@
 <?php
+
+header('Location: ./polaris.php', true, 302);
+exit;
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================

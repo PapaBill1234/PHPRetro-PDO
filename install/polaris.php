@@ -47,16 +47,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><title>PHPRetro Polaris installer</title></head>
+<head><meta charset="utf-8"><title>PHPRetro Installer</title>
+<style>body{margin:0;background:#e9f0f5;color:#263746;font:16px Arial,sans-serif}.card{max-width:700px;margin:72px auto;padding:34px;background:#fff;border-radius:12px;box-shadow:0 8px 28px #7893a544}h1{margin-top:0;color:#174d72}.notice{padding:14px;margin:16px 0;border-radius:7px;background:#e8f5fb}.error{background:#fdeaea;color:#8c2525}button{border:0;border-radius:6px;padding:12px 18px;background:#1f78ae;color:#fff;font-weight:bold;cursor:pointer}code{background:#edf2f6;padding:2px 4px;border-radius:3px}</style>
+</head>
 <body>
+<main class="card">
 <h1>PHPRetro Polaris installer</h1>
-<p>This installer does not create, alter, or delete Polaris tables. It requires a configured Polaris database with a <code>users</code> table and applies only the repository's <code>migrations/*.sql</code> files.</p>
+<p>This setup keeps Polaris intact. It requires a configured Polaris database with a <code>users</code> table and applies only PHPRetro's own migrations.</p>
 <?php if ($error !== null): ?>
-<p><strong>Installation failed:</strong> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
+<p class="notice error"><strong>Installation failed:</strong> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
 <?php endif; ?>
 <?php foreach ($messages as $message): ?>
-<p><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
+<p class="notice"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
 <?php endforeach; ?>
 <form method="post"><button type="submit">Apply PHPRetro migrations</button></form>
+</main>
 </body>
 </html>
