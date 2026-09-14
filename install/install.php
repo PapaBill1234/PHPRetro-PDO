@@ -1,4 +1,7 @@
 <?php
+
+require __DIR__ . '/polaris.php';
+exit;
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
 |+==================================================================
