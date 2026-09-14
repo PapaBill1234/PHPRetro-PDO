@@ -36,9 +36,9 @@ if(!empty($_GET['error'])){
 	unset($_SESSION['error']);
 }
 
-$username = $input->HoloText($_GET['username']);
-$rememberme = $input->HoloText($_GET['rememberme']);
-$pageto = $input->HoloText($_GET['page']);
+$username = $input->HoloText(($_GET['username'] ?? ''));
+$rememberme = $input->HoloText(($_GET['rememberme'] ?? ''));
+$pageto = $input->HoloText(($_GET['page'] ?? ''));
 
 if(!isset($_SESSION['login'])){
 	$_SESSION['login']['enabled'] = true;
@@ -48,7 +48,7 @@ if(!isset($_SESSION['login'])){
 require_once('./templates/login_header.php');
 
 ?>
-<?php 
+<?php
 $phrases = explode("|", $settings->find("site_promo_phrases"));
 if((int) $settings->find("site_flash_promo") > 0){ ?>
 
@@ -86,7 +86,7 @@ swfobj.addVariable("button_link", "<?php echo PATH; ?>/register");
 swfobj.addVariable("localization_url", "<?php echo PATH; ?>/xml/landing_intro.xml");
 swfobj.addVariable("video_link", "<?php echo PATH; ?>/flash/intro/Habbo_intro.swf");
 swfobj.addVariable("select_button_text", "<?php echo $lang->loc['join.now']; ?>");
-swfobj.addVariable("header_text", "<?php echo $phrases[1]; ?>");
+swfobj.addVariable("header_text", "<?php echo $phrases[1] ?? '';  ?>");
 swfobj.write("create-habbo-flash");
 HabboView.add(function() {
 	if (deconcept.SWFObjectUtil.getPlayerVersion()["major"] >= 8) {
@@ -99,14 +99,14 @@ HabboView.add(function() {
 <?php } else { ?>
 
 	        	<div id="column1" class="column">
-			     		
-				<div class="habblet-container " id="create-habbo">		
-	
+
+				<div class="habblet-container " id="create-habbo">
+
 						<div id="create-habbo" class="layout-static">
 	<div id="create-habbo-nonflash" style="background-image: url(<?php echo PATH; ?>/web-gallery/v2/images/landing/pixel.gif)">
         <div class="landing-text-1"><span><?php echo $phrases[0]; ?></span></div>
-        <div class="landing-text-2"><span><?php echo $phrases[1]; ?></span></div>
-        <div class="landing-text-3"><span><?php echo $phrases[2]; ?></span></div>
+        <div class="landing-text-2"><span><?php echo $phrases[1] ?? '';  ?></span></div>
+        <div class="landing-text-3"><span><?php echo $phrases[2] ?? '';  ?></span></div>
 
         <div id="landing-register-text"><a href="<?php echo PATH; ?>/register"><span><?php echo $lang->loc['join.now']; ?></span></a></div>
         <div id="landing-promotional-text"><span><?php echo $lang->loc['join.desc']; ?></span></div>
@@ -142,7 +142,7 @@ HabboView.add(function() {
                 <li>
                     <label for="login-password" class="login-text"><?php echo $lang->loc['password']; ?></label>
                     <input tabindex="2" type="password" class="login-field" name="password" id="login-password" />
-<?php if($_SESSION['login']['tries'] > 4 && $settings->find("site_capcha") == "1"){ ?>
+<?php if(($_SESSION['login']['tries'] ?? 0) > 4 && $settings->find("site_capcha") == "1"){ ?>
                 </li>
                 <li>
 
@@ -181,7 +181,7 @@ document.observe("dom:loaded", function() {
 	                <a href="#" id="login-submit-new-button" class="new-button" style="float: left; margin-left: 0;display:none"><b style="padding-left: 10px; padding-right: 7px; width: 55px"><?php echo $lang->loc['sign.in']; ?></b><i></i></a>
                 </li>
                 <li class="no-label">
-                    <input tabindex="3" type="checkbox" value="true" name="_login_remember_me" id="login-remember-me"<?php if(isset($_GET['rememberme']) && $rememberme = "true"){ echo " checked=\"checked\""; }elseif($rememberme = "false"){ echo " checked=\"unchecked\""; } ?>/>
+                    <input tabindex="3" type="checkbox" value="true" name="_login_remember_me" id="login-remember-me"<?php if(isset($_GET['rememberme']) && $rememberme == "true"){ echo " checked=\"checked\""; }elseif($rememberme == "false"){ echo " checked=\"unchecked\""; } ?>/>
                     <label for="login-remember-me"><?php echo $lang->loc['remember.me']; ?></label>
                 </li>
                 <li class="no-label">
@@ -237,34 +237,34 @@ document.observe("dom:loaded", function() {
 						<div class="ad-container">
 <a href="register.php"><img src="<?php echo PATH; ?>/web-gallery/v2/images/landing/uk_party_frontpage_image.gif" alt="" /></a>
 </div>
-	
-						
-					
+
+
+
 				</div>
 				<script type="text/javascript">if (!$(document.body).hasClassName('process-template')) { Rounder.init(); }</script>
-			 
+
 
 </div>
 <div id="column3" class="column">
 </div>
 <div id="column-footer">
-		
-				<div class="habblet-container ">		
-	
+
+				<div class="habblet-container ">
+
 						<div class="habblet box-content" id="tag-cloud-slim">
     <span class="tags-habbos-like"><?php echo $lang->loc['tags']; ?></span>
 <?php
 // Polaris stores tags only as denormalized rooms.tags; there is no compatible aggregate tag table.
-echo $lang->loc['no.tags'];
+echo $lang->loc['no.tags'] ?? '';
 ?>
 </div>
-	
-						
-					
+
+
+
 				</div>
 				<script type="text/javascript">if (!$(document.body).hasClassName('process-template')) { Rounder.init(); }</script>
-			 
- 
+
+
 <!--[if lt IE 7]>
 <script type="text/javascript">
 Pngfix.doPngImageFix();

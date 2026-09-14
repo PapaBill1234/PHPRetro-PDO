@@ -28,11 +28,12 @@ if (!defined("IN_HOLOCMS")) { header("Location: ".PATH."/"); exit; }
 */
 
 $lang->addLocale("footer");
-$sql = $db->query("SELECT * FROM ".PREFIX."faq WHERE show_in_footer = '1' AND type = 'cat' ORDER BY id ASC");
 $content = "";
-while($row = $db->fetch_assoc($sql)){
-	$content = $content." | <a href=\"".PATH."/help/".$row['id']."\" target=\"_new\">".$row['title']."</a>";
-}
+try {
+    foreach ($db->fetchAll('SELECT id, question FROM phpretro_faq WHERE active = ? ORDER BY sort_order, id', [1]) as $row) {
+        $content .= ' | <a href="' . PATH . '/help/' . (int) $row['id'] . '" target="_new">' . HoloText($row['question']) . '</a>';
+    }
+} catch (Throwable $exception) { }
 ?>
 
 <!--[if lt IE 7]>
@@ -44,7 +45,7 @@ Pngfix.doPngImageFix();
 <div id="footer">
 	<p><a href="<?php echo PATH; ?>/" target="_self"><?php echo $lang->loc['link.homepage']; ?></a> | <a href="<?php echo PATH; ?>/papers/disclaimer" target="_self"><?php echo $lang->loc['link.disclaimer']; ?></a> | <a href="<?php echo PATH; ?>/papers/privacy" target="_self"><?php echo $lang->loc['link.privacy']; ?></a><?php echo $content; ?></p>
 	<?php /*@@* DO NOT EDIT OR REMOVE THE LINE BELOW WHATSOEVER! *@@ You ARE allowed to remove the links though*/ ?>
-	<p<?php if($page['new_landing'] == true){ ?> class="copyright"<?php } ?>>Powered by <a href="http://www.phpretro.com/">PHPRetro</a><br /><?php echo $lang->loc['copyright.habbo']; ?></p>
+	<p<?php if(($page['new_landing'] ?? false) == true){ ?> class="copyright"<?php } ?>>Powered by <a href="http://www.phpretro.com/">PHPRetro</a><br /><?php echo $lang->loc['copyright.habbo']; ?></p>
 	<?php /*@@* DO NOT EDIT OR REMOVE THE LINE ABOVE WHATSOEVER! *@@ You ARE allowed to remove the links though*/ ?>
 </div>			</div>
         </div>
