@@ -1,68 +1,12 @@
 <?php
-
 declare(strict_types=1);
-
+session_start();
 require_once __DIR__ . '/../includes/Database.php';
-
-function migrationStatements(string $contents): array
-{
-    $contents = preg_replace('/^\s*--.*$/m', '', $contents) ?? '';
-    return array_values(array_filter(array_map('trim', explode(';', $contents))));
-}
-
-$messages = [];
-$error = null;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $database = new Database();
-        $database->fetchColumn('SELECT 1 FROM users LIMIT 1');
-        $database->execute(
-            'CREATE TABLE IF NOT EXISTS phpretro_schema_migrations (
-                filename VARCHAR(255) NOT NULL PRIMARY KEY,
-                applied_at INT NOT NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
-        );
-
-        foreach (glob(__DIR__ . '/../migrations/*.sql') ?: [] as $migration) {
-            $filename = basename($migration);
-            if ($database->fetchColumn('SELECT filename FROM phpretro_schema_migrations WHERE filename = ?', [$filename])) {
-                $messages[] = $filename . ' already applied.';
-                continue;
-            }
-
-            foreach (migrationStatements((string) file_get_contents($migration)) as $statement) {
-                $database->execute($statement);
-            }
-            $database->execute(
-                'INSERT INTO phpretro_schema_migrations (filename, applied_at) VALUES (?, ?)',
-                [$filename, time()]
-            );
-            $messages[] = $filename . ' applied.';
-        }
-    } catch (Throwable $exception) {
-        $error = $exception->getMessage();
-    }
-}
+function statements(string $sql): array { $sql = preg_replace('/^\s*--.*$/m', '', $sql) ?? ''; return array_values(array_filter(array_map('trim', explode(';', $sql)))); }
+$step = max(1, min(6, (int) ($_SESSION['polaris_step'] ?? 1))); $error = null; $messages = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') { $action = $_POST['action'] ?? 'next'; if ($action === 'back') { $step = max(1, $step - 1); } else { try { if ($step === 2 || $step === 6) { $db = new Database(); if ($db->fetchColumn('SELECT 1 FROM users LIMIT 1') === false) throw new RuntimeException('Polaris users table was not found. Import CleanDB.sql first.'); if ($step === 6) { $db->execute('CREATE TABLE IF NOT EXISTS phpretro_schema_migrations (filename VARCHAR(255) NOT NULL PRIMARY KEY, applied_at INT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'); foreach (glob(__DIR__ . '/../migrations/*.sql') ?: [] as $file) { $name=basename($file); if ($db->fetchColumn('SELECT filename FROM phpretro_schema_migrations WHERE filename=?',[$name])) {$messages[]="$name already applied."; continue;} foreach (statements((string)file_get_contents($file)) as $sql) $db->execute($sql); $db->execute('INSERT INTO phpretro_schema_migrations (filename, applied_at) VALUES (?,?)',[$name,time()]); $messages[]="$name applied."; } } } if ($step < 6) $step++; } catch(Throwable $e) {$error=$e->getMessage();} } $_SESSION['polaris_step']=$step; }
+$titles=[1=>'Introduction',2=>'Check',3=>'Database',4=>'Settings',5=>'Administrator',6=>'Install'];
+$text=[1=>'Welcome to PHPRetro. This installer keeps the original flow while protecting Polaris.',2=>'Check the PHP 8.5 PDO connection and verified Polaris database.',3=>'Database credentials come from DB_DSN, DB_USER, and DB_PASS.',4=>'Site settings are handled by the modern configuration layer.',5=>'Use an existing Polaris staff account for administration.',6=>'Apply PHPRetro-owned migrations. Polaris tables are never changed.'];
+require __DIR__ . '/installer_header.php';
 ?>
-<!doctype html>
-<html lang="en">
-<head><meta charset="utf-8"><title>PHPRetro Installer</title>
-<link rel="stylesheet" href="../web-gallery/v2/styles/style.css"><link rel="stylesheet" href="../web-gallery/v2/styles/process.css"><link rel="stylesheet" href="./images/style.css">
-<style>body{margin:0;background:#d9e7ef;color:#263746;font:14px Arial,sans-serif}.card{width:760px;margin:56px auto;padding:26px;background:#fff;border:1px solid #9ab5c5;border-radius:7px;box-shadow:0 4px 12px #7893a544}h1{margin-top:0;color:#174d72}.notice{padding:12px;margin:16px 0;border-radius:5px;background:#e8f5fb}.error{background:#fdeaea;color:#8c2525}button{border:0;border-radius:5px;padding:10px 18px;background:#2787bd;color:#fff;font-weight:bold;cursor:pointer}code{background:#edf2f6;padding:2px 4px;border-radius:3px}</style>
-</head>
-<body>
-<main class="card process-template-box">
-<div id="header"><h1>PHPRetro Installer</h1><ul class="stats"><li>1/1 &nbsp; Polaris setup</li></ul></div>
-<h2>PHPRetro Polaris installer</h2>
-<p>This setup keeps Polaris intact. It requires a configured Polaris database with a <code>users</code> table and applies only PHPRetro's own migrations.</p>
-<?php if ($error !== null): ?>
-<p class="notice error"><strong>Installation failed:</strong> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
-<?php endif; ?>
-<?php foreach ($messages as $message): ?>
-<p class="notice"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
-<?php endforeach; ?>
-<form method="post"><button type="submit">Apply PHPRetro migrations</button></form>
-</main>
-</body>
-</html>
+<div id="container"><div class="cbb process-template-box clearfix"><div id="content"><div id="header" class="clearfix"><h1><a href="#"></a></h1><ul class="stats"><li class="stats-online"><span class="stats-fig"><?php echo $step; ?>/6 <?php echo $titles[$step]; ?></span></li></ul></div><div class="process-content"><form method="post"><div id="installer-column-left"><div id="installer-section-left"><?php echo htmlspecialchars($text[$step],ENT_QUOTES,'UTF-8'); ?></div></div><div id="installer-column-right"><div id="installer-section-right"><div class="rounded rounded-blue"><h2 class="heading"><?php echo $titles[$step]; ?></h2><fieldset id="installer-fieldset"><?php if($error): ?><p class="error"><?php echo htmlspecialchars($error,ENT_QUOTES,'UTF-8'); ?></p><?php endif; foreach($messages as $m): ?><p><?php echo htmlspecialchars($m,ENT_QUOTES,'UTF-8'); ?></p><?php endforeach; if($step===2): ?><p>Validates PHP 8.5, PDO MySQL, and Polaris <code>users</code>.</p><?php endif; if($step===6): ?><p>Ready to install current PHPRetro migrations.</p><?php endif; ?></fieldset></div></div><div id="installer-buttons"><?php if($step>1): ?><button class="back" name="action" value="back">Back</button><?php endif; ?><button class="continue" name="action" value="next"><?php echo $step===6?'Install':'Continue'; ?></button></div></div></form></div><?php require __DIR__ . '/installer_footer.php'; ?>
