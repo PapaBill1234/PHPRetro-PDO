@@ -15,84 +15,42 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new header_footer_sql;
-$lang->addLocale("quickmenu");
-
-switch($_GET['key']){
-	case "friends_all": $mode = 1; break;
-	case "groups": $mode = 2; break;
-	case "rooms": $mode = 3; break;
-}
-
-$sql = $data->select1($mode, $user->id, $user->name);
-$i = 0;
-	if($db->num_rows($sql) > 0){
-		switch($mode){
-			case 1:
-				$sql2 = $data->select1($mode, $user->id, $user->name, 1800);
-				if($db->num_rows($sql2) > 0){
-					echo "<ul id=\"online-friends\">\n";
-					while ($row = $db->fetch_row($sql2)){
-						$i++;
-						if($input->IsEven($i)){ $even = "odd"; } else { $even = "even"; }
-						printf("        <li class=\"%s\"><a href=\"".PATH."/home/%s\">%s</a></li>\n",$even,$input->HoloText($row[1]),$input->HoloText($row[1]));
-					}
-					echo "\n</ul>";
-				}
-				$sql2 = $data->select1($mode, $user->id, $user->name, -1800);
-				if($db->num_rows($sql2) > 0){
-					echo "<ul id=\"offline-friends\">\n";
-					while ($row = $db->fetch_row($sql2)){
-						$i++;
-						if($input->IsEven($i)){ $even = "odd"; } else { $even = "even"; }
-						printf("        <li class=\"%s\"><a href=\"".PATH."/home/%s\">%s</a></li>\n",$even,$input->HoloText($row[1]),$input->HoloText($row[1]));
-					}
-					echo "\n</ul>";
-				}
-				break;
-			case 2:
-				echo "<ul id=\"quickmenu-groups\">\n";
-				while($row = $db->fetch_row($sql)){
-					$i++;
-					echo "<li class=\"";
-					if($input->IsEven($i)){ echo "odd"; } else { echo "even"; }
-					echo "\">";
-					if($row[5] != "0"){ echo "<a href=\"".PATH."/client?forwardId=2&amp;roomId=".$row[5]."\" onclick=\"HabboClient.roomForward(this, '".$row[5]."', 'private'); return false;\" target=\"client\" class=\"group-room\" title=\"".$lang->loc['group.room']."\"></a>"; }
-					if($row[2] == 1){ echo "<div class=\"favourite-group\" title=\"".$lang->loc['favorite']."\"></div>\n"; }
-					if($row[3] > 1 && $row[4] != $user->id){ echo "<div class=\"admin-group\" title=\"".$lang->loc['administrator']."\"></div>\n"; }
-					if($row[3] > 1 && $row[4] == $user->id){ echo "<div class=\"owned-group\" title=\"".$lang->loc['owner']."\"></div>\n"; }
-					echo "\n<a href=\"".groupURL($row[0])."\">".$input->HoloText($row[1])."</a>\n</li>";
-				}
-				echo "\n</ul>\n";
-				echo "<p class=\"create-group\"><a href=\"#\" onclick=\"GroupPurchase.open(); return false;\">".$lang->loc['create.group']."</a></p>";
-				break;
-			case 3:
-				echo "<ul id=\"quickmenu-rooms\">\n";
-				while ($row = $db->fetch_row($sql)){
-					$i++;
-					if($input->IsEven($i)){ $even = "odd"; } else { $even = "even"; }
-					printf("        <li class=\"%s\"><a href=\"".PATH."/client?forwardId=2&amp;roomId=%s\" onclick=\"roomForward(this, '%s', 'private'); return false;\" target=\"client\" id=\"room-navigation-link_%s\">%s</a></li>\n",$even,$row[0],$row[0],$row[0],$input->unicodeToImage($input->HoloText($row[1])));
-				}
-				echo "\n</ul>\n";
-				echo "<p class=\"create-room\"><a href=\"".PATH."/client?shortcut=roomomatic\" onclick=\"HabboClient.openShortcut(this, 'roomomatic'); return false;\" target=\"client\">".$lang->loc['create.room']."</a></p>";
-				break;
-		}
-	} else {
-		switch($mode){
-			case 1:
-				echo "<ul id=\"quickmenu-friends\">\n	<li class=\"odd\">".$lang->loc['no.friends']."</li>\n</ul>";
-				break;
-			case 2:
-				echo "<ul id=\"quickmenu-groups\">\n	<li class=\"odd\">".$lang->loc['no.groups']."</li>\n</ul>\n";
-				echo "<p class=\"create-group\"><a href=\"#\" onclick=\"GroupPurchase.open(); return false;\">".$lang->loc['create.group']."</a></p>";
-				break;
-			case 3:
-				echo "<ul id=\"quickmenu-rooms\">\n	<li class=\"odd\">".$lang->loc['no.rooms']."</li>\n</ul>\n";
-				echo "<p class=\"create-room\"><a href=\"".PATH."/client?shortcut=roomomatic\" onclick=\"HabboClient.openShortcut(this, 'roomomatic'); return false;\" target=\"client\">".$lang->loc['create.room']."</a></p>";
-				break;
-		}
-	}
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$lang->addLocale('quickmenu');
+$key = habbletText($_GET, 'key');
+if ($key === 'friends_all') {
+    $rows = $db->fetchAll('SELECT DISTINCT u.id, u.username, u.online, COALESCE(s.hide_online, 0) AS hide_online FROM messenger_friendships f JOIN users u ON u.id = f.user_two_id LEFT JOIN users_settings s ON s.user_id = u.id WHERE f.user_one_id = ? ORDER BY u.username, u.id', [(int) $user->id]);
+    foreach (['online', 'offline'] as $status) {
+        echo '<ul id="'.$status.'-friends">';
+        foreach ($rows as $index => $row) {
+            $online = $row['online'] !== '0' && (string) $row['hide_online'] !== '1';
+            if ($online !== ($status === 'online')) { continue; }
+            echo '<li class="'.($index % 2 ? 'odd' : 'even').'"><a href="'.PATH.'/home/'.rawurlencode($row['username']).'">'.$input->HoloText($row['username']).'</a></li>';
+        }
+        echo '</ul>';
+    }
+    if (!$rows) { echo '<ul id="quickmenu-friends"><li>'.$lang->loc['no.friends'].'</li></ul>'; }
+} elseif ($key === 'groups') {
+    // GuildRank: OWNER=0, ADMIN=1, MEMBER=2, REQUESTED=3, DELETED=4.
+    $rows = $db->fetchAll('SELECT DISTINCT g.id, g.name, g.room_id, g.user_id, m.level_id, COALESCE(s.guild_id, 0) AS favorite_id FROM guilds_members m JOIN guilds g ON g.id = m.guild_id LEFT JOIN users_settings s ON s.user_id = m.user_id WHERE m.user_id = ? AND m.level_id IN (0, 1, 2) ORDER BY g.name, g.id', [(int) $user->id]);
+    echo '<ul id="quickmenu-groups">';
+    foreach ($rows as $row) {
+        echo '<li>';
+        if ((int) $row['room_id'] > 0) { echo '<a class="group-room" href="'.PATH.'/client?forwardId=2&amp;roomId='.(int) $row['room_id'].'"></a>'; }
+        if ((int) $row['favorite_id'] === (int) $row['id']) { echo '<div class="favourite-group"></div>'; }
+        if ((int) $row['user_id'] === (int) $user->id) { echo '<div class="owned-group"></div>'; }
+        elseif ((int) $row['level_id'] === 1) { echo '<div class="admin-group"></div>'; }
+        echo '<a href="'.PATH.'/groups/'.(int) $row['id'].'/id">'.$input->HoloText($row['name']).'</a></li>';
+    }
+    if (!$rows) { echo '<li>'.$lang->loc['no.groups'].'</li>'; }
+    echo '</ul>';
+} elseif ($key === 'rooms') {
+    $rows = $db->fetchAll('SELECT id, name FROM rooms WHERE owner_id = ? ORDER BY name, id', [(int) $user->id]);
+    echo '<ul id="quickmenu-rooms">';
+    foreach ($rows as $row) {
+        echo '<li><a id="room-navigation-link_'.(int) $row['id'].'" href="'.PATH.'/client?forwardId=2&amp;roomId='.(int) $row['id'].'">'.$input->HoloText($row['name']).'</a></li>';
+    }
+    if (!$rows) { echo '<li>'.$lang->loc['no.rooms'].'</li>'; }
+    echo '</ul>';
+} else { http_response_code(400); echo 'Unknown menu.'; }

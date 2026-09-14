@@ -15,46 +15,15 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new community_sql;
-$lang->addLocale("tags.tagmatch");
-
-$name = $input->FilterText($_POST['friendName']);
-
-$sql = $db->query("SELECT tag FROM ".PREFIX."tags WHERE ownerid = '".$user->id."'");
-$i = 0;
-while($row = $db->fetch_row($sql)){
-$mytag[$i] = $row[0];
-$i++;
-}
-$sql = $data->select4($name);
-if($db->num_rows($sql) == 0){ ?>
-    <div class="tag-match-error">
-        <?php echo $lang->loc['friend.not.found']; ?>
-    </div>
-<?php exit;
-}
-$i = 0;
-$sql = $db->query("SELECT tag FROM ".PREFIX."tags WHERE ownerid = '".$db->result($sql)."'");
-while($row = $db->fetch_row($sql)){
-$theirtag[$i] = $row[0];
-$i++;
-}
-if(!is_array($mytag)){ $mytag = array(); }
-if(!is_array($theirtag)){ $theirtag = array(); }
-$identical = array_intersect($mytag, $theirtag);
-$count['mine'] = count($mytag);
-$count['same'] = count($theirtag);
-if($count['mine'] == 0){ $count['mine'] = 1; }
-$percent = ceil(($count['same'] / $count['mine']) * 100);
-
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$lang->addLocale('tags.tagmatch');
+$id = $db->fetchColumn('SELECT id FROM users WHERE username = ?', [habbletText($_POST, 'friendName')]);
+if ($id === false) { echo '<div class="tag-match-error">'.$lang->loc['friend.not.found'].'</div>'; return; }
+$mine = array_map('strtolower', habbletUserTags($db, (int) $user->id));
+$theirs = array_map('strtolower', habbletUserTags($db, (int) $id));
+$percent = count($mine) ? (int) ceil(count(array_intersect($mine, $theirs)) * 100 / count($mine)) : 0;
 ?>
-    <div id="tag-match-value" style="display: none;"><?php echo $percent; ?></div>
-
-    <div id="tag-match-value-display"><?php $percent; ?> %</div>
-
-    <div id="tag-match-slogan" style="display: none;">
-            <?php echo $lang->loc['match.result']; ?>
-    </div>
+<div id="tag-match-value" style="display:none"><?php echo $percent; ?></div>
+<div id="tag-match-value-display"><?php echo $percent; ?> %</div>
+<div id="tag-match-slogan" style="display:none"><?php echo $lang->loc['match.result']; ?></div>

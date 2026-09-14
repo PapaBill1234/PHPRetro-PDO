@@ -15,25 +15,13 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new credits_sql;
-$lang->addLocale("collectables.confirm");
-$lang->addLocale("ajax.buttons");
-
-$this['month'] = date('m');
-$this['year'] = date('Y');
-$this['time'] = mktime(0,0,0,$this['month'],1,$this['year']);
-
-$name = $serverdb->result($data->select3($this['time']), 0);
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$lang->addLocale('ajax.buttons');
+$month = mktime(0, 0, 0, (int) date('m'), 1, (int) date('Y'));
+$name = $db->fetchColumn('SELECT name FROM phpretro_collectibles WHERE time = ?', [$month]);
+// The CMS table is descriptive only: it has no catalog item ID or purchase price.
 ?>
-
-<p>
-<?php echo $lang->loc['confirm.collectable.purchase']." ".$input->HoloText($name); ?>? <?php echo $lang->loc['collectable.price']; ?>.
-</p>
-
-<p>
-<a href="#" class="new-button" id="collectibles-purchase"><b><?php echo $lang->loc['purchase']; ?></b><i></i></a>
-<a href="#" class="new-button" id="collectibles-close"><b><?php echo $lang->loc['cancel']; ?></b><i></i></a>
-</p>
+<p><?php echo $input->HoloText($name === false ? 'No collectible this month.' : $name); ?></p>
+<p>Collectible purchases are unavailable.</p>
+<p><a href="#" class="new-button" id="collectibles-close"><b><?php echo $lang->loc['cancel']; ?></b><i></i></a></p>
