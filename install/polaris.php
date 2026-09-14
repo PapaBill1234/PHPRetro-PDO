@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach (statements((string) file_get_contents($file)) as $sql) { $db->execute($sql); }
                 $db->execute('INSERT INTO phpretro_schema_migrations (filename, applied_at) VALUES (?,?)', [$name, time()]); $messages[] = "$name applied.";
             }
-            $path = parse_url((string) ($_SESSION['site_url'] ?? ''), PHP_URL_PATH) ?: '';
+            $path = parse_url((string) ($_SESSION['site_url'] ?? ''), PHP_URL_PATH) ?: rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
             foreach (['site_name' => ($_SESSION['site_name'] ?? 'PHPRetro'), 'site_shortname' => ($_SESSION['site_name'] ?? 'PHPRetro'), 'site_path' => rtrim($path, '/'), 'site_language' => 'en', 'site_closed' => '0', 'hotel_server' => 'polaris'] as $key => $value) {
                 $db->execute('INSERT INTO phpretro_site_settings (setting_key, setting_value, updated_by, updated_at) VALUES (?,?,NULL,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value), updated_at=VALUES(updated_at)', [$key, $value, time()]);
             }
