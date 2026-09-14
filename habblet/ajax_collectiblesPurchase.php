@@ -15,38 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$database = new Database();
-$data = new credits_sql;
-$lang->addLocale("collectables.buy");
-$lang->addLocale("ajax.buttons");
-
-$this['month'] = date('m');
-$this['year'] = date('Y');
-$this['time'] = mktime(0,0,0,$this['month'],1,$this['year']);
-
-$furni_id = $serverdb->result($data->select3($this['time']), 0, 3);
-
-if(($user->user("credits") - 25) > 0) {
-$credits = $user->user("credits") - 25;
-$data->update1($user->id,$credits);
-$data->insert1($user->id,$furni_id);
-$user->refresh();
-$database->execute('INSERT INTO phpretro_transactions (user_id, type, amount, balance_after, description, reference_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [$user->id, 'purchase', -25, $credits, 'Bought a collectable', (string) $furni_id, time()]);
-@SendMUSData('UPRC' . $user->id);
-@SendMUSData('UPRH' . $user->id);
-$message = $lang->loc['collectable.bought']." ".$input->HoloText($serverdb->result($data->select3($this['time']), 0)).".";
-}else{
-$message = $lang->loc['purchase.failed'];
-}
-?>
-<p>
-<?php echo $message; ?>.
-</p>
-
-
-<p>
-<a href="#" class="new-button" id="collectibles-close"><b><?php echo $lang->loc['ok']; ?></b><i></i></a>
-</p>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): The monthly collectible has no catalogue item mapping or delivery contract.
+habbletUnavailable('Collectible purchases are unavailable.');

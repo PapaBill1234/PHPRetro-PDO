@@ -15,12 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-$index = $input->FilterText($_POST['feedItemIndex']);
-if(!is_numeric($index)){ exit; }
-
-$sql = $db->query("SELECT id FROM ".PREFIX."alerts WHERE userid = '".$user->id."' AND `type` > -1 ORDER BY id DESC LIMIT 1 OFFSET ".$index);
-if($db->num_rows($sql) > 0){ $id = $db->result($sql); }else{ $id = 0; }
-$db->query("DELETE FROM ".PREFIX."alerts WHERE userid = '".$user->id."' AND `type` > -1 AND id = '".$id."' LIMIT 1");
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): No alerts table or per-user feed dismissal equivalent.
+habbletUnavailable('Feed dismissal is unavailable.');
