@@ -1,5 +1,15 @@
-MethodException: 
-Line |
-   2 |  ([System.IO.File]::ReadAllText('housekeeping/news.php')).Replace([cha …
-     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Cannot convert argument "newChar", with value: "", for "Replace" to type "System.Char": "Cannot convert value "" to type "System.Char". Error: "String must be exactly one character long.""
+<?php
+$page['dir'] = '\\housekeeping';
+$page['housekeeping'] = true;
+$page['rank'] = 5;
+require_once('../includes/core.php');
+require_once('./includes/hksession.php');
+require_once('../includes/AdminAudit.php');
+$database=new Database(); $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); $notice=''; $action=$_GET['do']??'list';
+if($_SERVER['REQUEST_METHOD']==='POST'){ $id=(int)($_POST['id']??0); $affected=0; if($action==='delete'){$affected=$database->execute('DELETE FROM phpretro_news WHERE id = ?',[$id]);$notice=$affected>0?'Article removed.':'Article not found.';}else{$v=[trim((string)($_POST['title']??'')),trim((string)($_POST['summary']??'')),trim((string)($_POST['story']??'')),trim((string)($_POST['author']??'')),trim((string)($_POST['categories']??'')),trim((string)($_POST['images']??''))];if(in_array('',array_slice($v,0,4),true)){$notice='Title, summary, story, and author are required.';}elseif($id>0){$affected=$database->execute('UPDATE phpretro_news SET title=?, summary=?, story=?, author=?, categories=?, images=? WHERE id=?',[...$v,$id]);$notice=$affected>0?'Article updated.':'Article unchanged or not found.';}else{$affected=$database->execute('INSERT INTO phpretro_news (title,summary,story,author,categories,images,time) VALUES (?,?,?,?,?,?,?)',[...$v,time()]);$id=(int)$database->insertId();$notice='Article created.';}}if($affected>0){AdminAudit::log($database,(int)$user->id,'news_'.$action,'news',$id);} $action='list';}
+$item=['id'=>0,'title'=>'','summary'=>'','story'=>'','author'=>'','categories'=>'','images'=>'']; if($action==='edit'){ $loaded=$database->fetchRow('SELECT id,title,summary,story,author,categories,images FROM phpretro_news WHERE id=?',[(int)($_GET['id']??0)]);if($loaded!==false){$item=$loaded;}}
+ob_start(); if($action==='create'||$action==='edit'){?><form method="post"><input type="hidden" name="id" value="<?php echo(int)$item['id'];?>"><?php foreach(['title'=>'Title','summary'=>'Summary','story'=>'Story','author'=>'Author','categories'=>'Categories','images'=>'Image URLs'] as $field=>$label){?><label><?php echo $label;?></label><br><?php if(in_array($field,['summary','story','images'],true)){?><textarea name="<?php echo $field;?>"><?php echo $e($item[$field]);?></textarea><?php }else{?><input name="<?php echo $field;?>" value="<?php echo $e($item[$field]);?>"><?php }?><br><?php }?><button>Save</button></form><?php }else{$rows=$database->fetchAll('SELECT id,title,author,categories,time FROM phpretro_news ORDER BY time DESC,id DESC');?><p><a href="<?php echo PATH;?>/housekeeping/news?do=create">New article</a></p><table><tr><th>Title</th><th>Author</th><th>Categories</th><th>Date</th><th>Actions</th></tr><?php foreach($rows as $row){?><tr><td><?php echo $e($row['title']);?></td><td><?php echo $e($row['author']);?></td><td><?php echo $e($row['categories']);?></td><td><?php echo date('Y-m-d H:i',(int)$row['time']);?></td><td><a href="<?php echo PATH;?>/housekeeping/news?do=edit&id=<?php echo(int)$row['id'];?>">Edit</a><form style="display:inline" method="post" action="<?php echo PATH;?>/housekeeping/news?do=delete"><input type="hidden" name="id" value="<?php echo(int)$row['id'];?>"><button>Delete</button></form></td></tr><?php }}?></table><?php $content=ob_get_clean();
+$page['name'] = 'News'; $page['category'] = 'tools'; require_once('./templates/housekeeping_header.php');
+?>
+<div class="page_title"><span class="page_name">News</span></div><div class="page_main"><div class="center"><?php if ($notice !== '') { ?><div class="clean-ok"><?php echo $e($notice); ?></div><?php } ?><?php echo $content; ?></div></div><?php require_once('./templates/housekeeping_footer.php'); ?>
+
