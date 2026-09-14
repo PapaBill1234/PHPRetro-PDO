@@ -1,6 +1,6 @@
 <?php
 
-header('Location: ./polaris.php', true, 302);
+require __DIR__ . '/polaris.php';
 exit;
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management

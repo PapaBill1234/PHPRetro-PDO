@@ -48,11 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>PHPRetro Installer</title>
-<style>body{margin:0;background:#e9f0f5;color:#263746;font:16px Arial,sans-serif}.card{max-width:700px;margin:72px auto;padding:34px;background:#fff;border-radius:12px;box-shadow:0 8px 28px #7893a544}h1{margin-top:0;color:#174d72}.notice{padding:14px;margin:16px 0;border-radius:7px;background:#e8f5fb}.error{background:#fdeaea;color:#8c2525}button{border:0;border-radius:6px;padding:12px 18px;background:#1f78ae;color:#fff;font-weight:bold;cursor:pointer}code{background:#edf2f6;padding:2px 4px;border-radius:3px}</style>
+<link rel="stylesheet" href="../web-gallery/v2/styles/style.css"><link rel="stylesheet" href="../web-gallery/v2/styles/process.css"><link rel="stylesheet" href="./images/style.css">
+<style>body{margin:0;background:#d9e7ef;color:#263746;font:14px Arial,sans-serif}.card{width:760px;margin:56px auto;padding:26px;background:#fff;border:1px solid #9ab5c5;border-radius:7px;box-shadow:0 4px 12px #7893a544}h1{margin-top:0;color:#174d72}.notice{padding:12px;margin:16px 0;border-radius:5px;background:#e8f5fb}.error{background:#fdeaea;color:#8c2525}button{border:0;border-radius:5px;padding:10px 18px;background:#2787bd;color:#fff;font-weight:bold;cursor:pointer}code{background:#edf2f6;padding:2px 4px;border-radius:3px}</style>
 </head>
 <body>
-<main class="card">
-<h1>PHPRetro Polaris installer</h1>
+<main class="card process-template-box">
+<div id="header"><h1>PHPRetro Installer</h1><ul class="stats"><li>1/1 &nbsp; Polaris setup</li></ul></div>
+<h2>PHPRetro Polaris installer</h2>
 <p>This setup keeps Polaris intact. It requires a configured Polaris database with a <code>users</code> table and applies only PHPRetro's own migrations.</p>
 <?php if ($error !== null): ?>
 <p class="notice error"><strong>Installation failed:</strong> <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
