@@ -4,11 +4,12 @@ $page['allow_guests'] = true;
 $page['no_column3'] = true;
 require_once('./includes/core.php');
 require_once('./includes/session.php');
+require_once('./includes/PhpretroGroupUrls.php');
 $lang->addLocale("home.homes");
 $lang->addLocale("community.groups");
 
 $db = new Database();
-$groupId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$groupId = phpretroRequestGuildId();
 $guild = $groupId > 0 ? $db->fetchRow(
     "SELECT g.id, g.user_id, g.name, g.description, g.room_id, g.state, g.rights, g.badge, g.date_created, u.username AS owner_username FROM guilds g LEFT JOIN users u ON u.id = g.user_id WHERE g.id = ? LIMIT 1",
     [$groupId]

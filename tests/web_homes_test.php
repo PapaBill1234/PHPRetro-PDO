@@ -35,6 +35,8 @@ try {
     foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
     $alter = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/004_web_homes.sql')) ?? '';
     foreach (array_filter(array_map('trim', explode(';', $alter))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
+    $urls = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/005_web_group_urls.sql')) ?? '';
+    foreach (array_filter(array_map('trim', explode(';', $urls))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
     foreach (range(1, 3) as $id) {
         $name = $id === 2 ? 'Bob<script>' : 'User'.$id;
         $db->execute('INSERT INTO users (id, username, password, account_created, ip_register, ip_current, motto, look) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$id, $name, '', 100, '127.0.0.1', '127.0.0.1', 'motto', 'look']);

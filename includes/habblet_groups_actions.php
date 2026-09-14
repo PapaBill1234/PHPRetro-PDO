@@ -155,15 +155,28 @@ function habbletGroupDispatch(string $action): void
             habbletGroupRender('groupinfo', compact('group', 'ownerid', 'rank', 'favorite'));
             return;
         }
-        if (in_array($action, ['show_badge_editor', 'update_group_badge', 'check_group_url'], true)) {
+        if (in_array($action, ['show_badge_editor', 'update_group_badge'], true)) {
             $groups->need($groups->owner($group));
-            throw new HabbletGroupError($action === 'check_group_url' ? 'Custom group URLs have no Polaris schema equivalent.' : 'Use the game client to edit group badges. The legacy Flash editor uses a different part encoding from Polaris.', 501);
+            throw new HabbletGroupError('Use the game client to edit group badges. The legacy Flash editor uses a different part encoding from Polaris.', 501);
+        }
+        if ($action === 'check_group_url') {
+            $groups->need($groups->owner($group));
+            $lang->addLocale('groups.settings.checkurl');
+            $url = habbletText($_POST, 'url');
+            $urls = phpretroGroupUrls();
+            if (!$urls->valid($url) || $urls->taken($url, $id)) {
+                echo 'ERROR '.$lang->loc['url.error'];
+                return;
+            }
+            echo $lang->loc['your.alias'].': '.PATH.'/groups/'.htmlspecialchars($url, ENT_QUOTES, 'UTF-8').'. '.$lang->loc['you.cannot.alter'];
+            return;
         }
         if ($action === 'group_settings') {
             $groups->need($groups->owner($group));
             $groups->need($group['read_forum'] !== 'ADMINS' && $group['post_threads'] !== 'OWNER' && (int) $group['state'] !== 4, 'These Polaris settings cannot be represented by the legacy form. Use the game client.', 501);
             $lang->addLocale('groups.settings');
-            $alias = ''; $noalias = true;
+            $alias = phpretroGroupUrls()->forGuild($id);
+            $noalias = ($alias === '');
             $readOption = $group['read_forum'] === 'EVERYONE' ? 0 : 1;
             $postOption = array_search($group['post_threads'], ['EVERYONE', 'MEMBERS', 'ADMINS'], true);
             $rooms = $groups->db->fetchAll('SELECT id, name, description FROM rooms WHERE owner_id = ? ORDER BY id', [$groups->actor]);

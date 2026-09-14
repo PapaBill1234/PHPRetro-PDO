@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/habblet.php';
+require_once __DIR__.'/PhpretroGroupUrls.php';
 
 /** Expected request failures; database failures deliberately remain errors. */
 class HabbletGroupError extends RuntimeException {}
@@ -16,8 +17,6 @@ function habbletGroupRun(callable $action): void
         }
     }
 }
-
-function habbletGroupURL(int $id): string { return PATH.'/groups/'.$id.'/id'; }
 
 function habbletGroupRender(string $template, array $values): void
 {
@@ -237,7 +236,6 @@ class HabbletGroups
     public function settings(array $group): void
     {
         $this->need($this->owner($group));
-        $this->need(habbletText($_POST, 'url') === '', 'Custom group URLs have no Polaris schema equivalent.', 501);
         $room = habbletInt($_POST, 'roomId');
         $this->need($room === (int) $group['room_id'], 'Move group rooms in the game client; this form cannot perform Polaris room-rights updates.', 501);
         $name = $this->text('name', 30);
@@ -250,7 +248,16 @@ class HabbletGroups
         $post = habbletInt($_POST, 'newTopicPermission', -1);
         $this->need(in_array($state, [0, 1, 2, 3], true) && in_array($read, [0, 1], true) && in_array($post, [0, 1, 2], true), 'Invalid group settings.', 400);
         $this->need($group['read_forum'] !== 'ADMINS' && $group['post_threads'] !== 'OWNER' && (int) $group['state'] !== 4, 'These Polaris settings cannot be represented by the legacy form.', 501);
+        $url = habbletText($_POST, 'url');
+        $urls = new PhpretroGroupUrls($this->db, new PhpretroLiveSync($this->db));
+        if ($url !== '' && $urls->forGuild((int) $group['id']) === '') {
+            $this->need($urls->valid($url) && !$urls->taken($url), 'This url name contains invalid characters or is already taken. It will not be saved.', 400);
+        }
         $this->db->execute('UPDATE guilds SET name = ?, description = ?, state = ?, read_forum = ?, post_threads = ? WHERE id = ? AND user_id = ?', [$name, $description, $state, ['EVERYONE', 'MEMBERS'][$read], ['EVERYONE', 'MEMBERS', 'ADMINS'][$post], $group['id'], $this->actor]);
+        if ($url !== '') {
+            try { $urls->claim((int) $group['id'], $this->actor, $url); }
+            catch (InvalidArgumentException $error) { throw new HabbletGroupError($error->getMessage(), 400); }
+        }
     }
 
     public function deleteGroup(array $group): void
