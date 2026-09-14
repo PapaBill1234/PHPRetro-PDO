@@ -15,33 +15,20 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-if($page['bypass'] != true){
-$page['dir'] = '\habblet';
-$page['allow_guests'] = true;
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-}
-$lang->addLocale("tags.ajax");
-$lang->addLocale("ajax.buttons");
+require_once(__DIR__.'/../includes/habblet.php');
+$lang->addLocale('tags.ajax');
+$lang->addLocale('ajax.buttons');
+$tags = empty($user->logged_in) ? [] : habbletUserTags($db, (int) $user->id);
 ?>
 <div id="profile-tags-container">
-<?php
-$sql = $db->query("SELECT * FROM ".PREFIX."tags WHERE ownerid = '".$user->id."' AND type = 'user' ORDER BY id ASC");
-if($db->num_rows($sql) < 1){ echo $lang->loc['no.tags']; }else{
-while($row = $db->fetch_assoc($sql)){
-?>
-
+<?php if ($tags === []) { echo $lang->loc['no.tags']; } else { foreach ($tags as $tag) { ?>
     <span class="tag-search-rowholder">
-        <a href="<?php echo PATH; ?>/tag/<?php echo $input->HoloText($row['tag']); ?>" class="tag"
-        ><?php echo $input->HoloText($row['tag']); ?></a><img border="0" class="tag-delete-link" onMouseOver="this.src='<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete_hi.gif'" onMouseOut="this.src='<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete.gif'" src="<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete.gif"
-        />
+        <a href="<?php echo PATH; ?>/tag/<?php echo rawurlencode($tag); ?>" class="tag"><?php echo $input->HoloText($tag); ?></a><img border="0" class="tag-delete-link" onMouseOver="this.src='<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete_hi.gif'" onMouseOut="this.src='<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete.gif'" src="<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_delete.gif" />
     </span>
-
 <?php } ?>
-    <img id="tag-img-added" border="0" class="tag-none-link" src="<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_added.gif" style="display:none"/>    
+    <img id="tag-img-added" border="0" class="tag-none-link" src="<?php echo PATH; ?>/web-gallery/images/buttons/tags/tag_button_added.gif" style="display:none"/>
 <?php } ?>
 </div>
-
 <script type="text/javascript">
     document.observe("dom:loaded", function() {
         TagHelper.setTexts({
