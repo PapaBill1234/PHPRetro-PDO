@@ -81,7 +81,7 @@ if(!empty($_GET['installed'])){
 	header('Location: ./migrate.php'); exit;
 }else{
 	$_SESSION['install_started'] = true;
-	header('Location: ./install.php'); exit;
+	header('Location: ./polaris.php'); exit;
 }
 
 require_once('./installer_header.php');

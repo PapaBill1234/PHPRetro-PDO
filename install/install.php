@@ -33,10 +33,14 @@ if(!empty($_SESSION['settings']['s_site_language'])){
 
 require_once('./install_functions.php');
 
-$page = (int) $_POST['page']; if(empty($page)){ $page = 1; }
+$page = (int) ($_POST['page'] ?? 1); if(empty($page)){ $page = 1; }
 if(!isset($_SESSION['settings'])){ $_SESSION['settings'] = array(); }
+$installing = false;
+$disable_continue = false;
+$disable_back = false;
 
-if(!empty($_POST['submit']) && $_POST['submit'] == $continue){
+$submit = $_POST['submit'] ?? '';
+if($submit !== '' && $submit == $continue){
 	foreach($_POST as $id => $value){
 		if($id == "page"){ continue; }
 		$_SESSION['settings'][$id] = $value;
@@ -70,8 +74,8 @@ if(!empty($_POST['submit']) && $_POST['submit'] == $continue){
 			if(!empty($db->error)){ $error = $lang->loc['database.connection.error'].": ".$db->error; break; }
 			break;
 		case 4:
-			$last = $_POST['s_site_path'][strlen($str)-1];
-			if($last == "/"){ $_POST['s_site_path'] = substr_replace($_POST['s_site_path'],"",-1); }
+			$sitePath = $_POST['s_site_path'] ?? '';
+			if(str_ends_with($sitePath, "/")){ $_POST['s_site_path'] = substr_replace($sitePath,"",-1); }
 			foreach($_POST as $value){
 				if(empty($value)){
 					$error = $lang->loc['fill.all.fields'];
@@ -107,7 +111,7 @@ if(!empty($_POST['submit']) && $_POST['submit'] == $continue){
 	if(!isset($error)){
 		$page++;
 	}
-}elseif($_POST['submit'] == $back){
+}elseif($submit == $back){
 	$page--;
 }
 	
@@ -125,8 +129,9 @@ if ($handle = opendir('../includes/languages')) {
     	$filename = '../includes/languages/'.$file;
         $fh = fopen($filename, 'r');
         $contents = fread($fh, filesize($filename));
-        $lines = split("\n", $contents);
+        $lines = explode("\n", $contents);
         $name = str_replace('Name: ','',$lines[2]);
+        $selected = '';
         if(isset($_SESSION['settings']['s_site_language']) && $_SESSION['settings']['s_site_language'] == str_replace('.php','',$file)){ $selected = ' selected="true"'; }
         $form .= '<option value="'.str_replace('.php','',$file).'"'.$selected.'>'.$name.'</option>';
     }
@@ -174,6 +179,8 @@ if(!isset($_SESSION['settings']['db_server'])){ $_SESSION['settings']['db_server
 if(!isset($_SESSION['settings']['db_host'])){ $_SESSION['settings']['db_host'] = "localhost"; }
 if(!isset($_SESSION['settings']['db_port'])){ $_SESSION['settings']['db_port'] = "3306"; }
 if(!isset($_SESSION['settings']['db_username'])){ $_SESSION['settings']['db_username'] = "root"; }
+if(!isset($_SESSION['settings']['db_password'])){ $_SESSION['settings']['db_password'] = ""; }
+if(!isset($_SESSION['settings']['db_name'])){ $_SESSION['settings']['db_name'] = ""; }
 $lang->addLocale("installer.database");
 $description = $lang->loc['page.desc'];
 $title = $lang->loc['page.title'];
