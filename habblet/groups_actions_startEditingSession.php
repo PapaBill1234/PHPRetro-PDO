@@ -15,20 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['no_ajax'] = true;
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-$id = $input->FilterText($_GET['id']);
-
-$sql = $data->select15($user->id,$id);
-if($db->num_rows($sql) < 1){ $error = true; }
-$row = $db->fetch_row($sql);
-if($row[2] < 2){ $error = true; }
-$sql = $db->query("SELECT * FROM ".PREFIX."homes_edit WHERE pageid = '".$id."' AND `type` = 'group' LIMIT 1");
-if($db->num_rows($sql) > 1){ header('Location: '.PATH.'/groups/'.$input->HoloText($id).'/id?concurrentEditing=true'); exit; }
-if($error != true){ $db->query("INSERT INTO ".PREFIX."homes_edit (pageid,editorid,`type`,time) VALUES ('".$id."','".$user->id."','group','".time()."')"); }
-
-header('Location: '.PATH.'/groups/'.$id.'/id');
-?>
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('startEditingSession');

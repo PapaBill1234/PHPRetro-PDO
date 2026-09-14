@@ -15,22 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-$id = $input->FilterText($_POST['groupId']);
-$targets = explode(",", $_POST['targetIds']);
-$data = new home_sql;
-
-$lang->addLocale("groups.members.batch");
-$lang->addLocale("ajax.buttons");
-
-$grouprow = $serverdb->fetch_row($data->select14($id));
-$memberrow = $serverdb->fetch_row($data->select15($user->id,$grouprow[0]));
-
-if($memberrow[2] > 1){
-	foreach($targets as $userid){
-		$data->update4($userid,$id,1,0);
-	}
-}
-?>
-OK
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('members-accept');

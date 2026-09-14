@@ -15,25 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-$lang->addLocale("groups.requests.delete");
-$lang->addLocale("ajax.buttons");
-
-$id = $input->FilterText($_POST['groupId']);
-$grouprow = $db->fetch_row($data->select14($id));
-
-if($user->id == $grouprow[6]){
-	$data->delete2($grouprow[0]);
-}
-?>
-<p>
-<?php echo $lang->loc['deleted']; ?>
-</p>
-<p>
-<a href="<?php echo PATH; ?>/me" class="new-button" id="group-action-ok"><b><?php echo $lang->loc['ok']; ?></b><i></i></a>
-</p>
-
-<div class="clear"></div>
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('delete_group');
