@@ -15,29 +15,15 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new profile_sql;
-
-$pagesize = $_POST['pageSize'];
-
-if(isset($_POST['friendList'])){
-	$friends = $_POST['friendList'];
-    foreach($friends as $id){
-		$id = $input->FilterText($id);
-        $data->delete1($id,$user->id);
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$friends = $_POST['friendList'] ?? [$_POST['friendId'] ?? null];
+if (!is_array($friends) || count($friends) > 100) { http_response_code(400); echo 'Invalid friend list.'; return; }
+foreach ($friends as $friend) {
+    $id = habbletInt(['id' => $friend], 'id');
+    if ($id > 0) {
+        $db->execute('DELETE FROM messenger_friendships WHERE (user_one_id = ? AND user_two_id = ?) OR (user_one_id = ? AND user_two_id = ?)', [(int) $user->id, $id, $id, (int) $user->id]);
     }
-}elseif(isset($_POST['friendId'])){
-	$id = $input->FilterText($_POST['friendId']);
-    $data->delete1($id,$user->id);
-} else{
-	echo "Unknown error!";
 }
-
-$page['bypass'] = true;
-$page = 1;
-$pagesize = 30;
-$search = "";
-require_once('./habblet/friendmanagement_viewcategory.php');
-?>
+$_GET['pageNumber'] = 1;
+require(__DIR__.'/friendmanagement_viewcategory.php');
