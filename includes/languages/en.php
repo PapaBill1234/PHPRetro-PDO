@@ -572,35 +572,35 @@ $loc['message'] = "Message";
 $loc['proceed'] = "Proceed";
 $loc['change'] = "Change";
 break;
-case "iot.errors";
+case "iot.errors":
 $loc['invalid.captcha'] = "Invalid check code";
 $loc['fill.all.fields'] = "Please fill in all fields";
 $loc['invalid.email']  = "Invalid email";
 $loc['no.account.found'] = "Oops! No matching ".SHORTNAME." accounts found, please check your typing and try again.";
 break;
-case "iot.step-2";
+case "iot.step-2":
 $loc['error.header'] = "Something strange happened...";
 $loc['error.info'] = "Something went wrong with the Help Tool. We're sorry about this. Possible reasons why this might have happened are: * Your session has timed-out. Close your browser and try again. * The hotel is closed for maintenance or the database is being worked on. Please try again later.";
 break;
-case "iot.step-1";
+case "iot.step-1":
 $loc['thank.you'] = "Thank You!";
 $loc['thank.you.message'] = "Thank you for using the ".SHORTNAME." Help Tool. We will try to respond as soon as we can. Thanks!";
 break;
-case "iot.step1";
+case "iot.step1":
 $loc['step.1.header'] = "Do you have a ".SHORTNAME." account?";
 $loc['check.code'] = "Please fill in the above check code";
 break;
-case "iot.step2";
+case "iot.step2":
 $loc['step.2.header'] = "Enter ".SHORTNAME." account information";
 $loc['step.2.info'] = "Please give us your ".SHORTNAME." name and registered email address.";
 $loc['name'] = SHORTNAME." name";
 break;
-case "iot.step3";
+case "iot.step3":
 $loc['step.3.header'] = "Contact Us";
 $loc['step.3.info'] = "Use the box below to contact us. You can use it to report another member for misbehavior or report a bug on the site, please use the help tool in the hotel if it's an emergency."; 
 $loc['send.a.question'] = "Send a Question";
 break;
-case "iot.step4";
+case "iot.step4":
 $loc['step.4.info'] = "If you have any questions about ".FULLNAME.", please leave your message along with your email so we can get back to you.";
 $loc['send.a.question'] = "Send a Question";
 break;
@@ -744,7 +744,7 @@ $loc['is.waiting'] = "is waiting for you in ".SHORTNAME."!";
 $loc['find.on.friendlist'] = "You can find him/her on your friendlist";
 $loc['first.time'] = "When you open ".FULLNAME." for the first time you might need to install Shockwave. But don't worry, it's as easy as 1-2-3!";
 break;
-case "home.me";
+case "home.me":
 $loc['pagename.me'] = "Home";
 $loc['change.motto'] = "Click to enter your motto/ status";
 $loc['cancel'] = "Cancel";
@@ -776,7 +776,7 @@ $loc['no.spam'] = "Don't spam me, bro!";
 $loc['enter.short'] = "Enter ".SHORTNAME;
 $loc['closed.short'] = SHORTNAME." is offline";
 break;
-case "widget.minimail";
+case "widget.minimail":
 $loc['my.messages'] = "My Messages";
 $loc['to'] = "To";
 $loc['from'] = "From";
@@ -1149,14 +1149,14 @@ $loc['you.need.coins'] = "To join ".SHORTNAME." Club you first need to get some 
 $loc['club.starts.at'] = SHORTNAME." Club membership starts from";
 $loc['purchase.coins'] = "Purchase ".SHORTNAME." Coins";
 break;
-case "club.status";
+case "club.status":
 $loc['not.a.member'] = "You are not a member of ".SHORTNAME." Club";
 $loc['you.have'] = "You have";
 $loc['club.days.left'] = SHORTNAME." Club day(s) left.";
 $loc['have.been.member'] = "You have been a member for";
 $loc['months'] = "month(s)";
 break;
-case "club.gifts";
+case "club.gifts":
 $loc['previous'] = "Previous";
 $loc['next'] = "Next";
 break;

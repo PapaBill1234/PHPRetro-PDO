@@ -48,7 +48,7 @@ $count = $db->num_rows($sql);
 	$randomq[] = "Do you have a favorite staff member?";
 
 // Select a random question from the array above
-srand ((double) microtime() * 1000000);
+srand ((float) microtime() * 1000000);
 $chosen = rand(0,count($randomq)-1);
 
 // Appoint the variable
