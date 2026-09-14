@@ -99,10 +99,18 @@ try {
     foreach (['startEditingSession','saveEditingSession','cancelEditingSession','check_group_url','show_badge_editor','update_group_badge'] as $action) {
         check(callAction($action)[1] === 501, $action.' unavailable explicitly');
     }
+    foreach (['startEditingSession','saveEditingSession','cancelEditingSession'] as $action) {
+        check(str_contains(file_get_contents($root.'/habblet/groups_actions_'.$action.'.php'), "\$page['no_ajax'] = true"), $action.' keeps legacy full-page GET/POST');
+    }
     check(endpoint('grouppurchase_purchase_ajax.php', ['name' => 'Purchase', 'description' => 'Test'])[1] === 501, 'Purchase unavailable');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM guilds') === 3, 'Unavailable purchase creates no group');
     check(callAction('group_settings')[1] === 200, 'Owner settings form renders');
     check(str_contains(callAction('group_settings')[0], 'id="group-settings-form"'), 'Group settings DOM retained');
+    $settingsHtml = callAction('group_settings')[0];
+    check(str_contains($settingsHtml, '50,000 member limit'), 'Native 50,000 group limit shown');
+    check(!str_contains($settingsHtml, '5000 member limit'), 'Legacy 5,000 label is not shown');
+    check(!str_contains($settingsHtml, 'No membership limit'), 'Legacy unlimited membership claim is not shown');
+    check(str_contains($settingsHtml, 'group-type-large'), 'Large group CSS class retained');
     check(str_contains(callAction('confirm_delete_group')[0], 'Guild&lt;script&gt;'), 'Delete confirmation escaped');
     check(callAction('confirm_select_favorite', ['targetAccountId' => 1])[1] === 200, 'Favorite confirmation');
     check(callAction('select_favorite', ['targetAccountId' => 1])[0] === 'OK', 'Favorite success contract');
@@ -197,6 +205,11 @@ try {
     check(forumAction('previewpost', ['topicId' => $topic, 'message' => 'Preview reply'])[1] === 200, 'Reply preview');
     check(forumAction('opentopicsettings', ['topicId' => $topic])[1] === 200, 'Topic settings form');
     asUser(3);
+    $db->execute("UPDATE users SET online = '1' WHERE id = 3");
+    $db->execute("UPDATE users_settings SET hide_online = '1' WHERE user_id = 3");
+    $hiddenAuthor = forumAction('savepost', ['topicId' => $topic, 'message' => 'Hidden online status', 'page' => 1]);
+    check($hiddenAuthor[1] === 200 && str_contains($hiddenAuthor[0], 'habbo_offline.gif') && !str_contains($hiddenAuthor[0], 'habbo_online_anim.gif'), 'Forum author honors hide_online');
+    $db->execute("UPDATE users_settings SET hide_online = '0' WHERE user_id = 3");
     $reply = forumAction('savepost', ['topicId' => $topic, 'message' => 'Member reply', 'page' => -1]);
     check($reply[1] === 200 && str_contains($reply[0], 'group-postlist-list'), 'Reply renders original list DOM');
     check(str_contains($reply[0], '<b>Hello</b>') && !str_contains($reply[0], '<script>bad</script>'), 'BBCode preserved with raw HTML escaped');

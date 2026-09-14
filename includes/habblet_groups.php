@@ -113,7 +113,7 @@ class HabbletGroups
 
     public function author(int $id): array
     {
-        return $this->db->fetchRow('SELECT u.id, u.username, u.look, u.motto, u.online, u.mail_verified, COALESCE(s.forums_post_count, 0) AS posts, (SELECT b.badge_code FROM users_badges b WHERE b.user_id = u.id AND b.slot_id > 0 ORDER BY b.slot_id, b.id LIMIT 1) AS badge_code FROM users u LEFT JOIN users_settings s ON s.user_id = u.id WHERE u.id = ?', [$id]) ?: ['id' => $id, 'username' => 'Unknown user', 'look' => '', 'motto' => '', 'online' => '0', 'mail_verified' => '0', 'posts' => 0, 'badge_code' => null];
+        return $this->db->fetchRow('SELECT u.id, u.username, u.look, u.motto, CASE WHEN s.hide_online = \'1\' THEN \'0\' ELSE u.online END AS online, u.mail_verified, COALESCE(s.forums_post_count, 0) AS posts, (SELECT b.badge_code FROM users_badges b WHERE b.user_id = u.id AND b.slot_id > 0 ORDER BY b.slot_id, b.id LIMIT 1) AS badge_code FROM users u LEFT JOIN users_settings s ON s.user_id = u.id WHERE u.id = ?', [$id]) ?: ['id' => $id, 'username' => 'Unknown user', 'look' => '', 'motto' => '', 'online' => '0', 'mail_verified' => '0', 'posts' => 0, 'badge_code' => null];
     }
 
     public function post(array $group, ?array $thread): int

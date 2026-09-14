@@ -15,5 +15,6 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
+$page['no_ajax'] = true;
 require_once __DIR__.'/../includes/habblet_groups_actions.php';
 habbletGroupDispatch('startEditingSession');

@@ -9,14 +9,14 @@ if(($row['online'] === '1')){ $online = "online"; }else{ $online = "offline"; }
 ?>
 
     <li class="<?php echo $even; ?> <?php echo $online; ?> <?php echo $side; ?>">
-    	<div class="item" style="padding-left: 5px; padding-bottom: 4px;">
-    		<div style="float: right; width: 16px; height: 16px; margin-top: 1px">
+	<div class="item" style="padding-left: 5px; padding-bottom: 4px;">
+		<div style="float: right; width: 16px; height: 16px; margin-top: 1px">
 				<?php if((int) $row['level_id'] === 0){ ?><img src="<?php echo PATH; ?>/web-gallery/images/groups/owner_icon.gif" width="15" height="15" alt="<?php echo $lang->loc['owner']; ?>" title="<?php echo $lang->loc['owner']; ?>" /><?php } ?>
 				<?php if((int) $row['level_id'] === 1){ $type = "a"; ?><img src="<?php echo PATH; ?>/web-gallery/images/groups/administrator_icon.gif" width="15" height="15" alt="<?php echo $lang->loc['administrator']; ?>" title="<?php echo $lang->loc['administrator']; ?>" /><?php } ?>
 				<?php if((int) $row['level_id'] >= 2){ $type = "m"; } ?>
 			</div>
 				<input type="checkbox" <?php if($row['user_id'] == $group['user_id']){ ?>disabled="disabled" <?php }else{ ?>id="group-memberlist-<?php echo $type; ?>-<?php echo $row['user_id']; ?>" <?php } ?>style="margin: 0; padding: 0; vertical-align: middle"/>
-    	    <a class="home-page-link" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row['username']); ?>"><span><?php echo $input->HoloText($row['username']); ?></span></a>
+	    <a class="home-page-link" href="<?php echo PATH; ?>/home/<?php echo $input->HoloText($row['username']); ?>"><span><?php echo $input->HoloText($row['username']); ?></span></a>
         </div>
     </li>
 

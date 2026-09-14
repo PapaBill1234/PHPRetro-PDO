@@ -46,7 +46,7 @@
         <input type="radio" name="group_type" id="group_type" value="0"<?php if($group['state'] == 0){ ?> checked="checked"<?php } if($group['state'] == 3){ ?> disabled="disabled"<?php } ?> />
         <div class="description">
           <div class="group-type-normal"><?php echo $lang->loc['regular']; ?></div>
-          <p><?php echo $lang->loc['regular.desc']; ?></p>
+          <p>Anyone can join. 50,000 member limit.</p>
         </div>
         <input type="radio" name="group_type" id="group_type" value="1"<?php if($group['state'] == 1){ ?> checked="checked"<?php } if($group['state'] == 3){ ?> disabled="disabled"<?php } ?> />
         <div class="description">
@@ -60,8 +60,8 @@
         </div>
         <input type="radio" name="group_type" id="group_type" value="3"<?php if($group['state'] == 3){ ?> checked="checked"<?php } if($group['state'] == 3){ ?> disabled="disabled"<?php } ?> />
         <div class="description">
-          <div class="group-type-large"><?php echo $lang->loc['unlimited']; ?></div>
-          <p><?php echo $lang->loc['unlimited.desc']; ?></p>
+          <div class="group-type-large">Large</div>
+          <p>Anyone can join. 50,000 member limit.</p>
           <p class="description-note"><?php echo $lang->loc['unlimited.note']; ?></p>
         </div>
         <input type="hidden" id="initial_group_type" value="<?php echo (int) $group['state']; ?>">

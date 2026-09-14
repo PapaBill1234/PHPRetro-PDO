@@ -30,7 +30,7 @@
         <div>
                 <?php if($settings->find("site_capcha") == "1"){ ?><div id="discussion-captcha-preview"></div><?php } ?>
                 <div class="button-area">
-  		            <a id="post-form-cancel-preview" class="new-button red-button cancel-icon" href="#"><b><span></span><?php echo $lang->loc['cancel']; ?></b><i></i></a>
+		            <a id="post-form-cancel-preview" class="new-button red-button cancel-icon" href="#"><b><span></span><?php echo $lang->loc['cancel']; ?></b><i></i></a>
 		            <a id="post-form-save-preview" class="new-button green-button save-icon" href="#"><b><span></span><?php echo $lang->loc['save']; ?></b><i></i></a>
 		        </div>
         </div>

@@ -1,7 +1,7 @@
 <?php
 // Bootstrap shared by the Phase 6 handlers. Also works when included by a page.
 if (!defined('IN_HOLOCMS')) {
-    $page = ['dir' => '\\habblet', 'allow_guests' => true];
+    $page = array_merge(['dir' => '\\habblet', 'allow_guests' => true], $page ?? []);
     chdir(__DIR__.'/..');
     require_once(__DIR__.'/core.php');
 }
