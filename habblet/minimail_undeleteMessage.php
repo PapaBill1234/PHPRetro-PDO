@@ -15,7 +15,14 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No minimail equivalent: messenger_messages/members/offline do not provide subjects, mailbox trash or the legacy conversation/read model. No message is read, sent, reported or deleted here.
-habbletUnavailable('Minimail is unavailable. Please use the hotel messenger.');
+require_once __DIR__.'/../includes/PhpretroMinimail.php';
+$mail = phpretroMinimail();
+$lang->addLocale('minimail.undeletemessage');
+if (phpretroMinimailRun(static function () use ($mail) { $mail->undelete(habbletInt($_POST, 'messageId')); return true; }) === null) { return; }
+phpretroMinimailXjson(['message' => $lang->loc['undelete.message'], 'totalMessages' => $mail->folderCount('trash')]);
+$page['bypass'] = true;
+$label = 'trash';
+$start = habbletInt($_POST, 'start');
+require __DIR__.'/minimail_loadMessages.php';

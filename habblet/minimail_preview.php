@@ -15,9 +15,6 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-
-echo $input->bbcode_format($input->HoloText($_POST['body']));
-?>
+require_once __DIR__.'/../includes/habblet.php';
+habbletRequireUser();
+echo $input->bbcode_format($input->HoloText(habbletText($_POST, 'body')));

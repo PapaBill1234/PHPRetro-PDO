@@ -203,3 +203,47 @@ CREATE TABLE IF NOT EXISTS `phpretro_myhabbo_guestbook` (
 `phpretro_myhabbo_layouts` stores which widgets a user has enabled, in which column and order. `phpretro_myhabbo_guestbook` covers the classic "leave a comment on someone's page" widget specifically, since it needs its own table shape (not just a layout position).
 
 **This is a simplified reconstruction, not a guaranteed match to the original feature set.**
+
+## 8. Live-sync outbox — website record vs PolarIS notify
+
+Website-owned writes never touch PolarIS live tables. `PhpretroLiveSync::record()` inserts a pending outbox row; `notifyLiveGame()` is a no-op hook for a later Java consumer.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_emulator_outbox` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `event_type` VARCHAR(64) NOT NULL,
+  `payload_json` JSON NOT NULL,
+  `status` ENUM('pending','processing','done','failed') NOT NULL DEFAULT 'pending',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `processed_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_status_created` (`status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 9. `phpretro_minimail` — website mailbox (subjects, trash, conversations)
+
+One row per recipient, matching original PHPRetro minimail plus `synced_at`. PolarIS `messenger_*` tables are chat, not mail, and are never written here. `synced_at` stays NULL until a live-game consumer exists.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_minimail` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `sender_id` INT NOT NULL,
+  `recipient_id` INT NOT NULL,
+  `subject` VARCHAR(100) NOT NULL,
+  `body` TEXT NOT NULL,
+  `conversation_id` INT NOT NULL DEFAULT 0,
+  `sent_at` INT NOT NULL,
+  `read_at` INT NULL,
+  `deleted` TINYINT(1) NOT NULL DEFAULT 0,
+  `deleted_at` INT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_inbox` (`recipient_id`, `deleted`, `id`),
+  INDEX `idx_sent` (`sender_id`, `id`),
+  INDEX `idx_conversation` (`conversation_id`),
+  CONSTRAINT `fk_phpretro_minimail_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_phpretro_minimail_recipient` FOREIGN KEY (`recipient_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
