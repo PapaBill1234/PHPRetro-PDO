@@ -15,26 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-$lang->addLocale("groups.requests.favorite");
-$lang->addLocale("ajax.buttons");
-
-$id = $input->FilterText($_POST['groupId']);
-$userid = $input->FilterText($_POST['targetAccountId']);
-
-$grouprow = $db->fetch_row($data->select14($id));
-?>
-<p>
-<?php echo $lang->loc['are.you.sure.favorite']; ?> <?php echo $input->HoloText($grouprow[2]); ?> <?php echo $lang->loc['as.your.favorite.group']; ?>
-</p>
-
-
-<p>
-<a href="#" class="new-button" id="group-action-cancel"><b><?php echo $lang->loc['cancel']; ?></b><i></i></a>
-<a href="#" class="new-button" id="group-action-ok"><b><?php echo $lang->loc['ok']; ?></b><i></i></a>
-</p>
-
-<div class="clear"></div>
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('confirm_select_favorite');

@@ -15,18 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-
-$id = $input->FilterText($_POST['groupId']);
-$userid = $input->FilterText($_POST['targetAccountId']);
-
-$memberrow = $db->fetch_row($data->select15($userid,$id));
-
-if($userid == $user->id){
-	$data->update2($userid,$id,"1");
-}
-?>
-OK
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('select_favorite');

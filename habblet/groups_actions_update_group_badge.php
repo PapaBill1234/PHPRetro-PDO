@@ -15,17 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['no_ajax'] = true;
-require_once('../includes/core.php');
-$id = $input->FilterText($_POST['groupId']);
-$badge = $input->FilterText($_POST['code']);
-$data = new home_sql;
-
-$memberrow = $serverdb->fetch_row($data->select15($user->id,$id));
-if($memberrow[2] > 1){
-	$data->update5($id,$badge);
-}
-
-header('Location: '.groupURL($input->HoloText($id)));
-?>
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('update_group_badge');
