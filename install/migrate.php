@@ -233,7 +233,7 @@ require_once('./installer_header.php');
 
                     <fieldset id="installer-fieldset">
 						<?php if(isset($form) && !empty($form)){ echo $form; } ?>
-						<?php if($installing == true){ migrateDB(); } ?>
+						<?php if($installing == true){ echo '<p>The legacy Holograph migration is not supported with Polaris. Initialize Polaris with CleanDB.sql and run the project migrations instead.</p>'; } ?>
                     </fieldset>
 
                 </div>

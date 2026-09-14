@@ -442,14 +442,10 @@ function strtotimestamp($str){
 	$timestamp = mktime((int) $time[0],(int) $time[1],(int) $time[2],(int) $date[1],(int) $date[0],(int) $date[2]);
 	return $timestamp;
 }
-function tinker($array){
-	foreach($array as &$item){
-		$item = stripslashes($item);
-		$item = mysql_real_escape_string($item);
-	}
-	return $array;
-}
 function migrateDB(){
+	throw new LogicException('The legacy Holograph-to-PHPRetro migration is not supported with Polaris. Initialize Polaris with references/schema/CleanDB.sql and run this project\'s migrations instead.');
+
+
 	global $lang;
 	define('SHORTNAME',$_SESSION['settings']['s_site_shortname']);
 	define('PATH',$_SESSION['settings']['s_site_path']);
