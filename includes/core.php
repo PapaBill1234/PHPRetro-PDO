@@ -47,9 +47,19 @@ require('./includes/version.php');
 
 if($page['housekeeping'] != true){ if(is_object($_SESSION['user'])){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'])){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
 
+if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_SESSION['hk_user'])) {
+    try {
+        $staffSession = (new Database())->fetchRow('SELECT id FROM phpretro_staff_sessions WHERE user_id = ? AND session_hash = ? AND revoked_at IS NULL', [(int) $_SESSION['hk_user']->id, hash('sha256', session_id())]);
+        if ($staffSession === false) { unset($_SESSION['hk_user']); session_destroy(); header('Location: '.PATH.'/housekeeping/'); exit; }
+        (new Database())->execute('UPDATE phpretro_staff_sessions SET last_activity = ? WHERE id = ?', [time(), (int) $staffSession['id']]);
+    } catch (Throwable $exception) { /* TODO: fail closed after migrations are mandatory; this compatibility path currently permits the request. */ }
+}
+
 if($user->error == 1 && $page['bypass_user_check'] != true && $_COOKIE['rememberme'] == "true" && $page['housekeeping'] != true){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; header("Location: ".PATH."/security_check_token"); }
 
-if($settings->find("site_closed") == "1" && $page['id'] != "maintenance" && $page['housekeeping'] != true && $user->user("rank") < 5){
+$phase5bMaintenance = false;
+try { $phase5bMaintenance = (new Database())->fetchColumn('SELECT setting_value FROM phpretro_site_settings WHERE setting_key = ?', ['maintenance_mode']) === '1'; } catch (Throwable $exception) { $phase5bMaintenance = false; }
+if(($settings->find("site_closed") == "1" || $phase5bMaintenance) && $page['id'] != "maintenance" && $page['housekeeping'] != true && $user->user("rank") < 5){
 	header("Location: ".PATH."/maintenance"); exit;
 }
 ?>

@@ -4,16 +4,20 @@ $page['housekeeping'] = true;
 $page['rank'] = 5;
 require_once('../includes/core.php');
 require_once('./includes/hksession.php');
+require_once('../includes/AdminAudit.php');
 $database = new Database(); $e = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); $notice = ''; $action = $_GET['do'] ?? 'list';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $id = (int) ($_POST['id'] ?? 0);
-  if ($action === 'delete') { $database->execute('DELETE FROM vouchers WHERE id = ?', [$id]); $notice = 'Voucher removed.'; }
+  $affected = 0;
+  if ($action === 'delete') { $affected = $database->execute('DELETE FROM vouchers WHERE id = ?', [$id]); $notice = $affected > 0 ? 'Voucher removed.' : 'Voucher not found.'; }
   else {
     $v = [trim((string) ($_POST['code'] ?? '')), (int) ($_POST['credits'] ?? 0), (int) ($_POST['points'] ?? 0), (int) ($_POST['points_type'] ?? 0), (int) ($_POST['catalog_item_id'] ?? 0), max(1, (int) ($_POST['amount'] ?? 1)), (int) ($_POST['redemption_limit'] ?? -1)];
     if ($v[0] === '' || strlen($v[0]) > 10) { $notice = 'Code is required and must be no longer than 10 characters.'; }
-    elseif ($id > 0) { $database->execute('UPDATE vouchers SET code=?, credits=?, points=?, points_type=?, catalog_item_id=?, amount=?, `limit`=? WHERE id=?', [$v[0],$v[1],$v[2],$v[3],$v[4],$v[5],$v[6],$id]); $notice = 'Voucher updated.'; }
-    else { $database->execute('INSERT INTO vouchers (code, credits, points, points_type, catalog_item_id, amount, `limit`) VALUES (?, ?, ?, ?, ?, ?, ?)', $v); $notice = 'Voucher created.'; }
-  } $action = 'list';
+    elseif ($id > 0) { $affected = $database->execute('UPDATE vouchers SET code=?, credits=?, points=?, points_type=?, catalog_item_id=?, amount=?, `limit`=? WHERE id=?', [$v[0],$v[1],$v[2],$v[3],$v[4],$v[5],$v[6],$id]); $notice = $affected > 0 ? 'Voucher updated.' : 'Voucher unchanged or not found.'; }
+    else { $affected = $database->execute('INSERT INTO vouchers (code, credits, points, points_type, catalog_item_id, amount, `limit`) VALUES (?, ?, ?, ?, ?, ?, ?)', $v); $id = (int) $database->insertId(); $notice = 'Voucher created.'; }
+  }
+  if ($affected > 0) { AdminAudit::log($database, (int) $user->id, 'voucher_'.$action, 'voucher', $id); }
+  $action = 'list';
 }
 $voucher = ['id'=>0,'code'=>'','credits'=>0,'points'=>0,'points_type'=>0,'catalog_item_id'=>0,'amount'=>1,'redemption_limit'=>-1];
 if ($action === 'edit') { $loaded = $database->fetchRow('SELECT id, code, credits, points, points_type, catalog_item_id, amount, `limit` AS redemption_limit FROM vouchers WHERE id=?', [(int) ($_GET['id'] ?? 0)]); if ($loaded !== false) { $voucher = $loaded; } }
@@ -23,3 +27,4 @@ if ($action === 'create' || $action === 'edit') { ?><form method="post"><input t
 }
 $content = ob_get_clean(); $page['name'] = 'Vouchers'; $page['category'] = 'tools'; require_once('./templates/housekeeping_header.php');
 ?><div class="page_title"><span class="page_name">Vouchers</span></div><div class="page_main"><div class="center"><?php if ($notice !== '') { ?><div class="clean-ok"><?php echo $e($notice); ?></div><?php } echo $content; ?></div></div><?php require_once('./templates/housekeeping_footer.php'); ?>
+

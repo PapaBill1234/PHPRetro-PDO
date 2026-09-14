@@ -19,6 +19,8 @@ $page['dir'] = '\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
 require_once('../includes/core.php');
+require_once('../includes/Totp.php');
+require_once('../includes/AdminAudit.php');
 
 if($user->id > 0){ header('Location: '.PATH.'/housekeeping/dashboard'); exit; }
 
@@ -30,8 +32,8 @@ if(!isset($_SESSION['login'])){
 $lang->addLocale("housekeeping.login");
 
 if(!empty($_POST['username'])){
-	$username = $input->FilterText($_POST['username']);
-	$password = $input->HoloHash($_POST['password'],$username);
+	$username = trim((string) ($_POST['username'] ?? ''));
+	$password = (string) ($_POST['password'] ?? '');
 	
 	$user = new HoloUser($username,$password,true,false);
 	
@@ -51,10 +53,22 @@ if(!empty($_POST['username'])){
 		}
 	}
 	if(empty($login_error)){
-		unset($_SESSION['login']);
-		$_SESSION['hk_user'] = $user;
-		header('Location: '.PATH.'/housekeeping/dashboard'); exit;
-	}else{
+        $phase5bDb = new Database();
+        $twoFactorRank = (int) ($phase5bDb->fetchColumn('SELECT setting_value FROM phpretro_site_settings WHERE setting_key = ?', ['staff_2fa_rank']) ?: 5);
+        $totp = $phase5bDb->fetchRow('SELECT secret_base32, enabled FROM phpretro_staff_totp WHERE user_id = ?', [(int) $user->id]);
+        if ((int) $user->user('rank') >= $twoFactorRank && (!$totp || (int) $totp['enabled'] !== 1)) {
+            $_SESSION['staff_2fa_pending_user'] = $user; $_SESSION['staff_2fa_pending_at'] = time(); unset($_SESSION['login']);
+            header('Location: '.PATH.'/housekeeping/twofactor'); exit;
+        } elseif ((int) $user->user('rank') >= $twoFactorRank && !Totp::verify($totp['secret_base32'], trim((string) ($_POST['totp_code'] ?? '')))) {
+            $login_error = 'Invalid authenticator code.';
+        } else {
+            unset($_SESSION['login']); $_SESSION['hk_user'] = $user;
+            $hash = hash('sha256', session_id()); $phase5bDb->execute('INSERT INTO phpretro_staff_sessions (user_id, session_hash, ip, created_at, last_activity) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE last_activity = VALUES(last_activity), ip = VALUES(ip), revoked_at = NULL', [(int) $user->id, $hash, $_SERVER['REMOTE_ADDR'] ?? '', time(), time()]);
+            AdminAudit::log($phase5bDb, (int) $user->id, 'staff_login', 'staff_session', null);
+            header('Location: '.PATH.'/housekeeping/dashboard'); exit;
+        }
+	}
+    if(!empty($login_error)){
 		$_SESSION['login']['tries']++;
 	}
 }
@@ -83,7 +97,9 @@ require_once('./templates/housekeeping_header.php');
 <strong><?php echo $lang->loc['username']; ?>:</strong><br />
 <input type="text" size="20" name="username" id="namefield" value="<?php echo $input->HoloText($username); ?>" /><br />
 <strong><?php echo $lang->loc['password']; ?>:</strong><br />
-<input type="password" size="20" name="password" value="" />
+<input type="password" size="20" name="password" value="" /><br />
+<strong>Authenticator code (staff):</strong><br />
+<input type="text" size="20" name="totp_code" inputmode="numeric" maxlength="6" value="" />
 <?php if($_SESSION['login']['tries'] > 4 && $settings->find("site_capcha") == "1"){ ?>
 <strong><?php echo $lang->loc['captcha']; ?>:</strong><br />
 <img id="captcha" src="<?php echo PATH; ?>/captcha.jpg?t=<?php echo time(); ?>" alt="" width="200" height="50" /><br /><br />
