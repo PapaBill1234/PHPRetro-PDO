@@ -15,27 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['allow_guests'] = true;
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-
-$id = $input->FilterText($_POST['groupId']);
-$tag = $input->FilterText($_POST['tagName']);
-$tag_correct = $input->stringToURL($input->HoloText($tag));
-
-$grouprow = $db->fetch_row($data->select14($id));
-$memberrow = $db->fetch_row($data->select15($user->id,$grouprow[0]));
-
-if(strlen($tag) > 20 || strlen($tag) < 1){ $return = "invalidtag";
-}elseif(strnatcasecmp($tag,$tag_correct) != false){ $return = "invalidtag";
-}elseif($memberrow[2] < 2){ $return = "invalidtag";
-}elseif($db->result($db->query("SELECT COUNT(*) FROM ".PREFIX."tags WHERE ownerid = '".$id."' AND tag = '".$tag."' AND type = 'group'")) > 0){ $return = "invalidtag";
-}elseif($db->result($db->query("SELECT COUNT(*) FROM ".PREFIX."tags WHERE ownerid = '".$id."' AND type = 'group'")) > 19){ $return = "invalidtag";
-}else{
-$db->query("INSERT INTO ".PREFIX."tags (ownerid,tag,type) VALUES ('".$id."','".strtolower($tag)."','group')");
-$return = "valid";
-}
-echo $return;
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): guilds has no tags column. User tags live in users_settings.tags only.
+habbletUnavailable('Group tags are unavailable.');

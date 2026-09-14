@@ -15,18 +15,9 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['allow_guests'] = true;
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-
-$id = $input->FilterText($_POST['accountId']);
-$tag = $input->FilterText($_POST['tagName']);
-
-if($id != $user->id){ exit; }
-
-$db->query("DELETE FROM ".PREFIX."tags WHERE ownerid = '".$id."' AND tag = '".$tag."' AND type = 'user' LIMIT 1");
-
-$page['bypass'] = true;
-require_once('./habblet/myhabbo_tag_list.php');
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+$id = habbletInt($_POST, 'accountId');
+if ($id !== (int) $user->id) { return; }
+habbletRemoveUserTag($db, $id, habbletText($_POST, 'tagName'));
+require __DIR__.'/myhabbo_tag_list.php';

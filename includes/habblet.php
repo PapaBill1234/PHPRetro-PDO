@@ -71,3 +71,73 @@ function habbletTagCount(Database $database, string $tag): int {
     if ($tag === '' || str_contains($tag, ';')) { return 0; }
     return (int) $database->fetchColumn("SELECT COUNT(*) FROM users_settings s JOIN users u ON u.id = s.user_id WHERE LOCATE(CONCAT(';', ?, ';'), CONCAT(';', s.tags, ';')) > 0", [$tag]);
 }
+
+function habbletValidUserTag(string $tag): bool {
+    global $input;
+    if ($tag === '' || strlen($tag) > 20 || str_contains($tag, ';')) { return false; }
+    return strnatcasecmp($tag, $input->stringToURL($input->HoloText($tag))) === 0;
+}
+
+function habbletAddUserTag(Database $database, int $userId, string $tag): string {
+    $tag = trim($tag);
+    if (!habbletValidUserTag($tag)) { return 'invalidtag'; }
+    $tag = strtolower($tag);
+    $database->execute('START TRANSACTION');
+    try {
+        $row = $database->fetchRow('SELECT tags FROM users_settings WHERE user_id = ? FOR UPDATE', [$userId]);
+        if (!$row) {
+            $database->execute('ROLLBACK');
+            return 'invalidtag';
+        }
+        $tags = array_values(array_filter(explode(';', (string) $row['tags']), static fn(string $existing): bool => $existing !== ''));
+        foreach ($tags as $existing) {
+            if (strcasecmp($existing, $tag) === 0) {
+                $database->execute('COMMIT');
+                return 'invalidtag';
+            }
+        }
+        if (count($tags) > 19) {
+            $database->execute('COMMIT');
+            return 'invalidtag';
+        }
+        $tags[] = $tag;
+        $packed = implode(';', $tags);
+        if (strlen($packed) > 255) {
+            $database->execute('ROLLBACK');
+            return 'invalidtag';
+        }
+        $database->execute('UPDATE users_settings SET tags = ? WHERE user_id = ? LIMIT 1', [$packed, $userId]);
+        $database->execute('COMMIT');
+        return 'valid';
+    } catch (Throwable $exception) {
+        $database->execute('ROLLBACK');
+        throw $exception;
+    }
+}
+
+function habbletRemoveUserTag(Database $database, int $userId, string $tag): void {
+    $tag = trim($tag);
+    if ($tag === '' || str_contains($tag, ';')) { return; }
+    $database->execute('START TRANSACTION');
+    try {
+        $row = $database->fetchRow('SELECT tags FROM users_settings WHERE user_id = ? FOR UPDATE', [$userId]);
+        if (!$row) {
+            $database->execute('ROLLBACK');
+            return;
+        }
+        $tags = [];
+        $removed = false;
+        foreach (explode(';', (string) $row['tags']) as $existing) {
+            if ($existing === '') { continue; }
+            if (strcasecmp($existing, $tag) === 0) { $removed = true; continue; }
+            $tags[] = $existing;
+        }
+        if ($removed) {
+            $database->execute('UPDATE users_settings SET tags = ? WHERE user_id = ? LIMIT 1', [implode(';', $tags), $userId]);
+        }
+        $database->execute('COMMIT');
+    } catch (Throwable $exception) {
+        $database->execute('ROLLBACK');
+        throw $exception;
+    }
+}

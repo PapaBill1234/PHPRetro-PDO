@@ -15,33 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$lang->addLocale("homes.widget.rating");
-
-$ownerid = $input->FilterText($_GET['ownerId']);
-$widgetid = $input->FilterText($_GET['ratingId']);
-
-if($ownerid == $user->id){
-	$db->query("DELETE FROM ".PREFIX."ratings WHERE userid = '".$ownerid."'");
-}
-?>
-<script type="text/javascript">	
-	var ratingWidget;
-	 
-		ratingWidget = new RatingWidget(<?php echo $input->HoloText($ownerid); ?>, <?php echo $input->HoloText($widgetid); ?>);
-	 
-</script><div class="rating-average">
-		<b><?php echo $lang->loc['average.rating']; ?>: 0</b><br/>
-	<div id="rating-stars" class="rating-stars" >
-				<ul id="rating-unit_ul1" class="rating-unit-rating">
-				<li class="rating-current-rating" style="width:0px;" />
-	
-			</ul>	
-	</div>
-	0 <?php echo $lang->loc['votes.total']; ?>
-	
-	<br/>
-	(0 <?php echo $lang->loc['high.votes.total']; ?>)
-</div>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): Home 1-5 ratings have no equivalent. rooms.score and room_votes are room votes, not profile ratings.
+habbletUnavailable('Home ratings are unavailable.');
