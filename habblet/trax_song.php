@@ -15,15 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-$data = new home_sql;
-
-$id = $input->FilterText($_GET['id']);
-
-$row = $db->fetch_row($data->select13($id));
-$song = substr($row[0], 0, -1);
-$song = str_replace(array(":4:",":3:",":2:","1:"),array("&track4=","&track3=","&track2=","&track1="),$song);
-$userrow = $db->fetch_row($data->select2($row[2]));
-echo "status=0&name=".$input->HoloText($row[1])."&author=".$input->HoloText($userrow[1]).$song;
-?>
+$page['no_ajax'] = true;
+require_once(__DIR__.'/../includes/habblet.php');
+// TODO(phase6): Homes Trax widgets and user-composed songs have no mapping. Polaris soundtracks/jukebox discs are a different inventory.
+habbletUnavailable('Homes Trax playback is unavailable.');
