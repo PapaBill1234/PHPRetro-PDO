@@ -16,7 +16,25 @@
 \+================================================================*/
 
 $page['no_ajax'] = true;
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No native homes item/widget placement. phpretro_myhabbo_layouts is a different layout model and is not substituted.
-habbletUnavailable('Homes layout editing is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$type = habbletText($_GET, 'type') ?: habbletText($_POST, 'type');
+$id = habbletInt($_GET, 'id', (int) $user->id);
+$username = $homes->profile((int) $user->id)['username'];
+if ($type === 'startSession') {
+    if ($id !== (int) $user->id) { http_response_code(403); exit('Not permitted.'); }
+    $_SESSION['page_edit'] = 'home';
+    $homes->sync->recordAndNotify('homes.session_start', ['user_id' => (int) $user->id]);
+} elseif ($type === 'cancel') {
+    unset($_SESSION['page_edit']);
+    $homes->sync->recordAndNotify('homes.session_cancel', ['user_id' => (int) $user->id]);
+} elseif ($type === 'save') {
+    phpretroHomesRun(static fn() => $homes->saveCoordinates(habbletText($_POST, 'widgets')));
+    unset($_SESSION['page_edit']);
+    echo "<script language=\"JavaScript\" type=\"text/javascript\">waitAndGo('".PATH.'/home/'.rawurlencode($username)."');</script>";
+    return;
+}
+header('Location: '.PATH.'/home/'.rawurlencode($username));
+return;

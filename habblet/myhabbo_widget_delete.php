@@ -15,7 +15,8 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No native homes item/widget placement. phpretro_myhabbo_layouts is a different layout model and is not substituted.
-habbletUnavailable('Homes layout editing is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+phpretroHomesRun(static fn() => $homes->delete(habbletInt($_POST, 'widgetId')));

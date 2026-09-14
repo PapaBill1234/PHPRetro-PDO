@@ -141,11 +141,7 @@ try {
 
     $blocked = [
         'groups_widgets.php',
-        'myhabbo_guestbook_add.php',
         'myhabbo_guestbook_configure.php',
-        'myhabbo_guestbook_list.php',
-        'myhabbo_guestbook_remove.php',
-        'myhabbo_homes.php',
         'myhabbo_noteeditor_place.php',
         'myhabbo_rating_rate.php',
         'myhabbo_rating_reset_ratings.php',
@@ -165,10 +161,6 @@ try {
         'myhabbo_tag_listgrouptags.php',
         'myhabbo_tag_removegrouptag.php',
         'myhabbo_traxplayer_select_song.php',
-        'myhabbo_widget_add.php',
-        'myhabbo_widget_delete.php',
-        'myhabbo_widget_edit.php',
-        'myhabbo_widgets.php',
         'trax_song.php',
     ];
     $beforeCredits = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');

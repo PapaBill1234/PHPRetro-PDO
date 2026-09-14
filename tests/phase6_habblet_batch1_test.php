@@ -150,7 +150,7 @@ try {
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 1 OR user_two_id = 1') === 0, 'Both friendship directions deleted');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 2 AND user_two_id = 4') === 1, 'Unrelated friendships preserved');
     check(str_contains(endpoint('minimail_recipients.php')[0], '[]'), 'Empty recipient JSON valid');
-    $blocked = ['ajax_collectiblesPurchase.php', 'ajax_habboclub_gift.php', 'ajax_redeemvoucher.php', 'ajax_removeFeedItem.php', 'habboclub_habboclub_reminder_remove.php', 'habboclub_habboclub_subscribe.php', 'mod_add_report.php', 'myhabbo_avatarlist_friendsearchpaging.php'];
+    $blocked = ['ajax_collectiblesPurchase.php', 'ajax_habboclub_gift.php', 'ajax_redeemvoucher.php', 'ajax_removeFeedItem.php', 'habboclub_habboclub_reminder_remove.php', 'habboclub_habboclub_subscribe.php', 'mod_add_report.php'];
     $before = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
     foreach ($blocked as $file) { check(endpoint($file, ['messageId' => "' OR 1=1", 'objectId' => '2'])[1] === 501, $file.' unavailable'); }
     check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Unavailable purchases do not debit balances');
