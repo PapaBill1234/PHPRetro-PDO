@@ -315,6 +315,11 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 			RememberMeUI.init("right");
 		</script>
 <?php } ?>
+<?php
+if (in_array((string) ($page['id'] ?? ''), ['me', 'home', 'profile', 'welcome'], true)) {
+	$page['cat'] = 'home';
+}
+?>
 <ul id="navi">
 		<?php if($user->name != "Guest"){ ?>
         <li<?php if($page['cat'] == "home"){ echo " class=\"selected\""; } ?>>
@@ -354,8 +359,8 @@ switch($page['cat']){
 			<li class="<?php if($page['id'] == "me"){ echo "selected"; } ?>">
 				<?php if($page['id'] == "me"){ echo $lang->loc['home']; }else{ echo "<a href=\"".PATH."/me\">".$lang->loc['home']."</a>"; } ?>
 			</li>
-    		<li class="<?php if($page['id'] == "home" && ($_GET['id'] == $user->id || $_GET['name'] == $user->name)){ echo "selected"; } ?>">
-				<?php if($page['id'] == "home" && ($_POST['name'] == $user->name || $_GET['name'] == $user->name)){ echo $lang->loc['my.page']; }else{ echo "<a href=\"".PATH."/home/".$user->name."\">".$lang->loc['my.page']."</a>"; } ?>
+    		<li class="<?php if($page['id'] == "home" && (((int) ($_GET['id'] ?? 0) === (int) $user->id && (int) $user->id > 0) || ($_GET['name'] ?? '') == $user->name)){ echo "selected"; } ?>">
+				<?php if($page['id'] == "home" && (($_POST['name'] ?? '') == $user->name || ($_GET['name'] ?? '') == $user->name)){ echo $lang->loc['my.page']; }else{ echo "<a href=\"".PATH."/home/".$user->name."\">".$lang->loc['my.page']."</a>"; } ?>
     		</li>
     		<li class="<?php if($page['id'] == "profile"){ echo "selected"; } ?>">
 				<?php if($page['id'] == "profile"){ echo $lang->loc['settings']; }else{ echo "<a href=\"".PATH."/profile\">".$lang->loc['settings']."</a>"; } ?>

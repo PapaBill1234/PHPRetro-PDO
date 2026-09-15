@@ -12,6 +12,16 @@ function check(bool $condition, string $message): void {
 check(str_contains($source, 'id="new-personal-info"'), 'me.php has the hotel-view personal info habblet');
 check(str_contains($source, 'id="habbo-plate"'), 'me.php shows the avatar plate');
 check(str_contains($source, "\$page['cat'] = 'home'"), 'me.php selects the user Home tab');
+
+$header = file_get_contents($root.'/templates/community_header.php');
+check(str_contains($header, "['me', 'home', 'profile', 'welcome']"), 'community header forces Home-section pages onto the user tab');
+check(str_contains($header, "\$_GET['name'] ?? ''"), 'community header does not read an undefined name query key');
+
+$profile = file_get_contents($root.'/profile.php');
+check(str_contains($profile, "\$page['cat'] = 'home'"), 'profile sits under the user Home tab');
+
+$home = file_get_contents($root.'/home.php');
+check(str_contains($home, "\$page['cat'] = 'home'"), 'homes sit under the user Home tab');
 check(str_contains($source, 'id="column2"'), 'me.php has the second habblet column');
 check(str_contains($source, 'hotcampaigns-habblet-list'), 'me.php still lists campaigns');
 check(str_contains($source, 'id="newspromo"'), 'me.php still has the news promo');

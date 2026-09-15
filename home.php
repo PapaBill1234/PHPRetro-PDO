@@ -23,7 +23,7 @@ $page['id'] = 'home';
 $page['type'] = 'user';
 $page['name'] = $input->HoloText($profile['username']);
 $page['bodyid'] = $page['edit'] ? 'editmode' : 'viewmode';
-$page['cat'] = 'community';
+$page['cat'] = 'home';
 require_once './templates/community_header.php';
 $columns = [1 => [], 2 => []];
 foreach ($homes->displayLayouts((int) $profile['id']) as $row) {
