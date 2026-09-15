@@ -1,2 +1,4 @@
-
 .env
+/cache/*.cache
+/cache/*.tmp.*
+/cache/status.ret

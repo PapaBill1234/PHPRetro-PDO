@@ -23,25 +23,13 @@ require_once('./includes/hksession.php');
 $data = new housekeeping_sql;
 $lang->addLocale("housekeeping.cache");
 
-$sql = $db->query("SELECT value FROM ".PREFIX."settings WHERE id = 'cache_settings' LIMIT 1");
-$setting = $db->result($sql);
-if($setting == "0" && file_exists('./cache/settings.ret')){
-	$message = $lang->loc['error.1'];
-	$code = "gray";
-	unlink('./cache/settings.ret');
-}elseif($setting == "1" && !file_exists('./cache/settings.ret')){
-	$message = $lang->loc['error.2'];
-	$code = "gray";
-	$settings->generateCache();
-}elseif($settings->checkCache() == true){
+$driver = CacheFactory::activeDriver();
+if ($settings->checkCache()) {
 	$message = $lang->loc['error.3'];
 	$code = "yellow";
 	$settings->generateCache();
-}elseif($settings->find("cache_settings") == "1"){
-	$message = $lang->loc['up.to.date'];
-	$code = "ok";
-}else{
-	$message = $lang->loc['no.cache'];
+} else {
+	$message = $lang->loc['up.to.date'].' ('.$driver.')';
 	$code = "ok";
 }
 
