@@ -17,6 +17,7 @@ function writeLocalEnvironment(): void {
     foreach ($required as $sessionKey => $label) { if (!array_key_exists($sessionKey, $_SESSION)) { throw new RuntimeException($label . ' is required. Return to the Database step.'); } }
     $lines = [];
     foreach ($required as $sessionKey => $label) { $lines[] = $label . '="' . str_replace(['\\', '"', "\r", "\n"], ['\\\\', '\\"', '', ''], (string) $_SESSION[$sessionKey]) . '"'; }
+    $lines[] = 'CACHE_DRIVER="file"';
     if (file_put_contents(dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env', implode(PHP_EOL, $lines) . PHP_EOL, LOCK_EX) === false) { throw new RuntimeException('Could not write .env. Check the PHPRetro folder permissions.'); }
 }
 $step = max(1, min(6, (int) ($_SESSION['polaris_step'] ?? 1))); $error = null; $messages = [];

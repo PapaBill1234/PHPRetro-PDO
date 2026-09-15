@@ -78,9 +78,14 @@ function GetOnlineCount(){
 	return $db->fetchColumn("SELECT COUNT(*) FROM users WHERE online > ?", [time() - 300]); // approximate
 }
 function HotelStatus(){
+	$status = array('online' => 'online', 'check' => 0, 'bypass' => false);
 	if($GLOBALS['settings']->find("site_status_image") == 2){
-		@include('./cache/status.ret');
-		if((($status['check'] + (60*30)) < time()) || $status['bypass'] == true){
+		$store = CacheFactory::instance();
+		$cached = $store->get('hotel:status');
+		if (is_array($cached)) {
+			$status = array_merge($status, $cached);
+		}
+		if((($status['check'] + (60*30)) < time()) || ($status['bypass'] ?? false) === true){
 			$fp = @fsockopen($GLOBALS['settings']->find("hotel_ip"), $GLOBALS['settings']->find("hotel_mus"), $errno, $errstr, 1);
 			if($fp){
 				$status['online'] = "online";
@@ -88,13 +93,8 @@ function HotelStatus(){
 			} else {
 				$status['online'] = "offline";
 			}
-			$fh = @fopen('./cache/status.ret', 'w');
-			@fwrite($fh, "<?php\n"."$"."status['online'] = \"".$status['online']."\";\n"."$"."status['check'] = ".time().";\n");
-			if($status['bypass'] == true && $status['online'] != "online"){
-				@fwrite($fh, "$"."status['bypass'] = true;\n");
-			}
-			@fwrite($fh, "?>");
-			@fclose($fh);
+			$status['check'] = time();
+			$store->set('hotel:status', $status, 60 * 30);
 		}
 	}elseif($GLOBALS['settings']->find("site_status_image") == 1){
 		$fp = @fsockopen($GLOBALS['settings']->find("hotel_ip"), $GLOBALS['settings']->find("hotel_mus"), $errno, $errstr, 1);

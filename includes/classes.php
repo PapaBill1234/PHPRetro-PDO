@@ -1,6 +1,7 @@
 <?php
 // FILE: includes/classes.php
 require_once(__DIR__ . '/Database.php');
+require_once(__DIR__ . '/Cache.php');
 
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
@@ -576,15 +577,30 @@ class mssql extends HoloDatabase {
 class HoloLocale {
 	var $loc = array();
 	function addLocale($keys){
-		if(is_array($keys)){
-			foreach($keys as $key){
-				require('./includes/languages/'.$GLOBALS['settings']->find("site_language").'.php');
-				$this->loc = array_merge($this->loc,$loc);
+		$keys = is_array($keys) ? $keys : array($keys);
+		$language = $GLOBALS['settings']->find("site_language");
+		if (!is_string($language) || preg_match('/^[a-zA-Z0-9]+$/', $language) !== 1) {
+			$language = 'en';
+		}
+		$store = CacheFactory::instance();
+		$file = './includes/languages/'.$language.'.php';
+		if (!is_file($file)) {
+			$file = './includes/languages/en.php';
+			$language = 'en';
+		}
+		foreach ($keys as $key) {
+			$cacheKey = 'locale:'.$language.':'.$key;
+			$cached = $store->get($cacheKey);
+			if (is_array($cached)) {
+				$this->loc = array_merge($this->loc, $cached);
+				continue;
 			}
-		}else{
-			$key = $keys;
-			require('./includes/languages/'.$GLOBALS['settings']->find("site_language").'.php');
-			$this->loc = array_merge($this->loc,$loc);
+			$loc = array();
+			require $file;
+			if (isset($loc) && is_array($loc)) {
+				$store->set($cacheKey, $loc);
+				$this->loc = array_merge($this->loc, $loc);
+			}
 		}
 		return true;
 	}
@@ -686,16 +702,47 @@ class HoloFigureCheck {
 	}
 }
 class HoloSettings {
+    public const CACHE_KEY = 'settings:all';
     var $cache = array();
     private $database;
-    function __construct(){
+    private Cache $store;
+    function __construct(?Cache $store = null){
         $this->database = $GLOBALS['db'] ?? new Database();
+        $this->store = $store ?? CacheFactory::instance();
         $this->cache = array('site_path'=>'','site_shortname'=>'PHPRetro','site_name'=>'PHPRetro','site_language'=>'en','site_closed'=>'0','hotel_server'=>'polaris','cache_settings'=>'0','site_cookie_time'=>'30','site_session_time'=>'20','email_from'=>'noreply@localhost','email_name'=>'PHPRetro');
-        try { foreach ($this->database->fetchAll('SELECT setting_key, setting_value FROM phpretro_site_settings') as $row) { $this->cache[$row['setting_key']] = $row['setting_value']; } } catch (Throwable $exception) { }
+        $cached = $this->store->get(self::CACHE_KEY);
+        if (is_array($cached)) {
+            $this->cache = array_merge($this->cache, $cached);
+            $this->applyEnvOverrides();
+            return;
+        }
+        $this->refreshFromDatabase();
     }
-    function generateCache(){ return true; }
+    function generateCache(){
+        $this->refreshFromDatabase();
+        return true;
+    }
     function find($key){ return $this->cache[$key] ?? ''; }
-    function checkCache(){ return false; }
+    function checkCache(){ return $this->store->get(self::CACHE_KEY) === null; }
+    private function refreshFromDatabase(): void {
+        try {
+            $rows = array();
+            foreach ($this->database->fetchAll('SELECT setting_key, setting_value FROM phpretro_site_settings') as $row) {
+                $rows[$row['setting_key']] = $row['setting_value'];
+            }
+            $this->cache = array_merge($this->cache, $rows);
+            $this->store->set(self::CACHE_KEY, $rows);
+        } catch (Throwable $exception) { }
+        $this->applyEnvOverrides();
+    }
+    private function applyEnvOverrides(): void {
+        foreach (['email_from' => 'MAIL_FROM', 'email_name' => 'MAIL_FROM_NAME', 'email_log' => 'MAIL_LOG'] as $setting => $env) {
+            $value = getenv($env);
+            if (is_string($value) && $value !== '') {
+                $this->cache[$setting] = $value;
+            }
+        }
+    }
 }
 class HoloMail {
 	var $plaintext;

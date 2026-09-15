@@ -63,8 +63,7 @@ if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_S
 
 if($user->error == 1 && $page['bypass_user_check'] != true && ($_COOKIE['rememberme'] ?? '') == "true" && $page['housekeeping'] != true){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; header("Location: ".PATH."/security_check_token"); }
 
-$phase5bMaintenance = false;
-try { $phase5bMaintenance = (new Database())->fetchColumn('SELECT setting_value FROM phpretro_site_settings WHERE setting_key = ?', ['maintenance_mode']) === '1'; } catch (Throwable $exception) { $phase5bMaintenance = false; }
+$phase5bMaintenance = $settings->find('maintenance_mode') === '1';
 if(($settings->find("site_closed") == "1" || $phase5bMaintenance) && $page['id'] != "maintenance" && $page['housekeeping'] != true && $user->user("rank") < 5){
 	header("Location: ".PATH."/maintenance"); exit;
 }
