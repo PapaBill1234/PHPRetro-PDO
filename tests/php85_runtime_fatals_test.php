@@ -48,6 +48,7 @@ $account = file_get_contents($root.'/account.php');
 check(!str_contains($account, 'session_is_registered'), 'account.php no longer calls session_is_registered');
 check(str_contains($account, "addLocale(\"landing.login\")"), 'account.php loads landing.login before pagename.home');
 check(str_contains($account, "\$_GET['var1'] ?? ''"), 'account.php uses null-safe GET keys');
+check(str_contains($account, "\$_GET['origin'] ?? ''"), 'account.php logout does not read an undefined origin key');
 
 $papers = file_get_contents($root.'/papers.php');
 check(str_contains($papers, '$input->HoloText($title)'), 'papers.php calls HoloInput::HoloText');
