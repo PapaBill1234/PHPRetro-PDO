@@ -2,9 +2,9 @@
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
+require_once __DIR__ . '/../includes/core.php');
 require_once('./includes/hksession.php');
-require_once('../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/AdminAudit.php');
 $database=new Database(); $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); $notice=''; $action=$_GET['do']??'list';
 if($_SERVER['REQUEST_METHOD']==='POST'){ Csrf::requireValid();$id=(int)($_POST['id']??0);$affected=0;if($action==='delete'){$affected=$database->execute('DELETE FROM phpretro_collectibles WHERE id=?',[$id]);$notice=$affected>0?'Collectible removed.':'Collectible not found.';}else{$v=[trim((string)($_POST['name']??'')),trim((string)($_POST['description']??'')),trim((string)($_POST['image']??'')),(int)($_POST['time']??0)];if(in_array('',array_slice($v,0,3),true)||$v[3]<=0){$notice='Name, description, image, and month timestamp are required.';}elseif($id>0){$affected=$database->execute('UPDATE phpretro_collectibles SET name=?,description=?,image=?,time=? WHERE id=?',[...$v,$id]);$notice=$affected>0?'Collectible updated.':'Collectible unchanged or not found.';}else{$affected=$database->execute('INSERT INTO phpretro_collectibles (name,description,image,time) VALUES (?,?,?,?)',$v);$id=(int)$database->insertId();$notice='Collectible created.';}}if($affected>0){AdminAudit::log($database,(int)$user->id,'collectible_'.$action,'collectible',$id);} $action='list';}
 $item=['id'=>0,'name'=>'','description'=>'','image'=>'','time'=>strtotime(date('Y-m-01 00:00:00'))];if($action==='edit'){$loaded=$database->fetchRow('SELECT id,name,description,image,time FROM phpretro_collectibles WHERE id=?',[(int)($_GET['id']??0)]);if($loaded!==false){$item=$loaded;}}

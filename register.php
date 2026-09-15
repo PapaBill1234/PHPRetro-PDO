@@ -21,6 +21,10 @@ if (isset($_POST['bean_avatarName'])) {
     $year = (int) ($_POST['bean_year'] ?? 0);
     $figure = (string) ($_POST['bean_figure'] ?? '');
     $gender = (string) ($_POST['bean_gender'] ?? '');
+    if ($figure === '' && isset($_POST['randomFigure']) && is_string($_POST['randomFigure']) && preg_match('/^([MF])-(.+)$/', $_POST['randomFigure'], $picked)) {
+        $gender = $picked[1];
+        $figure = $picked[2];
+    }
     $acceptTos = (string) ($_POST['bean_termsOfServiceSelection'] ?? '');
     $lang->addLocale("register.errors");
 
@@ -386,6 +390,44 @@ if(!isset($error['captcha'])){
             </div>
 	    </div>
     </form>
+	<script type="text/javascript">
+	HabboView.add(function() {
+		if ($("register-name")) {
+			Event.observe($("register-name"), "blur", function() {
+				if ($F("register-name") != "" && RegistrationForm.Validator._nameCheckNeeded) {
+					RegistrationForm.Validator._checkName();
+				}
+			});
+		}
+		var radios = $$("input[name='randomFigure']");
+		var applyFigure = function(radio) {
+			if (!radio || !radio.value) { return; }
+			var value = String(radio.value);
+			var dash = value.indexOf("-");
+			if (dash < 1) { return; }
+			if ($("register-gender")) { $("register-gender").value = value.substring(0, dash); }
+			if ($("register-figure")) { $("register-figure").value = value.substring(dash + 1); }
+		};
+		radios.each(function(radio) {
+			Event.observe(radio, "click", function() { applyFigure(radio); });
+			Event.observe(radio, "change", function() { applyFigure(radio); });
+		});
+		if (radios.length > 0 && !$F("register-figure")) {
+			radios[0].checked = true;
+			applyFigure(radios[0]);
+		}
+		var origComplete = RegistrationForm.Validator._onCheckNameAvailabilityComplete;
+		RegistrationForm.Validator._onCheckNameAvailabilityComplete = function(C, D) {
+			if (!D || typeof D !== "object") {
+				$("register-name").removeClassName("register-loading");
+				RegistrationForm.Validator._ajaxCheckInProgress = false;
+				RegistrationForm.Validator._showErrorState($("register-name"), false);
+				return;
+			}
+			origComplete(C, D);
+		};
+	});
+	</script>
 	
 						
 							

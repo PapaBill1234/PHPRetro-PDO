@@ -18,24 +18,29 @@
 require_once(__DIR__.'/../includes/habblet.php');
 $lang->addLocale("register.ajax.errors");
 
+if (!isset($db) || !($db instanceof Database)) {
+	$db = new Database();
+}
+
+function namecheckHeader(array $payload): void {
+	header('X-JSON: '.json_encode($payload, JSON_UNESCAPED_UNICODE));
+}
+
 $name = habbletText($_POST, 'name');
 $filter = preg_replace("/[^a-z\d\-=\?!@:\.]/i", "", $name);
 
-if($db->fetchColumn('SELECT COUNT(*) FROM users WHERE username = ?', [$name]) > 0){
-	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.2']."\"}");
+if($name === ''){
+	namecheckHeader(["registration_name" => $lang->loc['ajax.error.5']]);
 } elseif($filter != $name){
-	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.3']."\"}");
+	namecheckHeader(["registration_name" => $lang->loc['ajax.error.3']]);
 } elseif(strlen($name) > 24){
-	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.4']."\"}");
-} elseif(strlen($name) < 1){
-	header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.5']."\"}");
+	namecheckHeader(["registration_name" => $lang->loc['ajax.error.4']]);
+} elseif(strnatcasecmp(substr($name, 0, 4), "MOD-") === 0){
+	namecheckHeader(["registration_name" => $lang->loc['ajax.error.5']]);
+} elseif($db->fetchColumn('SELECT COUNT(*) FROM users WHERE username = ?', [$name]) > 0){
+	namecheckHeader(["registration_name" => $lang->loc['ajax.error.2']]);
 } else {
-	$first = substr($name, 0, 4);
-	if (strnatcasecmp($first,"MOD-") == false) {
-		header("X-JSON: {\"registration_name\":\"".$lang->loc['ajax.error.5']."\"}");
-	} else {
-		header("X-JSON: {}");
-	}
+	header('X-JSON: {}');
 }
 
 ?>

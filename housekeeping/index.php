@@ -18,12 +18,13 @@
 $page['dir'] = '\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
-require_once('../includes/Totp.php');
-require_once('../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/core.php');
+require_once __DIR__ . '/../includes/Totp.php');
+require_once __DIR__ . '/../includes/AdminAudit.php');
 
 if($user->id > 0){ header('Location: '.PATH.'/housekeeping/dashboard'); exit; }
 
+$username = '';
 if(!isset($_SESSION['login'])){
 	$_SESSION['login']['enabled'] = true;
 	$_SESSION['login']['tries'] = 0;
@@ -46,11 +47,11 @@ if(!empty($_POST['username'])){
 			$login_error = $lang->loc['banned.1'].$user->banned['reason'].$lang->loc['banned.2'].$user->banned['expire'].".";
 		}
 	}
-	if($_SESSION['login']['tries'] > 4 && $settings->find("site_capcha") == "1"){
-		if(($_SESSION['register-captcha-bubble'] == strtolower($_POST['bean_captchaResponse']) && !empty($_SESSION['register-captcha-bubble'])) || $settings->find("site_capcha") == "0") {
+	if(($_SESSION['login']['tries'] ?? 0) > 4 && $settings->find("site_capcha") == "1"){
+		if(((($_SESSION['register-captcha-bubble'] ?? '') == strtolower((string) ($_POST['bean_captchaResponse'] ?? $_POST['captcha'] ?? ''))) && !empty($_SESSION['register-captcha-bubble'])) || $settings->find("site_capcha") == "0") {
 			unset($_SESSION['register-captcha-bubble']);
 		}else{
-			$login_error = $lang->loc['error.captcha'];
+			$login_error = $lang->loc['error.captcha'] ?? 'Invalid captcha code.';
 		}
 	}
 	if(empty($login_error)){
@@ -70,7 +71,7 @@ if(!empty($_POST['username'])){
         }
 	}
     if(!empty($login_error)){
-		$_SESSION['login']['tries']++;
+		$_SESSION['login']['tries'] = (int) ($_SESSION['login']['tries'] ?? 0) + 1;
 	}
 }
 
@@ -101,7 +102,7 @@ require_once('./templates/housekeeping_header.php');
 <input type="password" size="20" name="password" value="" /><br />
 <strong>Authenticator code (staff):</strong><br />
 <input type="text" size="20" name="totp_code" inputmode="numeric" maxlength="6" value="" />
-<?php if($_SESSION['login']['tries'] > 4 && $settings->find("site_capcha") == "1"){ ?>
+<?php if(($_SESSION['login']['tries'] ?? 0) > 4 && $settings->find("site_capcha") == "1"){ ?>
 <strong><?php echo $lang->loc['captcha']; ?>:</strong><br />
 <img id="captcha" src="<?php echo PATH; ?>/captcha.jpg?t=<?php echo time(); ?>" alt="" width="200" height="50" /><br /><br />
 <input type="text" name="captcha" id="captcha-code" value="" /><br />

@@ -2,10 +2,10 @@
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
+require_once __DIR__ . '/../includes/core.php');
 require_once('./includes/hksession.php');
-require_once('../includes/PhpretroHelpdesk.php');
-require_once('../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/PhpretroHelpdesk.php');
+require_once __DIR__ . '/../includes/AdminAudit.php');
 $lang->addLocale('housekeeping.help');
 $lang->addLocale('housekeeping.help.display');
 $lang->addLocale('housekeeping.help.remove');

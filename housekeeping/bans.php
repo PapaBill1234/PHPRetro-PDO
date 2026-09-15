@@ -2,9 +2,9 @@
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
+require_once __DIR__ . '/../includes/core.php');
 require_once('./includes/hksession.php');
-require_once('../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/AdminAudit.php');
 $database = new Database();
 // TODO: wrap this batch in a transaction so a mid-loop failure cannot leave partial bans.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'bulk_ban') { Csrf::requireValid(); foreach (array_values(array_filter(array_map('intval', (array) ($_POST['user_ids'] ?? [])))) as $bulkUserId) { $target = $database->fetchRow('SELECT id, ip_current, machine_id FROM users WHERE id = ?', [$bulkUserId]); if ($target !== false) { $database->execute('INSERT INTO bans (user_id, ip, machine_id, user_staff_id, timestamp, ban_expire, ban_reason, type, cfh_topic) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [$bulkUserId, $target['ip_current'], $target['machine_id'], (int) $user->id, time(), (int) ($_POST['ban_expire'] ?? 0), trim((string) ($_POST['ban_reason'] ?? 'Bulk staff action')), 'account', '']); AdminAudit::log($database, (int) $user->id, 'bulk_ban', 'user', $bulkUserId, trim((string) ($_POST['ban_reason'] ?? 'Bulk staff action'))); } } }

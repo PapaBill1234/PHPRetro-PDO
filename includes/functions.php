@@ -19,24 +19,33 @@
 if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 function HoloDate(){
+	$date = array();
 	$date['H'] = date('H');
 	$date['i'] = date('i');
 	$date['s'] = date('s');
 	$date['m'] = date('m');
 	$date['d'] = date('d');
 	$date['Y'] = date('Y');
+	$date['y'] = date('y');
 	$date['j'] = date('j');
 	$date['n'] = date('n');
 	$date['today'] = $date['d'];
 	$date['month'] = $date['m'];
 	$date['year'] = $date['Y'];
-	$date['date_normal'] = date('d-m-Y',mktime($date['m'],$date['d'],$date['Y']));
-	$date['date_reversed'] = date('Y-m-d', mktime($date['m'],$date['d'],$date['y']));
-	$date['date_full'] = date('d-m-Y H:i:s',mktime($date['H'],$date['i'],$date['s'],$date['m'],$date['d'],$date['Y']));
-	$date['date_time'] = date('H:i:s',mktime($date['H'],$date['i'],$date['s']));
-	$date['date_hc'] = "".$date['j']."-".$date['n']."-".$date['Y']."";
+	$date['date_normal'] = date('d-m-Y');
+	$date['date_reversed'] = date('Y-m-d');
+	$date['date_full'] = date('d-m-Y H:i:s');
+	$date['date_time'] = date('H:i:s');
+	$date['date_hc'] = $date['j']."-".$date['n']."-".$date['Y'];
 	$date['regdate'] = $date['date_normal'];
 	return $date;
+}
+function HoloText($str, $advanced=false){
+	if (isset($GLOBALS['input']) && is_object($GLOBALS['input']) && method_exists($GLOBALS['input'], 'HoloText')) {
+		return $GLOBALS['input']->HoloText($str, $advanced);
+	}
+	$str = (string) $str;
+	return $advanced ? $str : htmlspecialchars($str, ENT_COMPAT, 'UTF-8');
 }
 function GenerateTicket($type = "sso",$length = 0){
 switch($type){
