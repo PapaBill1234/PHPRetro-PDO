@@ -94,7 +94,7 @@ case "password":
 	require_once('./forgot.php');
 break;
 case "logout":
-	if($_GET['origin'] != "popup"){ require_once('./logout.php'); }
+	if(($_GET['origin'] ?? '') != "popup"){ require_once('./logout.php'); }
 break;
 case "logout_ok":
 	require_once('./logout.php');
