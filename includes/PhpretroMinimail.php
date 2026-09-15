@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/PhpretroLiveSync.php';
+require_once __DIR__.'/PhpretroPolarisCms.php';
 
 class PhpretroMinimailError extends RuntimeException {}
 
@@ -198,13 +199,14 @@ class PhpretroMinimail
 
     public function report(int $id): void
     {
-        $this->transaction(function () use ($id) {
+        $payload = $this->transaction(function () use ($id) {
             $row = $this->message($id, true);
             $this->need((int) $row['recipient_id'] === $this->actor, 'Not permitted.', 403);
             $this->need((int) $row['sender_id'] !== $this->actor, 'You cannot report your own messages.', 400);
+            $evidence = $row['subject']."\n\n".$row['body'];
             $this->db->execute(
                 'INSERT INTO phpretro_user_reports (reporter_id, reported_user_id, reason, evidence, status, action_notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [$this->actor, (int) $row['sender_id'], 'minimail', $row['subject']."\n\n".$row['body'], 'open', '', time()]
+                [$this->actor, (int) $row['sender_id'], 'minimail', $evidence, 'open', '', time()]
             );
             $this->db->execute('DELETE FROM messenger_friendships WHERE (user_one_id = ? AND user_two_id = ?) OR (user_one_id = ? AND user_two_id = ?)', [$this->actor, $row['sender_id'], $row['sender_id'], $this->actor]);
             $this->db->execute('DELETE FROM messenger_friendrequests WHERE (user_from_id = ? AND user_to_id = ?) OR (user_from_id = ? AND user_to_id = ?)', [$this->actor, $row['sender_id'], $row['sender_id'], $this->actor]);
@@ -214,7 +216,13 @@ class PhpretroMinimail
                 'reporter_id' => $this->actor,
                 'reported_user_id' => (int) $row['sender_id'],
             ]);
+            return [
+                'sender_id' => $this->actor,
+                'reported_id' => (int) $row['sender_id'],
+                'evidence' => $evidence,
+            ];
         });
+        PhpretroPolarisCms::instance()->notifyUserReport($this->db, $payload['sender_id'], $payload['reported_id'], 'minimail', $payload['evidence']);
     }
 }
 
