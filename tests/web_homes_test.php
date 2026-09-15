@@ -37,6 +37,8 @@ try {
     foreach (array_filter(array_map('trim', explode(';', $alter))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
     $urls = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/005_web_group_urls.sql')) ?? '';
     foreach (array_filter(array_map('trim', explode(';', $urls))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
+    $remaining = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/007_restore_remaining_501s.sql')) ?? '';
+    foreach (array_filter(array_map('trim', explode(';', $remaining))) as $sql) { if ($sql !== '') { $db->execute($sql); } }
     foreach (range(1, 3) as $id) {
         $name = $id === 2 ? 'Bob<script>' : 'User'.$id;
         $db->execute('INSERT INTO users (id, username, password, account_created, ip_register, ip_current, motto, look) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$id, $name, '', 100, '127.0.0.1', '127.0.0.1', 'motto', 'look']);
@@ -105,10 +107,11 @@ try {
     check(endpoint('myhabbo_widget_delete.php', ['widgetId' => $profileId])[1] === 403, 'Profile widget cannot be deleted');
 
     check(endpoint('myhabbo_widget_add.php', ['widget_key' => 'traxplayerwidget'])[1] === 501, 'Trax widget stays unavailable');
-    check(endpoint('myhabbo_widget_add.php', ['widget_key' => 'ratingwidget'])[1] === 501, 'Rating widget stays unavailable');
-    check(endpoint('myhabbo_widget_add.php', ['widgetId' => '12'])[1] === 400, 'Catalogue item ids are not guessed');
-    check(endpoint('groups_widgets.php')[1] === 501, 'Group homes stay unavailable');
-    check(endpoint('myhabbo_guestbook_configure.php')[1] === 501, 'Guestbook privacy stays unavailable');
+    $rating = endpoint('myhabbo_widget_add.php', ['widget_key' => 'ratingwidget']);
+    check($rating[1] === 200 && str_contains($rating[0], 'RatingWidget'), 'Rating widget is website-owned');
+    check(endpoint('myhabbo_widget_add.php', ['widgetId' => '12'])[1] === 400, 'Unknown catalogue item ids are rejected');
+    check(endpoint('groups_widgets.php')[1] === 400, 'Group widget render requires a widget id');
+    check(endpoint('myhabbo_guestbook_configure.php')[1] === 400, 'Guestbook privacy requires a widget id');
 
     $note = endpoint('myhabbo_guestbook_add.php', ['widgetId' => $guestbookId, 'message' => 'Hi <b>']);
     check($note[1] === 200 && str_contains($note[0], htmlspecialchars('Hi <b>', ENT_COMPAT, 'UTF-8')), 'Guestbook escapes message');

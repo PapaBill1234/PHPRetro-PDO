@@ -15,7 +15,41 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
-habbletRequireUser();
-// TODO(phase6): There is no homes_catalogue or homes inventory in Polaris. Do not charge credits for undeliverable items.
-habbletUnavailable('The MyHabbo store is unavailable.');
+require_once __DIR__.'/../includes/habblet.php';
+if (($page['bypass'] ?? false) !== true) {
+    habbletRequireUser();
+    require_once __DIR__.'/../includes/PhpretroHomes.php';
+    $homes = phpretroHomes();
+}
+$lang->addLocale('homes.store.inventory.preview');
+$type = $homes->storeType(habbletText($_POST, 'type') ?: 'stickers');
+$id = habbletInt($_POST, 'itemId');
+if ($type === 'widget') {
+    $row = $homes->catalogue($id);
+    if (!$row) { echo '<p>Unknown item.</p>'; return; }
+    $jsonType = '"Widget"';
+    $preview = 'null';
+    $title = $row['description'];
+    $css = $homes->itemCss('widget', $row['data'], true);
+    $count = 1;
+} else {
+    $row = $homes->inventoryItem($id);
+    if (!$row) { echo '<p>Unknown item.</p>'; return; }
+    $jsonType = $type === 'background' ? '"Background"' : ($type === 'note' ? '"WebCommodity"' : '"Sticker"');
+    $preview = $type === 'note' ? 'null' : '"'.$homes->itemCss($row['type'], $row['catalogue_data']).'"';
+    $title = $row['description'] ?: $row['name'];
+    $css = $homes->itemCss($row['type'], $row['catalogue_data'], true);
+    $qty = $homes->db->fetchColumn('SELECT COUNT(*) FROM phpretro_homes_items WHERE user_id = ? AND catalogue_id = ? AND '.($type === 'background' ? '1=1' : 'placed = 0'), [(int) $user->id, $row['catalogue_id']]);
+    $count = (int) $qty;
+}
+if (($page['bypass'] ?? false) !== true) {
+    header('X-JSON: ["'.$css.'",'.$preview.','.json_encode($title).','.$jsonType.','.($type === 'widget' ? '"true"' : 'null').','.$count.']');
+}
+?>
+<h4>&nbsp;</h4>
+<div id="inventory-preview-box"></div>
+<div id="inventory-preview-place" class="clearfix">
+	<div class="clearfix">
+		<a href="#" class="new-button" id="inventory-place"><b><?php echo $lang->loc['place']; ?></b><i></i></a>
+	</div>
+</div>

@@ -15,7 +15,12 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No native homes item/widget placement. phpretro_myhabbo_layouts is a different layout model and is not substituted.
-habbletUnavailable('Homes layout editing is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$page['edit'] = true;
+$item = phpretroHomesRun(static fn() => $homes->editNote(habbletInt($_POST, 'stickieId'), habbletInt($_POST, 'skinId', 1)));
+if ($item === null) { return; }
+phpretroHomesJsonHeader(['id' => (string) $item['id'], 'cssClass' => 'n_skin_'.$item['skin'], 'type' => 'stickie']);
+require __DIR__.'/../includes/habblet-templates/home-stickie.php';

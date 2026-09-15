@@ -31,7 +31,7 @@ if ($type === 'startSession') {
     unset($_SESSION['page_edit']);
     $homes->sync->recordAndNotify('homes.session_cancel', ['user_id' => (int) $user->id]);
 } elseif ($type === 'save') {
-    phpretroHomesRun(static fn() => $homes->saveCoordinates(habbletText($_POST, 'widgets')));
+    phpretroHomesRun(static fn() => $homes->saveLayout($_POST));
     unset($_SESSION['page_edit']);
     echo "<script language=\"JavaScript\" type=\"text/javascript\">waitAndGo('".PATH.'/home/'.rawurlencode($username)."');</script>";
     return;

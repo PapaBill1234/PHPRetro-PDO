@@ -1,12 +1,15 @@
 <?php
 $online = (($entry['online'] ?? '0') === '1') ? 'online' : 'offline';
+$canDelete = (int) $user->id === (int) $entry['author_user_id']
+    || (int) $user->id === (int) ($entry['profile_user_id'] ?? 0)
+    || !empty($entry['can_delete']);
 ?>
 <li id="guestbook-entry-<?php echo (int) $entry['id']; ?>" class="guestbook-entry">
 <div class="guestbook-author">
 <img src="<?php echo $user->avatarURL($entry['look'], 's,4,4,,1,0'); ?>" alt="<?php echo $input->HoloText($entry['username']); ?>" title="<?php echo $input->HoloText($entry['username']); ?>"/>
 </div>
 <div class="guestbook-actions">
-<?php if ((int) $user->id === (int) $entry['author_user_id'] || (int) $user->id === (int) $entry['profile_user_id']) { ?>
+<?php if ($canDelete) { ?>
 <img src="<?php echo PATH; ?>/web-gallery/images/myhabbo/buttons/delete_entry_button.gif" id="gbentry-delete-<?php echo (int) $entry['id']; ?>" class="gbentry-delete" style="cursor:pointer" alt=""/>
 <?php } ?>
 </div>

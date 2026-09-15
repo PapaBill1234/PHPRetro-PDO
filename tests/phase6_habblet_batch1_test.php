@@ -156,10 +156,12 @@ try {
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 1 OR user_two_id = 1') === 0, 'Both friendship directions deleted');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 2 AND user_two_id = 4') === 1, 'Unrelated friendships preserved');
     check(str_contains(endpoint('minimail_recipients.php')[0], '[]'), 'Empty recipient JSON valid');
-    $blocked = ['ajax_redeemvoucher.php', 'habboclub_habboclub_reminder_remove.php', 'habboclub_habboclub_subscribe.php'];
+    $blocked = ['ajax_redeemvoucher.php', 'habboclub_habboclub_subscribe.php'];
     $before = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
     foreach ($blocked as $file) { check(endpoint($file, ['messageId' => "' OR 1=1", 'objectId' => '2'])[1] === 501, $file.' unavailable'); }
     check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Unavailable purchases do not debit balances');
+    check(endpoint('habboclub_habboclub_reminder_remove.php')[1] === 200, 'Club reminder dismisses a website feed key');
+    check($db->fetchColumn('SELECT item_key FROM phpretro_feed_dismissals WHERE user_id = 1 AND item_key = ?', ['hc-reminder']) === 'hc-reminder', 'Reminder stores hc-reminder');
     $claim = endpoint('ajax_collectiblesPurchase.php');
     check($claim[1] === 200 && str_contains($claim[0], 'Collectible &lt;rare&gt;'), 'Collectible claim records website purchase');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM phpretro_collectible_purchases') === 1, 'Collectible purchase stored');

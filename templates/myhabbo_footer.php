@@ -29,10 +29,10 @@ if (!defined("IN_HOLOCMS")) { header("Location: ".PATH."/"); exit; }
 $lang->addLocale("footer");
 $lang->addLocale("homes.footer");
 
-if($page['discussion'] == true){
+if(!empty($page['discussion'])){
 ?>
     <div class="habblet ">
-<?php if(!$user->IsHCMember($userrow[0]) && $page['edit'] != true){ ?>
+<?php if(empty($page['edit']) && !empty($userrow[0]) && !$user->IsHCMember($userrow[0])){ ?>
 		<?php $banners = [];
 		try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
 		foreach ($banners as $row) { ?>
@@ -52,7 +52,7 @@ if($page['discussion'] == true){
   </div>
 <?php }else{ ?>
 				<div id="mypage-ad">
-<?php if(!$user->IsHCMember($userrow[0]) && $page['edit'] != true){ ?>
+<?php if(empty($page['edit']) && !empty($userrow[0]) && !$user->IsHCMember($userrow[0])){ ?>
 <div class="habblet ">
 	<div class="ad-container">
 		<?php $banners = [];
@@ -101,7 +101,7 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 
 </div>
 
-<?php if($page['concurrent_editing'] == true){ ?>
+<?php if(!empty($page['concurrent_editing'])){ ?>
 <div class="dialog-grey" id="groups-concurrent-editing">
 	<div class="dialog-grey-top dialog-grey-handle">
 		<div><h3><span><?php echo $lang->loc['session.timeout.error']; ?></span></h3></div>
@@ -138,8 +138,8 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 	</script>
 <?php } ?>
 
-<?php if($page['edit'] != true){ ?>
-<?php if($user->id > 0 && !$page['discussion']){ ?>
+<?php if(empty($page['edit'])){ ?>
+<?php if($user->id > 0 && empty($page['discussion'])){ ?>
 <div class="cbb topdialog" id="guestbook-form-dialog">
 	<h2 class="title dialog-handle"><?php echo $lang->loc['edit.guestbook.entry']; ?></h2>
 	
@@ -287,7 +287,7 @@ Event.observe("dialog-group-settings-exit", "click", function(e) {
 	</div>
 </div>
 <?php } ?>
-<?php if($page['discussion'] == true){ ?>
+<?php if(!empty($page['discussion'])){ ?>
 <div class="cbb topdialog" id="postentry-verifyemail-dialog">
 	<h2 class="title dialog-handle"><?php echo $lang->loc['confirm.email']; ?></h2>
 
@@ -303,7 +303,7 @@ Event.observe("dialog-group-settings-exit", "click", function(e) {
 	</div>
 </div>
 <?php } ?>
-<?php if($page['discussion.post'] == true){ ?>
+<?php if(!empty($page['discussion.post'])){ ?>
 <div class="cbb topdialog" id="postentry-delete-dialog">
 	<h2 class="title dialog-handle"><?php echo $lang->loc['delete.discussion']; ?></h2>
 	

@@ -41,7 +41,7 @@ try {
     $db->execute($match[0]);
     preg_match('/CREATE TABLE IF NOT EXISTS phpretro_user_reports \(.*?\) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;/s', file_get_contents($root.'/migrations/002_admin_features.sql'), $match);
     $db->execute($match[0]);
-    foreach (['003_web_minimail.sql', '004_web_homes.sql', '005_web_group_urls.sql', '006_restore_remaining.sql'] as $file) {
+    foreach (['003_web_minimail.sql', '004_web_homes.sql', '005_web_group_urls.sql', '006_restore_remaining.sql', '007_restore_remaining_501s.sql'] as $file) {
         $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
         foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
             if ($sql !== '') { $db->execute($sql); }
@@ -123,7 +123,7 @@ try {
     $widget = $homes->add('guestbookwidget', 1);
     asUser(2);
     $entry = endpoint('myhabbo_guestbook_add.php', ['widgetId' => $widget['id'], 'message' => 'Hello guestbook']);
-    check($entry[1] === 200, 'Logged-in non-friend can post while privacy configure is 501');
+    check($entry[1] === 200, 'Logged-in non-friend can post to a public guestbook');
     asUser(1);
 
     $desk = new PhpretroHelpdesk($db, new PhpretroLiveSync($db));

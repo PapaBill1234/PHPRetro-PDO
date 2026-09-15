@@ -28,4 +28,8 @@ if (in_array($widget['widget_key'], PhpretroHomes::BLOCKED_WIDGETS, true)) {
     habbletUnavailable('This widget is unavailable.');
     return;
 }
+if (($widget['scope'] ?? 'user') === 'group') {
+    require __DIR__.'/../includes/habblet-templates/group-widget.php';
+    return;
+}
 require __DIR__.'/../includes/habblet-templates/home-widget.php';

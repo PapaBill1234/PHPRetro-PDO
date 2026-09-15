@@ -107,8 +107,11 @@ try {
     }
     foreach (['startEditingSession','saveEditingSession','cancelEditingSession'] as $action) {
         check(str_contains(file_get_contents($root.'/habblet/groups_actions_'.$action.'.php'), "\$page['no_ajax'] = true"), $action.' keeps legacy full-page GET/POST');
-        check(callAction($action)[1] === 302, $action.' is a website edit session');
     }
+    check(callAction('startEditingSession')[1] === 302, 'startEditingSession is a website edit session');
+    $saved = callAction('saveEditingSession');
+    check($saved[1] === 200 && str_contains($saved[0], 'waitAndGo'), 'saveEditingSession persists layout then waitAndGo');
+    check(callAction('cancelEditingSession')[1] === 302, 'cancelEditingSession is a website edit session');
     check(endpoint('grouppurchase_purchase_ajax.php', ['name' => 'Purchase', 'description' => 'Test'])[1] === 403, 'Purchase without club is rejected');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM guilds') === 3, 'Failed purchase creates no group');
     check(callAction('group_settings')[1] === 200, 'Owner settings form renders');

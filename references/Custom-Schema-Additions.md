@@ -367,4 +367,100 @@ CREATE TABLE IF NOT EXISTS `phpretro_object_reports` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+## 17. `phpretro_myhabbo_layouts.privacy` / `guild_id` — guestbook privacy + group homes
+
+PolarIS has no guestbook table. Homepage widgets and group-home widgets share this CMS table so `widgetId` cannot collide.
+
+```sql
+ALTER TABLE `phpretro_myhabbo_layouts`
+  ADD COLUMN `privacy` ENUM('public','private') NOT NULL DEFAULT 'public',
+  ADD COLUMN `guild_id` INT NOT NULL DEFAULT 0,
+  DROP INDEX `idx_user_column_position`,
+  ADD UNIQUE INDEX `idx_user_guild_column_position` (`user_id`, `guild_id`, `column_number`, `position`),
+  ADD INDEX `idx_guild_id` (`guild_id`);
+```
+
+`guild_id = 0` is a user home. `guild_id > 0` is a group home; `user_id` is the guild owner. `privacy` is the guestbook widget toggle (friends-only / members-only).
+
+## 18. `phpretro_home_ratings` — homepage rating (not `room_votes`)
+
+PolarIS `room_votes` is an in-room thumbs-up (`user_id`, `room_id`, no 1–5 value). Homepage rating is website-only.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_home_ratings` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `profile_user_id` INT NOT NULL,
+  `rater_id` INT NOT NULL,
+  `rating` TINYINT NOT NULL,
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idx_profile_rater` (`profile_user_id`, `rater_id`),
+  INDEX `idx_profile` (`profile_user_id`),
+  CONSTRAINT `fk_phpretro_home_ratings_profile` FOREIGN KEY (`profile_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_phpretro_home_ratings_rater` FOREIGN KEY (`rater_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 19. `phpretro_homes_catalogue` / `phpretro_homes_items` — MyHabbo store
+
+PolarIS has no `homes_catalogue`. Stickers/notes/backgrounds are not hotel furniture.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_homes_catalogue` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(255) NOT NULL,
+  `description` VARCHAR(255) NOT NULL DEFAULT '',
+  `type` ENUM('sticker','widget','note','background') NOT NULL,
+  `data` VARCHAR(255) NOT NULL,
+  `price` INT NOT NULL DEFAULT 0,
+  `amount` INT NOT NULL DEFAULT 1,
+  `category` VARCHAR(255) NOT NULL DEFAULT 'Default',
+  `category_id` INT NOT NULL DEFAULT 0,
+  `min_rank` INT NOT NULL DEFAULT 1,
+  `placement` ENUM('homes','groups','anywhere') NOT NULL DEFAULT 'anywhere',
+  PRIMARY KEY (`id`),
+  INDEX `idx_type_category` (`type`, `category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `phpretro_homes_items` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `guild_id` INT NOT NULL DEFAULT 0,
+  `catalogue_id` INT NOT NULL,
+  `item_type` ENUM('sticker','stickie','background') NOT NULL,
+  `skin` VARCHAR(64) NOT NULL DEFAULT '',
+  `data` TEXT NOT NULL,
+  `x` INT NOT NULL DEFAULT 0,
+  `y` INT NOT NULL DEFAULT 0,
+  `z` INT NOT NULL DEFAULT 0,
+  `placed` TINYINT(1) NOT NULL DEFAULT 0,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_user_placed_type` (`user_id`, `placed`, `item_type`),
+  INDEX `idx_guild_placed` (`guild_id`, `placed`),
+  CONSTRAINT `fk_phpretro_homes_items_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_phpretro_homes_items_catalogue` FOREIGN KEY (`catalogue_id`) REFERENCES `phpretro_homes_catalogue` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+Credit debit is PolarIS `users.credits` only while `users.online` is `'0'`. Audit row type is `homes_store` on `phpretro_transactions`.
+
+## 20. `phpretro_group_guestbook` — group-home comments
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_group_guestbook` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `guild_id` INT NOT NULL,
+  `author_user_id` INT NOT NULL,
+  `message` TEXT NOT NULL,
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_guild_created` (`guild_id`, `created_at`),
+  CONSTRAINT `fk_phpretro_group_guestbook_guild` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_phpretro_group_guestbook_author` FOREIGN KEY (`author_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
 
