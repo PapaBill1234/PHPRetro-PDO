@@ -869,7 +869,6 @@ global $lang;
 ob_start();
 include($file);
 $contents = ob_get_clean();
-ob_end_clean();
 return $contents;
 }
 }
