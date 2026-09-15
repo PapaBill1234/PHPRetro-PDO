@@ -24,7 +24,11 @@ $data = new housekeeping_sql;
 $lang->addLocale("housekeeping.newsletter");
 define('RATE',1000); //how fast when sending messages in miliseconds
 
-if($_GET['do'] == "send"){
+$do = $_GET['do'] ?? '';
+$error = $error ?? '';
+$row = $row ?? array('id' => '', 'subject' => '');
+
+if($do == "send"){
 	$mailer = $_SESSION['newsletter']['mailer'];
 	$emails = $_SESSION['newsletter']['emails'];
 	$subject = $_SESSION['newsletter']['subject'];
@@ -70,18 +74,18 @@ if($_GET['do'] == "send"){
 	}
 	echo "</body></html>";
 	exit;
-}elseif($_GET['do'] == "save"){
+}elseif($do == "save"){
 	Csrf::requireValid();
 	$emails = [];
 	foreach ($serverdb->fetchAll("SELECT mail FROM users WHERE mail IS NOT NULL AND mail != ''") as $row) {
 		$emails[] = $row['mail'];
 	}
 	$mailer = new HoloMail;
-	$message = $input->HoloText($_POST['message'],true);
-	$subject = $input->HoloText($_POST['subject'],true);
+	$message = $input->HoloText($_POST['message'] ?? '',true);
+	$subject = $input->HoloText($_POST['subject'] ?? '',true);
 	if(!empty($_POST['header'])){ $message = $mailer->htmlToMessage($_POST['header']) . $message; }
 	if(!empty($_POST['footer'])){ $message .= $mailer->htmlToMessage($_POST['footer']); }
-	if($_POST['status'] == "true"){
+	if(($_POST['status'] ?? '') == "true"){
 		$_SESSION['newsletter']['mailer'] = $mailer;
 		$_SESSION['newsletter']['emails'] = $emails;
 		$_SESSION['newsletter']['subject'] = $subject;
@@ -99,9 +103,10 @@ if($_GET['do'] == "send"){
 		}
 	}
 	header('Location: '.PATH.'/housekeeping');
+	exit;
 }
 
-$default_email = HoloMail::htmlToMessage('./templates/newsletter_body.php');
+$default_email = (new HoloMail)->htmlToMessage('./templates/newsletter_body.php');
 
 $page['name'] = $lang->loc['pagename.newsletter'];
 $page['category'] = "tools";

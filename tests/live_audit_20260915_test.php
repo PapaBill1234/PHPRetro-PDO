@@ -120,6 +120,11 @@ check(str_contains($css, '/web-gallery/styles/local/com.css'), 'existing local C
 check(!str_contains($css, '/web-gallery/styles/"'), 'existing CSS tag does not point at the styles directory');
 check(HoloOptionalWebGalleryTag('../includes/core.php', 'js') === '', 'path traversal is rejected');
 
+$newsletter = file_get_contents($root.'/housekeeping/newsletter.php');
+check(str_contains($newsletter, "\$_GET['do'] ?? ''"), 'newsletter does not read an undefined do query key');
+check(!str_contains($newsletter, 'HoloMail::htmlToMessage'), 'newsletter does not call instance HoloMail methods statically');
+check(str_contains($newsletter, '(new HoloMail)->htmlToMessage'), 'newsletter loads the body template through a HoloMail instance');
+
 $header = file_get_contents($root.'/templates/housekeeping_header.php');
 check(str_contains($header, "!empty(\$page['scrollbar'])"), 'housekeeping header does not read an undefined scrollbar key');
 check(str_contains($header, "!empty(\$page['second_scrollbar'])"), 'housekeeping header does not read an undefined second_scrollbar key');
