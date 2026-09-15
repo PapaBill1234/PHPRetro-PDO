@@ -247,3 +247,8 @@ CREATE TABLE IF NOT EXISTS `phpretro_minimail` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+## 10. MyHabbo layouts — `synced_at` live-sync columns
+
+`phpretro_myhabbo_layouts` / `phpretro_myhabbo_guestbook` stay the 001 shape. Migration `004_web_homes.sql` adds nullable `synced_at`. Widget keys used on user homes: `profilewidget`, `guestbookwidget`, `highscoreswidget`, `badgeswidget`, `friendswidget`, `groupswidget`, `roomswidget`. Trax/rating/store/stickers and group homes stay 501. Layout row `id` is the widget id for guestbook and friends paging.
+
+

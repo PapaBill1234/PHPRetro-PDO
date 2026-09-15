@@ -15,7 +15,10 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): Guestbook identity is a homes widget ID. phpretro_myhabbo_guestbook has no widget mapping and is not substituted.
-habbletUnavailable('Guestbooks are unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$entry = phpretroHomesRun(static fn() => $homes->addGuestbook(habbletInt($_POST, 'widgetId'), habbletText($_POST, 'message')));
+if ($entry === null) { return; }
+require __DIR__.'/../includes/habblet-templates/home-guestbook-entry.php';
