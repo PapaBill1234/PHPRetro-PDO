@@ -26,7 +26,7 @@ $lang->addLocale("housekeeping.header");
     <link rel="shortcut icon" href="<?php echo PATH; ?>/housekeeping/favicon.ico" type="image/vnd.microsoft.icon" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/housekeeping/images/styles/style.css" type="text/css">
 <link rel="stylesheet" href="<?php echo PATH; ?>/housekeeping/images/styles/boxes.css" type="text/css">
-<?php if($page['scrollbar'] == true){ ?>
+<?php if(!empty($page['scrollbar'])){ ?>
 <script type="text/javascript" src="<?php echo PATH; ?>/housekeeping/images/js/jsScroller.js"></script>
 <script type="text/javascript" src="<?php echo PATH; ?>/housekeeping/images/js/jsScrollbar.js"></script>
 <script type="text/javascript">
@@ -34,7 +34,7 @@ var scroller  = null;
 var scrollbar = null;
 </script>
 <?php } ?>
-<?php if($page['second_scrollbar'] == true){ ?>
+<?php if(!empty($page['second_scrollbar'])){ ?>
 <script type="text/javascript" src="<?php echo PATH; ?>/housekeeping/images/js/jsScroller2.js"></script>
 <script type="text/javascript" src="<?php echo PATH; ?>/housekeeping/images/js/jsScrollbar2.js"></script>
 <script type="text/javascript">
@@ -44,11 +44,11 @@ var scrollbar2 = null;
 <?php } ?>
 <script type="text/javascript">
 window.onload = function(){
-<?php if($page['scrollbar'] == true){ ?>
+<?php if(!empty($page['scrollbar'])){ ?>
  scroller  = new jsScroller(document.getElementById("listview"), 244, 96);
  scrollbar = new jsScrollbar (document.getElementById("Scrollbar-Container"), scroller, false);
 <?php } ?>
-<?php if($page['second_scrollbar'] == true){ ?>
+<?php if(!empty($page['second_scrollbar'])){ ?>
  scroller2  = new jsScroller2(document.getElementById("listview2"), 244, 96);
  scrollbar2 = new jsScrollbar2 (document.getElementById("Scrollbar2-Container"), scroller2, false);
 <?php } ?>
