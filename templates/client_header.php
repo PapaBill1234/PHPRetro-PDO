@@ -56,7 +56,7 @@ if (typeof HabboClient != "undefined") { HabboClient.windowName = "client"; }
 
 </script>
 
-<?php if($page['no_client_js'] != true){ ?>
+<?php if(empty($page['no_client_js'])){ ?>
 <script type="text/javascript">
 var habboClient = true;
 HabboClientUtils.init({remoteCallsEnabled : true, taggingGameEnabled : false});

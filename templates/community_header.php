@@ -18,6 +18,9 @@
 if (!defined("IN_HOLOCMS")) { header("Location: ".PATH."/"); exit; }
 $version = version();
 $lang->addLocale("community.header");
+$homeViewId = (int) ($profile['id'] ?? $userrow[0] ?? 0);
+$groupViewId = (int) ($guild['id'] ?? $grouprow['id'] ?? $grouprow[0] ?? 0);
+$isHomeView = in_array($page['type'] ?? '', ['home', 'user'], true);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -117,16 +120,16 @@ switch($page['id']){
 <style type="text/css">
 
     #playground, #playground-outer {
-	    width: <?php if($user->IsHCMember($userrow[0])){ echo "922"; }else{ echo "752"; } ?>px;
+	    width: <?php if($user->IsHCMember($homeViewId)){ echo "922"; }else{ echo "752"; } ?>px;
 	    height: 1360px;
     }
 
 </style>
 
-<?php if($page['edit'] == true){ ?>
+<?php if(!empty($page['edit'])){ ?>
 <script src="<?php echo PATH; ?>/web-gallery/static/js/homeedit.js" type="text/javascript"></script>
 <script language="JavaScript" type="text/javascript">
-document.observe("dom:loaded", function() { initView(<?php echo $userrow[0]; ?>, <?php echo $userrow[0]; ?>); });
+document.observe("dom:loaded", function() { initView(<?php echo $homeViewId; ?>, <?php echo $homeViewId; ?>); });
 function isElementLimitReached() {
 	if (getElementCount() >= 200) {
 		showHabboHomeMessageBox("<?php echo addslashes($lang->loc['error']); ?>", "<?php echo addslashes($lang->loc['savehome.limit.error']); ?>", "<?php echo addslashes($lang->loc['close']); ?>");
@@ -135,9 +138,9 @@ function isElementLimitReached() {
 	return false;
 }
 
-<?php if($page['type'] == "home"){ ?>
+<?php if($isHomeView){ ?>
 function cancelEditing(expired) {
-	location.replace("<?php echo PATH; ?>/myhabbo/cancel/<?php echo $userrow[0]; ?>" + (expired ? "?expired=true" : ""));
+	location.replace("<?php echo PATH; ?>/myhabbo/cancel/<?php echo $homeViewId; ?>" + (expired ? "?expired=true" : ""));
 }
 
 function getSaveEditingActionName(){
@@ -192,7 +195,7 @@ function showSaveOverlay() {
 </script>
 <?php }else{ ?>
 <script type="text/javascript">
-document.observe("dom:loaded", function() { initView(<?php if($page['type'] == "home"){ echo $userrow[0]; }else{ echo $grouprow[0]; } ?>, <?php if($user->id == "0"){ echo "null"; }else{ echo $user->id; } ?>); });
+document.observe("dom:loaded", function() { initView(<?php echo $isHomeView ? $homeViewId : $groupViewId; ?>, <?php if($user->id == "0"){ echo "null"; }else{ echo $user->id; } ?>); });
 </script>
 <?php } ?>
 <?php

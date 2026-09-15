@@ -458,14 +458,9 @@ class HoloUser {
 
 	function IsUserOnline($id){
 		if($id == "self"){ $id = $this->id; }
-		$timeout = ((int)$GLOBALS['settings']->find("site_session_time")) * 60;
-		$row = $this->db->fetchRow("SELECT online, show_online FROM users WHERE id = ?", [(int)$id]);
+		$row = $this->db->fetchRow("SELECT online FROM users WHERE id = ?", [(int)$id]);
 		if(!$row) return false;
-		if($row['show_online'] == 0) return false;
-		if($row['online'] + $timeout >= time()){
-			return true;
-		}
-		return false;
+		return $row['online'] !== '0';
 	}
 
 	function IsUserBanned($id){
