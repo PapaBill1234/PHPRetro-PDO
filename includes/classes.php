@@ -23,7 +23,7 @@ if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 class HoloInput {
 	function HoloText($str, $advanced=false) {
-		$str = stripslashes($str);
+		$str = stripslashes((string) $str);
 		if($advanced != true){ $str = htmlspecialchars($str,ENT_COMPAT,"UTF-8"); }
 		return $str;
 	}
@@ -655,42 +655,51 @@ class HoloFigureCheck {
 		return true;
 	}
 	function generateFigure($club=true,$gender=null){
-		if($gender == null){ if(rand(0,1) == 0){ $gender = "M"; }else{ $gender = "F"; } }
+		if($gender == null){ $gender = (rand(0,1) == 0) ? "M" : "F"; }
 		if($club == true){ $club = (bool) rand(0,1); }
-		$xml = simplexml_load_file('./xml/figuredata.xml');
+		$fallback = ($gender === "F")
+			? "hd-600-1.ch-630-62.lg-695-62.sh-725-62.hr-500-45"
+			: "hd-180-1.ch-210-66.lg-270-82.sh-290-80.hr-105-42";
+		$xml = @simplexml_load_file('./xml/figuredata.xml');
+		if($xml === false){ return array($fallback, $gender); }
 		$figure = "";
 		foreach($xml->sets->settype as $settype){
 			if((string) $settype['mandatory'] == "1" || rand(0,1) == 1){
-				$item['settype'] = $settype['type'];
+				$item = array();
+				$item['settype'] = (string) $settype['type'];
 				$palette = (int) $settype['paletteid'];
 				$possible = array();
 				foreach($settype->set as $xset){
-					if($xset['gender'] != "U" && $xset['gender'] != $gender){ $fail = true; }
-					if($xset['selectable'] == "0"){ $fail = true; }
-					if($xset['colorable'] == "0"){ $color = false; }else{ $color = true; }
-					if($xset['club'] == "1" && $club == false){ $fail = true; }
-					if($fail != true){ $possible[] = array($xset['id'],$color); }
-					$fail = false; $color = false;
+					$fail = false;
+					$setGender = (string) $xset['gender'];
+					if($setGender != "U" && $setGender != $gender){ $fail = true; }
+					if((string) $xset['selectable'] == "0"){ $fail = true; }
+					$colorable = ((string) $xset['colorable'] != "0");
+					if((string) $xset['club'] == "1" && $club == false){ $fail = true; }
+					if($fail != true){ $possible[] = array((string) $xset['id'], $colorable); }
 				}
 				$count = count($possible);
-				$num = rand(0,$count-1);
+				if($count < 1){ continue; }
+				$num = rand(0, $count-1);
 				$item['set'] = $possible[$num][0];
 				if($possible[$num][1] == false){ $item['color'] = ""; }else{
-					$possible = array();
-					foreach($xml->colors->palette[$palette-1]->color as $color){
-						if($color['club'] == "1" && $club == false){ $fail = true; }
-						if($color['selectable'] == "0"){ $fail = true; }
-						if($fail != true){ $possible[] = $color['id']; }
-						$fail = false;
+					$colors = array();
+					$paletteNode = $xml->colors->palette[$palette-1] ?? null;
+					if($paletteNode !== null){
+						foreach($paletteNode->color as $color){
+							$fail = false;
+							if((string) $color['club'] == "1" && $club == false){ $fail = true; }
+							if((string) $color['selectable'] == "0"){ $fail = true; }
+							if($fail != true){ $colors[] = (string) $color['id']; }
+						}
 					}
-					$count = count($possible);
-					$num = rand(0,$count-1);
-					$item['color'] = $possible[$num];
+					$item['color'] = (count($colors) > 0) ? $colors[rand(0, count($colors)-1)] : "";
 				}
 				$figure .= $item['settype']."-".$item['set']."-".$item['color'].".";
 			}
 		}
-		$figure = substr($figure, 0, -1);
+		$figure = rtrim($figure, ".");
+		if($figure === ""){ return array($fallback, $gender); }
 		return array($figure,$gender);
 	}
 }

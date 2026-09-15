@@ -51,7 +51,7 @@ $core = new core_sql;
 require('./includes/functions.php');
 require('./includes/version.php');
 
-if($page['housekeeping'] != true){ if(is_object($_SESSION['user'] ?? null)){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'])){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
+if($page['housekeeping'] != true){ if(is_object($_SESSION['user'] ?? null)){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'] ?? null)){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
 
 if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_SESSION['hk_user'])) {
     try {

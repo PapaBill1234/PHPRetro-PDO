@@ -2,7 +2,7 @@
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
+require_once __DIR__ . '/../includes/core.php');
 require_once('./includes/hksession.php');
 require_once('../includes/AdminAudit.php');
 $database = new Database();
