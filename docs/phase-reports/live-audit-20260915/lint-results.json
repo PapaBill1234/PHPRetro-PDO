@@ -1,0 +1,143 @@
+{
+  "php": "8.5.10",
+  "full_run_files_outside_references": 297,
+  "full_run_passed": 270,
+  "failed": 27,
+  "failures": [
+    {
+      "file": "housekeeping/about.php",
+      "line": 23,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/alerts.php",
+      "line": 6,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/auditlog.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/banners.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/bans.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/cache.php",
+      "line": 21,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/campaigns.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/catalogue.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/collectables.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/dashboard.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/faq.php",
+      "line": 3,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/help.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/index.php",
+      "line": 21,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/logout.php",
+      "line": 20,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/logs.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/maintenance.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/news.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/newsletter.php",
+      "line": 21,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/recommended.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/reports.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/search.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/settings.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/staffsessions.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/twofactor.php",
+      "line": 2,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/updates.php",
+      "line": 3,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/users.php",
+      "line": 9,
+      "error": "Parse error: Unmatched ')'"
+    },
+    {
+      "file": "housekeeping/vouchers.php",
+      "line": 5,
+      "error": "Parse error: Unmatched ')'"
+    }
+  ]
+}
