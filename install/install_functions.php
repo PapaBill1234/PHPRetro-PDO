@@ -495,9 +495,9 @@ function installDB(){
 	$data->delete1();
 	echo "<strong>".$lang->loc['creating.administrator.account']."...</strong><br />";
 	$password = $input->HoloHash($_SESSION['settings']['admin_password'],$_SESSION['settings']['admin_username']);
-	$data->insert1($input->FilterText($_SESSION['settings']['admin_username']),$password);
+	$data->insert1(trim((string) $_SESSION['settings']['admin_username']),$password);
 	$id = $GLOBALS['serverdb']->insert_id();
-	$data->insert2($id,$input->FilterText($_SESSION['settings']['admin_username']),$input->FilterText($_SESSION['settings']['admin_email']));
+	$data->insert2($id,trim((string) $_SESSION['settings']['admin_username']),trim((string) $_SESSION['settings']['admin_email']));
 	echo "<strong>".$lang->loc['generating.cache']."...</strong><br />";
 	$page['old'] = getcwd();
 	$page['dir'] = '\install';

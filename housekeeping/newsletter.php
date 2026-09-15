@@ -72,10 +72,9 @@ if($_GET['do'] == "send"){
 	exit;
 }elseif($_GET['do'] == "save"){
 	Csrf::requireValid();
-	$sql = $serverdb->query("SELECT email FROM ".PREFIX."users WHERE email != '' AND newsletter = '1' AND email_verified = '1'");
-	$emails = array();
-	while($row = $serverdb->fetch_row($sql)){
-		$emails[] = $row[0];
+	$emails = [];
+	foreach ($serverdb->fetchAll("SELECT mail FROM users WHERE mail IS NOT NULL AND mail != ''") as $row) {
+		$emails[] = $row['mail'];
 	}
 	$mailer = new HoloMail;
 	$message = $input->HoloText($_POST['message'],true);

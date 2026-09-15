@@ -22,13 +22,6 @@ require_once(__DIR__ . '/Cache.php');
 if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 class HoloInput {
-	function FilterText($str) {
-		// get_magic_quotes_gpc() removed – assume false
-		$str = preg_replace(array('/\x{0001}/u','/\x{0002}/u','/\x{0003}/u','/\x{0005}/u','/\x{0009}/u'),' ',$str);
-		// SQL escaping removed – will be handled by PDO in Phase 2
-		throw new Exception("Not yet migrated – see Phase 2");
-		return $str;
-	}
 	function HoloText($str, $advanced=false) {
 		$str = stripslashes($str);
 		if($advanced != true){ $str = htmlspecialchars($str,ENT_COMPAT,"UTF-8"); }

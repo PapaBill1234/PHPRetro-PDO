@@ -38,14 +38,14 @@ HabboView.run();
 <div id="column3" class="column">
 				<div class="habblet-container ">
 						<div class="ad-container">
-<?php $sql = $db->query("SELECT * FROM ".PREFIX."banners WHERE status = '1' ORDER BY id ASC");
-
-while($row = $db->fetch_assoc($sql)) { ?>
+<?php $banners = [];
+try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
+foreach ($banners as $row) { ?>
 <?php if($row['advanced'] == "1"){
 echo $input->HoloText($row['html'], true)."\n<br />\n";
 }else{ ?>
-<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><img src="<?php echo $row['banner']; ?>"></a><br /><?php } ?>
-<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><?php echo $row['text']; ?></a><br /><?php } ?>
+<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
+<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
 <?php } ?>
 <?php } ?>
 						</div>
@@ -53,10 +53,11 @@ echo $input->HoloText($row['html'], true)."\n<br />\n";
 				<script type="text/javascript">if (!$(document.body).hasClassName('process-template')) { Rounder.init(); }</script>
 </div>
 <?php }
-$sql = $db->query("SELECT * FROM ".PREFIX."faq WHERE show_in_footer = '1' AND type = 'cat' ORDER BY id ASC");
+$sql = [];
+try { $sql = $db->fetchAll('SELECT id, question FROM phpretro_faq WHERE active = 1 ORDER BY sort_order ASC, id ASC'); } catch (Throwable $exception) { $sql = []; }
 $content = "";
-while($row = $db->fetch_assoc($sql)){
-	$content = $content." | <a href=\"".PATH."/help/".$row['id']."\" target=\"_new\">".$row['title']."</a>";
+foreach ($sql as $row){
+	$content = $content." | <a href=\"".PATH."/help/".$row['id']."\" target=\"_new\">".$input->HoloText($row['question'])."</a>";
 }
 ?>
 

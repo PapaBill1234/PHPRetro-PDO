@@ -38,8 +38,7 @@ if(!isset($_SESSION['user']) && $page['allow_guests'] != true){
 	if(!isset($page['dir'])){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; }
 }
 if(!empty($page['rank'])){
-	$u = $serverdb->fetch_row($core->select3($id));
-	if($u[3] < $page['rank']){
+	if((int) $user->user('rank') < (int) $page['rank']){
 		$user->error = 4;
 	}
 }
