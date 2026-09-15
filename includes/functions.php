@@ -47,6 +47,25 @@ function HoloText($str, $advanced=false){
 	$str = (string) $str;
 	return $advanced ? $str : htmlspecialchars($str, ENT_COMPAT, 'UTF-8');
 }
+function HoloOptionalWebGalleryTag($relativeFile, $type){
+	$relativeFile = ltrim(str_replace('\\', '/', (string) $relativeFile), '/');
+	if ($relativeFile === '' || str_contains($relativeFile, '..') || !str_starts_with($relativeFile, 'web-gallery/')) {
+		return '';
+	}
+	$disk = getcwd() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativeFile);
+	if (!is_file($disk)) {
+		return '';
+	}
+	$url = rtrim((string) PATH, '/') . '/' . $relativeFile;
+	$safe = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+	if ($type === 'css') {
+		return '<link rel="stylesheet" href="'.$safe.'" type="text/css" />'."\n";
+	}
+	if ($type === 'js') {
+		return '<script src="'.$safe.'" type="text/javascript"></script>'."\n";
+	}
+	return '';
+}
 function GenerateTicket($type = "sso",$length = 0){
 switch($type){
 case "sso":

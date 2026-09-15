@@ -40,9 +40,8 @@ var andSoItBegins = (new Date()).getTime();
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/buttons.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/boxes.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/tooltips.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
-
-<script src="<?php echo PATH; ?>/web-gallery/js/local/com.js" type="text/javascript"></script>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/js/local/com.js', 'js'); ?>
 
 <script type="text/javascript">
 document.habboLoggedIn = <?php if($user->id == 0){ echo "false"; }else{ echo "true"; } ?>;
@@ -201,7 +200,7 @@ document.observe("dom:loaded", function() { initView(<?php if($page['type'] == "
 }
 ?>
 
-<?php if($page['discussion'] == true){ ?><link href="<?php echo PATH; ?>/web-gallery/styles/discussions.css" type="text/css" rel="stylesheet"/><?php } ?>
+<?php if(!empty($page['discussion'])){ ?><link href="<?php echo PATH; ?>/web-gallery/styles/discussions.css" type="text/css" rel="stylesheet"/><?php } ?>
 
 <meta name="description" content="<?php echo $settings->find("site_description"); ?>" />
 <meta name="keywords" content="<?php echo $settings->find("site_keywords"); ?>" />

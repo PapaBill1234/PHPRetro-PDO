@@ -21,8 +21,6 @@ $lang->addLocale("landing.email");
 $page['name'] = $lang->loc['pagename.email.verify'];
 $page['bodyid'] = "";
 
-session_start();
-
 require_once('./templates/login_header.php');
 
 $db = new Database();

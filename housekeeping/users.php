@@ -6,9 +6,9 @@ $page['rank'] = 7;
 }else{
 $page['rank'] = 6;
 }
-require_once __DIR__ . '/../includes/core.php');
+require_once __DIR__ . '/../includes/core.php';
 require_once('./includes/hksession.php');
-require_once __DIR__ . '/../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/AdminAudit.php';
 $database = new Database();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['bulk_action'] ?? '') === 'set_rank') {
     Csrf::requireValid();

@@ -43,7 +43,9 @@
    
    // start a PHP session - this class uses sessions to store the generated 
    // code. Comment out if you are calling already from your application
-   session_start();
+   if (session_status() !== PHP_SESSION_ACTIVE) {
+      session_start();
+   }
    
    // class defaults - change to effect globally
    
@@ -71,9 +73,9 @@
    class PhpCaptcha {
       var $oImage;
       var $aFonts;
-      var $iWidth;
-      var $iHeight;
-      var $iNumChars;
+      var $iWidth = CAPTCHA_WIDTH;
+      var $iHeight = CAPTCHA_HEIGHT;
+      var $iNumChars = CAPTCHA_NUM_CHARS;
       var $iNumLines;
       var $iSpacing;
       var $bCharShadow;
@@ -87,7 +89,7 @@
       var $sFileType;
       var $sCode = '';
       
-      function PhpCaptcha(
+      function __construct(
          $aFonts, // array of TrueType fonts to use - specify full path
          $iWidth = CAPTCHA_WIDTH, // width of image
          $iHeight = CAPTCHA_HEIGHT // height of image
@@ -110,7 +112,10 @@
       }
       
       function CalculateSpacing() {
-         $this->iSpacing = (int)($this->iWidth / $this->iNumChars);
+         $chars = (int) $this->iNumChars;
+         if ($chars < 1) { $chars = 1; }
+         $width = (int) $this->iWidth;
+         $this->iSpacing = (int)($width / $chars);
       }
       
       function SetWidth($iWidth) {
@@ -479,9 +484,9 @@
    
    // example sub class
    class PhpCaptchaColour extends PhpCaptcha {
-      function PhpCaptchaColour($aFonts, $iWidth = CAPTCHA_WIDTH, $iHeight = CAPTCHA_HEIGHT) {
+      function __construct($aFonts, $iWidth = CAPTCHA_WIDTH, $iHeight = CAPTCHA_HEIGHT) {
          // call parent constructor
-         parent::PhpCaptcha($aFonts, $iWidth, $iHeight);
+         parent::__construct($aFonts, $iWidth, $iHeight);
          
          // set options
          $this->UseColour(true);

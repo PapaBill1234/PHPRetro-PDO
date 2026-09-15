@@ -33,7 +33,7 @@ HabboView.run();
 
 </script>
 
-<?php if($page['no_column3'] != true){ ?>
+<?php if(empty($page['no_column3'])){ ?>
 
 <div id="column3" class="column">
 				<div class="habblet-container ">
