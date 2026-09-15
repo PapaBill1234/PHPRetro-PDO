@@ -26,6 +26,24 @@ The first release is **room jukebox playback**, not a byte-for-byte recreation o
 
 This boundary avoids inventing a mapping between the old Flash homes schema and Polaris's in-room music model.
 
+## PR #27 integration and delivery strategy
+
+PR #27 (`feature/restore-remaining-501s`) is Phase Zero for this plan. It restores the project-owned MyHabbo foundation that Trax needs: layout records, the homes catalogue, website inventory, group-home support, permissions and the live-sync outbox. Its Trax handlers intentionally remain 501 because they require the Polaris/Nitro work described here.
+
+Do not merge PR #27 and then start a separate, disconnected Trax branch. When implementation begins, create the Trax working branch from PR #27's head. That branch will contain both PR #27's completed website restorations and the new Trax work, and its final PR will target `master`. The standalone PR #27 can then be closed as superseded once the combined PR is ready for review.
+
+The combined work adds a **modern MyHabbo Trax widget** on top of the room-jukebox feature:
+
+1. Enable the currently blocked `traxplayerwidget` only after authoritative Polaris/Nitro playback exists.
+2. Add the skipped user-home widget catalogue entry (legacy slot 108) through a new project migration. It is a modern widget, not a Flash asset.
+3. Add a project-owned widget configuration record that links one MyHabbo layout widget to one verified Polaris room. The record stores configuration only; playback state remains owned by the Polaris plugin.
+4. Render now-playing metadata, cover art, room status and a Join Room action on the home page. The owner/authorised room users receive controls; visitors receive display-only state.
+5. Replace `myhabbo_traxplayer_select_song.php` with a signed CMS command to the plugin, including the room-state revision. It never writes Polaris state directly.
+6. Replace the legacy `trax_song.php` Flash route with a modern explanatory response or Nitro room link. It does not become an unauthenticated audio-file endpoint.
+7. Keep group Trax widgets out of the first release. PR #27 also skips legacy group slot 113; that is a later product decision after the user-home widget is stable.
+
+The existing PR #27 outbox remains useful for layout/configuration changes, but it cannot synchronize real-time music. The Polaris plugin packet broadcasts remain the only authority for start, pause, track selection and late-join playback state.
+
 ## Target architecture
 
 ```mermaid
