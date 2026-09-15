@@ -19,18 +19,22 @@ $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 require_once('./includes/session.php');
 $data = new credits_sql;
-$lang->addLocale("club.confirm");
+$lang->addLocale(["club.confirm", "credits.club"]);
 $lang->addLocale("ajax.buttons");
 
-$option = $input->HoloText($_POST['optionNumber']);
-$gender = $_POST['newGender'];
-$figure = $_POST['figureData'];
+$option = (int) ($_POST['optionNumber'] ?? 0);
+$offers = [
+	1 => [20, 1],
+	2 => [50, 3],
+	3 => [80, 6],
+];
 
-switch($option){
-	case 1: $price = 20; $months = 1; break;
-	case 2: $price = 50; $months = 3; break;
-	case 3: $price = 80; $months = 6; break;
+if (!isset($offers[$option])) {
+	http_response_code(400);
+	exit;
 }
+
+[$price, $months] = $offers[$option];
 ?>
 <div id="hc_confirm_box">
 
