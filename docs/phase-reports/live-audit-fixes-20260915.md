@@ -23,7 +23,9 @@ session shutdown.
 
 All 27 housekeeping files had a leftover `)` on
 `require_once __DIR__ . '/../includes/....php');` from PR #32. Every matching
-include is corrected, not only the first hit in each file.
+include is corrected, not only the first hit in each file. Remaining
+`require_once('../includes/AdminAudit.php')` calls after `core.php`'s `chdir()`
+are converted to `__DIR__` so Apache no longer looks outside the site root.
 
 ## F3 — CAPTCHA
 
@@ -53,6 +55,10 @@ this PR does not invent a mail policy.
 `allow_guests`, `name`, `bodyid`, …). `session.php` saves `REQUEST_URI` when
 `page.dir` is empty and never reads an undefined `$_SESSION['page']`.
 `forgot.php` and `email.php` no longer call `session_start()` after `core.php`.
+
+Housekeeping header optional keys `scrollbar` and `second_scrollbar` are initialized
+and read with `!empty()`, so dashboard pages no longer emit undefined-array-key
+warnings.
 
 ## F7 — empty optional assets
 

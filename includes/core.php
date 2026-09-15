@@ -17,7 +17,7 @@
 
 define("IN_HOLOCMS", TRUE);
 $page = $page ?? array();
-$page += array('dir' => '', 'no_ajax' => false, 'bypass_user_check' => false, 'housekeeping' => false, 'id' => '', 'new_landing' => false, 'discussion' => false, 'no_column3' => false, 'allow_guests' => false, 'rank' => '', 'name' => '', 'bodyid' => '', 'type' => '', 'cat' => '', 'category' => '');
+$page += array('dir' => '', 'no_ajax' => false, 'bypass_user_check' => false, 'housekeeping' => false, 'id' => '', 'new_landing' => false, 'discussion' => false, 'no_column3' => false, 'allow_guests' => false, 'rank' => '', 'name' => '', 'bodyid' => '', 'type' => '', 'cat' => '', 'category' => '', 'scrollbar' => false, 'second_scrollbar' => false);
 
 if(strpos($_SERVER['SERVER_SOFTWARE'],"Win") == false){ $page['dir'] = str_replace('\\','/',$page['dir']); }
 chdir(str_replace($page['dir'], "", getcwd()));
