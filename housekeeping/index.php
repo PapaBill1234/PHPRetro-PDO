@@ -18,9 +18,9 @@
 $page['dir'] = '\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once __DIR__ . '/../includes/core.php');
-require_once __DIR__ . '/../includes/Totp.php');
-require_once __DIR__ . '/../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/core.php';
+require_once __DIR__ . '/../includes/Totp.php';
+require_once __DIR__ . '/../includes/AdminAudit.php';
 
 if($user->id > 0){ header('Location: '.PATH.'/housekeeping/dashboard'); exit; }
 

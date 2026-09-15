@@ -59,6 +59,7 @@ check(str_contains($core, "\$_SESSION['hk_user'] ?? null"), 'core.php null-safes
 $hkIndex = file_get_contents($root.'/housekeeping/index.php');
 check(str_contains($hkIndex, "__DIR__ . '/../includes/Totp.php'"), 'housekeeping login requires Totp via __DIR__');
 check(!str_contains($hkIndex, "require_once('../includes/Totp.php')"), 'housekeeping login no longer uses chdir-relative Totp path');
+check(!preg_match("/require_once __DIR__ \. '\/\.\.\/includes\/[^']+\.php'\)/", $hkIndex), 'housekeeping login has no leftover require parenthesis');
 
 $hkSession = file_get_contents($root.'/includes/hksession.php');
 check(!str_contains($hkSession, 'fetch_row'), 'hksession rank check no longer uses mysql-style fetch_row');

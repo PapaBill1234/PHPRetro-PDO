@@ -1,7 +1,7 @@
 <?php
 $page['dir'] = '\\housekeeping'; $page['housekeeping'] = true; $page['rank'] = 5;
-require_once __DIR__ . '/../includes/core.php'); require_once('./includes/hksession.php');
-require_once __DIR__ . '/../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/core.php'; require_once('./includes/hksession.php');
+require_once __DIR__ . '/../includes/AdminAudit.php';
 $database = new Database(); $action = $_GET['do'] ?? 'list'; $notice = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') { Csrf::requireValid();
     $id = (int) ($_POST['id'] ?? 0);

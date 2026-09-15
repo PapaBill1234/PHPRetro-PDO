@@ -21,8 +21,6 @@ $lang->addLocale("landing.forgot");
 $page['name'] = $lang->loc['pagename.forgot.password'];
 $page['bodyid'] = "";
 
-session_start();
-
 require_once('./templates/login_header.php');
 $db = new Database();
 $mailer = new HoloMail;

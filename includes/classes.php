@@ -164,6 +164,7 @@ class HoloUser {
 	public $error = 0;
 	public $banned;
 	public $user = array('0','Guest','null','0',null,null,null,null,null,null,null,null,null);
+	public $figure = null;
 	private $db;
 
 	function __construct($name = null, $password = null, $updateuser=false, $rememberme=null){
@@ -255,6 +256,19 @@ class HoloUser {
 		return true;
 	}
 
+	public function __serialize(): array {
+		$data = get_object_vars($this);
+		unset($data['db']);
+		return $data;
+	}
+
+	public function __unserialize(array $data): void {
+		foreach ($data as $key => $value) {
+			$this->$key = $value;
+		}
+		$this->db = new Database();
+	}
+
 	/**
 	 * Complete a previously validated token login without requiring a password.
 	 */
@@ -341,17 +355,21 @@ class HoloUser {
 		if($style[0] == "s"){ $style[6] = "1"; }else{ $style[6] = "0"; }
 		if($style[3] == "sml"){ $style[7] = "1"; }else{ $style[7] = "0"; }
 		$expandedstyle = "s-".$style[6].".g-".$style[7].".d-".$style[1].".h-".$style[2].".a-0";
-		if($GLOBALS['settings']->find("site_cache_images") == "1" && file_exists("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png")){
+		$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
+		$cacheImages = (string) $GLOBALS['settings']->find("site_cache_images");
+		if($cacheImages !== "0" && $cacheImages !== "1"){ $cacheImages = "0"; }
+		$cachedFile = "./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png";
+		if($cacheImages == "1" && file_exists($cachedFile)){
 			$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
-		}elseif($GLOBALS['settings']->find("site_cache_images") == "1" && !file_exists("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png")){
-			$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
-			$i = file_get_contents($URL);
-			$f = fopen("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png","w+");
-			fwrite($f,$i);
-			fclose($f);
-			$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
-		}elseif($GLOBALS['settings']->find("site_cache_images") == "0"){
-			$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
+		}elseif($cacheImages == "1"){
+			$i = @file_get_contents($URL);
+			if($i !== false && $i !== ''){
+				$dir = dirname($cachedFile);
+				if(!is_dir($dir)){ @mkdir($dir, 0777, true); }
+				$f = @fopen($cachedFile,"w+");
+				if($f){ fwrite($f,$i); fclose($f); }
+				$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
+			}
 		}
 		if($return == 0){ return $URL; }else{ return $hash; }
 	}
@@ -711,7 +729,7 @@ class HoloSettings {
     function __construct(?Cache $store = null){
         $this->database = $GLOBALS['db'] ?? new Database();
         $this->store = $store ?? CacheFactory::instance();
-        $this->cache = array('site_path'=>'','site_shortname'=>'PHPRetro','site_name'=>'PHPRetro','site_language'=>'en','site_closed'=>'0','hotel_server'=>'polaris','cache_settings'=>'0','site_cookie_time'=>'30','site_session_time'=>'20','email_from'=>'noreply@localhost','email_name'=>'PHPRetro');
+        $this->cache = array('site_path'=>'','site_shortname'=>'PHPRetro','site_name'=>'PHPRetro','site_language'=>'en','site_closed'=>'0','hotel_server'=>'polaris','cache_settings'=>'0','site_cookie_time'=>'30','site_session_time'=>'20','email_from'=>'noreply@localhost','email_name'=>'PHPRetro','site_cache_images'=>'1','email_verify_enabled'=>'0');
         $cached = $this->store->get(self::CACHE_KEY);
         if (is_array($cached)) {
             $this->cache = array_merge($this->cache, $cached);

@@ -33,7 +33,6 @@ if(isset($_POST['password'])) {
 	$plain_password = $_POST['password']; // plaintext, not hashed
 	// We will pass plaintext to HoloUser constructor
 	$user = new HoloUser($username, $plain_password, true);
-	$_SESSION['user'] = $user;
 	unset($_SESSION['reauthenticate']);
 	
 	if($user->error > 0){
@@ -41,6 +40,7 @@ if(isset($_POST['password'])) {
 		$page = isset($_POST['page']) ? $input->HoloText($_POST['page']) : '';
 		header("Location: ".PATH."/?page=".$page."&username=".$username."&error=".$user->error); exit;
 	}else{
+		$_SESSION['user'] = $user;
 		$page = isset($_POST['page']) ? $input->HoloText($_POST['page']) : '';
 		$_SESSION['page'] = $page;
 		header("Location: ".PATH."/security_check"); exit;

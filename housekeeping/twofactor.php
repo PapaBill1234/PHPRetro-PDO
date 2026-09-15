@@ -1,5 +1,5 @@
 <?php
-$page['dir']='\\housekeeping'; $page['housekeeping']=true; $page['rank']=5; require_once __DIR__ . '/../includes/core.php'); require_once __DIR__ . '/../includes/Totp.php'); require_once __DIR__ . '/../includes/AdminAudit.php');
+$page['dir']='\\housekeeping'; $page['housekeeping']=true; $page['rank']=5; require_once __DIR__ . '/../includes/core.php'; require_once __DIR__ . '/../includes/Totp.php'; require_once __DIR__ . '/../includes/AdminAudit.php';
 $pending = $_SESSION['staff_2fa_pending_user'] ?? null;
 if (!is_object($pending) || !isset($_SESSION['staff_2fa_pending_at']) || time() - (int) $_SESSION['staff_2fa_pending_at'] > 600) { unset($_SESSION['staff_2fa_pending_user'], $_SESSION['staff_2fa_pending_at']); header('Location: '.PATH.'/housekeeping/'); exit; }
 $db=new Database(); $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8'); $userId=(int)$pending->id; $row=$db->fetchRow('SELECT secret_base32,enabled FROM phpretro_staff_totp WHERE user_id=?',[$userId]);

@@ -18,7 +18,7 @@
 $page['dir'] = '\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 7;
-require_once __DIR__ . '/../includes/core.php');
+require_once __DIR__ . '/../includes/core.php';
 require_once('./includes/hksession.php');
 $data = new housekeeping_sql;
 $lang->addLocale("housekeeping.newsletter");

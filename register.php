@@ -60,12 +60,20 @@ if (isset($_POST['bean_avatarName'])) {
     if (!$failure) {
         $db = new Database();
         $createdAt = time();
-        $db->execute(
-            "INSERT INTO users (username, password, mail, mail_verified, account_created, account_day_of_birth, last_login, last_online, look, gender, credits, ip_register, ip_current)
-             VALUES (?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$name, password_hash($password, PASSWORD_DEFAULT), $email, $createdAt, mktime(0, 0, 0, $month, $day, $year), $createdAt, $createdAt, $figure, $gender, (int) $settings->find('register_start_credits'), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)]
-        );
+        $startCredits = trim((string) $settings->find('register_start_credits'));
+        $columns = "username, password, mail, mail_verified, account_created, account_day_of_birth, last_login, last_online, look, gender, ip_register, ip_current";
+        $placeholders = "?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?";
+        $params = [$name, password_hash($password, PASSWORD_DEFAULT), $email, $createdAt, mktime(0, 0, 0, $month, $day, $year), $createdAt, $createdAt, $figure, $gender, substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)];
+        if ($startCredits !== '' && preg_match('/^-?\d+$/', $startCredits)) {
+            $columns .= ', credits';
+            $placeholders .= ', ?';
+            $params[] = (int) $startCredits;
+        }
+        $db->execute("INSERT INTO users ($columns) VALUES ($placeholders)", $params);
         $userId = (int) $db->insertId();
+        if ($userId > 0 && !$db->fetchColumn('SELECT user_id FROM users_settings WHERE user_id = ?', [$userId])) {
+            $db->execute('INSERT INTO users_settings (user_id) VALUES (?)', [$userId]);
+        }
 
         if ($settings->find('email_verify_enabled') === '1') {
             $token = bin2hex(random_bytes(32));

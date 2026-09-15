@@ -41,9 +41,8 @@ var andSoItBegins = (new Date()).getTime();
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/buttons.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/boxes.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/tooltips.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
-
-<script src="<?php echo PATH; ?>/web-gallery/js/local/com.js" type="text/javascript"></script>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/js/local/com.js', 'js'); ?>
 
 <script type="text/javascript">
 document.habboLoggedIn = true;

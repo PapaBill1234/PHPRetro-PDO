@@ -35,7 +35,7 @@ var andSoItBegins = (new Date()).getTime();
 <?php if($page['new_landing'] == true){ ?>
 <script src="<?php echo PATH; ?>/web-gallery/static/js/libs2.js" type="text/javascript"></script>
 <script src="<?php echo PATH; ?>/web-gallery/static/js/landing.js" type="text/javascript"></script>
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
 
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/frontpage.css" type="text/css" />
 <style type="text/css">
@@ -55,9 +55,8 @@ body {background-color: }
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/buttons.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/boxes.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/tooltips.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
-
-<script src="<?php echo PATH; ?>/web-gallery/js/local/com.js" type="text/javascript"></script>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/js/local/com.js', 'js'); ?>
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/process.css" type="text/css" />
 <?php } ?>
 

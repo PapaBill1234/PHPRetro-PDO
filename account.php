@@ -46,7 +46,6 @@ case "submit":
 	$remember_me = $_POST['_login_remember_me'] ?? null;
 	
 	$user = new HoloUser($name, $password, true, $remember_me);
-	$_SESSION['user'] = $user;
 	$lang->addLocale("landing.login");
 	
 	if($user->error > 0){
