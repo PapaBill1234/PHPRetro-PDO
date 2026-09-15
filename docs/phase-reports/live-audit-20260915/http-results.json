@@ -1,0 +1,438 @@
+{
+  "commit": "1c1a98c02f441450f27c4f2356a7addc237f7450",
+  "results": [
+    {
+      "path": "",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 11343,
+      "errors": []
+    },
+    {
+      "path": "account/submit",
+      "method": "POST",
+      "status": 302,
+      "location": "/PHPRetro-PDO/security_check",
+      "bytes": 190,
+      "errors": [
+        "Fatal error:  Uncaught Exception: Serialization of 'PDO' is not allowed in [no active file]:0"
+      ]
+    },
+    {
+      "path": "security_check",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 0,
+      "errors": []
+    },
+    {
+      "path": "me",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "profile",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "home/<qa-id>/id",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "groups",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "discussions",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "community",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "articles",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "credits",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "club",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "help",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 10766,
+      "errors": [
+        "Warning:  Undefined array key \"discussion\" in [deployment]/templates/community_header.php on line 204",
+        "Warning:  Undefined array key \"no_column3\" in [deployment]/templates/community_footer.php on line 36"
+      ]
+    },
+    {
+      "path": "tag",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "iot",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 6073,
+      "errors": []
+    },
+    {
+      "path": "client",
+      "method": "GET",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 135,
+      "errors": [
+        "Warning:  Undefined array key \"page\" in [deployment]/includes/session.php on line 36"
+      ]
+    },
+    {
+      "path": "account/password/forgot",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 9619,
+      "errors": [
+        "Notice:  session_start(): Ignoring session_start() because a session is already active (started from [deployment]/includes/core.php on line 39) in [deployment]/forgot.php on line 24"
+      ]
+    },
+    {
+      "path": "papers/disclaimer",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 6753,
+      "errors": []
+    },
+    {
+      "path": "papers/privacy",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 6761,
+      "errors": []
+    },
+    {
+      "path": "housekeeping/",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 128,
+      "errors": [
+        "Parse error:  Unmatched ')' in [deployment]/housekeeping/index.php on line 21"
+      ]
+    },
+    {
+      "path": "housekeeping/dashboard",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 131,
+      "errors": [
+        "Parse error:  Unmatched ')' in [deployment]/housekeeping/dashboard.php on line 2"
+      ]
+    },
+    {
+      "path": "captcha.jpg",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 449,
+      "errors": [
+        "Fatal error:  Uncaught DivisionByZeroError: Division by zero in [deployment]/captcha/php-captcha.inc.php:113"
+      ]
+    },
+    {
+      "path": "register",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 30440,
+      "errors": [
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356"
+      ]
+    },
+    {
+      "path": "habblet/ajax/namecheck",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 0,
+      "errors": [],
+      "response": "",
+      "x_json": "{\"registration_name\":\"Sorry, but this username is taken. Please choose another one.\"}"
+    },
+    {
+      "path": "habblet/ajax/namecheck",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 0,
+      "errors": [],
+      "response": "",
+      "x_json": "{}"
+    },
+    {
+      "path": "habblet/ajax/emailcheck",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 30,
+      "errors": [],
+      "response": "register.message.invalid_email",
+      "x_json": null
+    },
+    {
+      "path": "habblet/ajax/emailcheck",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 31,
+      "errors": [],
+      "response": "register.message.email_chars_ok",
+      "x_json": "\"emailOk\""
+    },
+    {
+      "path": "habblet/ajax/password",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 33,
+      "errors": [],
+      "response": "register.tooltip.passwordtooshort",
+      "x_json": null
+    },
+    {
+      "path": "habblet/ajax/password",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 32,
+      "errors": [],
+      "response": "register.tooltip.passwordsuccess",
+      "x_json": "\"charOk\""
+    },
+    {
+      "path": "habblet/ajax/namecheck",
+      "method": "POST",
+      "status": 403,
+      "location": null,
+      "bytes": 31,
+      "errors": []
+    },
+    {
+      "path": "register",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 32086,
+      "errors": [
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356",
+        "Warning:  Undefined variable $URL in [deployment]/includes/classes.php on line 356"
+      ]
+    },
+    {
+      "path": "register",
+      "method": "POST",
+      "status": 302,
+      "location": "/PHPRetro-PDO/",
+      "bytes": 0,
+      "errors": []
+    },
+    {
+      "path": "iot",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 6073,
+      "errors": []
+    },
+    {
+      "path": "iot/go",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 6119,
+      "errors": []
+    },
+    {
+      "path": "iot/go",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 5416,
+      "errors": []
+    },
+    {
+      "path": "articles/rss.xml",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 332,
+      "errors": []
+    },
+    {
+      "path": "email",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 7298,
+      "errors": [
+        "Notice:  session_start(): Ignoring session_start() because a session is already active (started from [deployment]/includes/core.php on line 39) in [deployment]/email.php on line 24"
+      ]
+    },
+    {
+      "path": "papers/privacy",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 6761,
+      "errors": []
+    },
+    {
+      "path": "web-gallery/js/",
+      "method": "GET",
+      "status": 403,
+      "location": null,
+      "bytes": 287,
+      "errors": []
+    },
+    {
+      "path": "web-gallery/styles/",
+      "method": "GET",
+      "status": 403,
+      "location": null,
+      "bytes": 287,
+      "errors": []
+    },
+    {
+      "path": "web-gallery/static/js/landing.js",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 84206,
+      "errors": []
+    },
+    {
+      "path": "web-gallery/v2/styles/style.css",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 79533,
+      "errors": []
+    },
+    {
+      "path": "",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 11343,
+      "errors": []
+    },
+    {
+      "path": "account/submit",
+      "method": "POST",
+      "status": 200,
+      "location": null,
+      "bytes": 953,
+      "errors": [
+        "Fatal error:  Uncaught Exception: Serialization of 'PDO' is not allowed in [no active file]:0"
+      ]
+    },
+    {
+      "path": "account/submit",
+      "method": "POST",
+      "status": 403,
+      "location": null,
+      "bytes": 31,
+      "errors": []
+    },
+    {
+      "path": "articles/rss.xml",
+      "method": "GET",
+      "status": 200,
+      "location": null,
+      "bytes": 332,
+      "errors": []
+    }
+  ]
+}
