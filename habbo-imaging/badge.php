@@ -29,9 +29,13 @@
 $page['dir'] = '\habbo-imaging';
 require_once('../includes/core.php');
 
-header("Content-type: image/gif");
+$badgedata = $_GET['badge'] ?? '';
+if (!is_string($badgedata) || preg_match('/^[a-zA-Z0-9]+$/', $badgedata) !== 1) {
+	http_response_code(400);
+	exit;
+}
 
-$badgedata = $_GET['badge'];
+header("Content-type: image/gif");
 
 if($settings->find("site_cache_images") == 1 && file_exists("./cache/badges/".$badgedata.".gif")){ $im = imagecreatefromgif("./cache/badges/".$badgedata.".gif"); }else{
 

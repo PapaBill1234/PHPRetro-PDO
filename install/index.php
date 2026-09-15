@@ -43,7 +43,7 @@ if(!empty($_GET['installed'])){
 		$message = $lang->loc['upgraded.message'];
 		break;
 	}
-}elseif(file_exists('../includes/config.php') && $_GET['bypass'] != "true"){
+}elseif(file_exists('../includes/config.php')){
 	$page['dir'] = '\install';
 	$page['old'] = getcwd();
 	require_once('../includes/core.php');
