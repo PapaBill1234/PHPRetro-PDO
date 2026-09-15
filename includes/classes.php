@@ -355,7 +355,7 @@ class HoloUser {
 		if($style[0] == "s"){ $style[6] = "1"; }else{ $style[6] = "0"; }
 		if($style[3] == "sml"){ $style[7] = "1"; }else{ $style[7] = "0"; }
 		$expandedstyle = "s-".$style[6].".g-".$style[7].".d-".$style[1].".h-".$style[2].".a-0";
-		$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
+		$URL = "https://www.habbo.com/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
 		$cacheImages = (string) $GLOBALS['settings']->find("site_cache_images");
 		if($cacheImages !== "0" && $cacheImages !== "1"){ $cacheImages = "0"; }
 		$cachedFile = "./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png";
