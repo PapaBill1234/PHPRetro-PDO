@@ -4,8 +4,10 @@
  *
  * record() writes phpretro_emulator_outbox. notifyLiveGame() is the hook a later
  * PolarIS worker plugs into. It is a no-op today: pending rows sit until a
- * consumer exists. Callers always record first, then notify, and never write
- * PolarIS live tables from the CMS.
+ * consumer exists. Callers always record first, then notify.
+ *
+ * Website-owned features never write PolarIS live tables. Group purchase is the
+ * documented exception: it mirrors PolarIS RequestGuildBuyEvent/createGuild.
  */
 class PhpretroLiveSync
 {

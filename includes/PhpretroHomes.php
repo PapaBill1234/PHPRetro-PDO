@@ -160,6 +160,7 @@ class PhpretroHomes
         $widget = $this->guestbook($widgetId);
         $message = trim($message);
         $this->need($this->actor > 0, 'Sign in required.', 401);
+        // Privacy configure is still 501 (no privacy column). Any signed-in user may post.
         $this->need($message !== '' && mb_strlen($message, 'UTF-8') <= 1000, 'Message must be between 1 and 1000 characters.', 400);
         return $this->transaction(function () use ($widget, $message) {
             $now = time();

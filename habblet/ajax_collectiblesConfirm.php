@@ -17,11 +17,14 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
+require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
 $lang->addLocale('ajax.buttons');
-$month = mktime(0, 0, 0, (int) date('m'), 1, (int) date('Y'));
-$name = $db->fetchColumn('SELECT name FROM phpretro_collectibles WHERE time = ?', [$month]);
-// The CMS table is descriptive only: it has no catalog item ID or purchase price.
+$item = phpretroWebRestorations()->currentCollectible();
+$name = $item ? $item['name'] : 'No collectible this month.';
 ?>
-<p><?php echo $input->HoloText($name === false ? 'No collectible this month.' : $name); ?></p>
-<p>Collectible purchases are unavailable.</p>
+<p><?php echo $input->HoloText($name); ?></p>
+<p>This records a website claim. Furniture is not granted from PolarIS here.</p>
+<?php if ($item) { ?>
+<p><a href="#" class="new-button" id="collectibles-purchase"><b><?php echo $lang->loc['ok'] ?? 'Purchase'; ?></b><i></i></a></p>
+<?php } ?>
 <p><a href="#" class="new-button" id="collectibles-close"><b><?php echo $lang->loc['cancel']; ?></b><i></i></a></p>

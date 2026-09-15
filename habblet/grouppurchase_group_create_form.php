@@ -44,21 +44,22 @@ if($user->user("credits") < 10){
 <p>
 <?php echo $lang->loc['price']; ?>: <b>10 <?php echo $lang->loc['coins']; ?></b>.<br> <?php echo $lang->loc['you.have']; ?>: <b><?php echo $input->HoloText($user->user("credits")); ?> <?php echo $lang->loc['coins']; ?></b>.
 </p>
+<p>The group badge is a placeholder until you edit it in the hotel client. An owned room with no group is required (PolarIS createGuild).</p>
 
 <form action="#" method="post" id="purchase-group-form-id">
 
 <div id="group-name-area">
     <div id="group_name_message_error" class="error"></div>
     <label for="group_name" id="group_name_text"><?php echo $lang->loc['group.name']; ?>:</label>
-    <input type="text" name="group_name" id="group_name" maxlength="30" onKeyUp="GroupUtils.validateGroupElements('group_name', 30, '<?php echo $lang->loc['max.group.name']; ?>');" value=""/><br />
+    <input type="text" name="group_name" id="group_name" maxlength="29" onKeyUp="GroupUtils.validateGroupElements('group_name', 29, '<?php echo $lang->loc['max.group.name']; ?>');" value=""/><br />
 </div>
 
 <div id="group-description-area">
     <div id="group_description_message_error" class="error"></div>
     <label for="group_description" id="description_text"><?php echo $lang->loc['group.description']; ?>:</label>
     <span id="description_chars_left"><label for="characters_left"><?php echo $lang->loc['characters.left']; ?>:</label>
-    <input id="group_description-counter" type="text" value="255" size="3" readonly="readonly" class="amount" /></span><br/>
-    <textarea name="group_description" id="group_description" onKeyUp="GroupUtils.validateGroupElements('group_description', 255, '<?php echo $lang->loc['max.group.desc']; ?>');"></textarea>
+    <input id="group_description-counter" type="text" value="250" size="3" readonly="readonly" class="amount" /></span><br/>
+    <textarea name="group_description" id="group_description" onKeyUp="GroupUtils.validateGroupElements('group_description', 250, '<?php echo $lang->loc['max.group.desc']; ?>');"></textarea>
 </div>
 </form>
 
