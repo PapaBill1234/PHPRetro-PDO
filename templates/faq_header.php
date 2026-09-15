@@ -41,9 +41,8 @@ var andSoItBegins = (new Date()).getTime();
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/buttons.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/boxes.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/tooltips.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
-
-<script src="<?php echo PATH; ?>/web-gallery/js/local/com.js" type="text/javascript"></script>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/js/local/com.js', 'js'); ?>
 
 <script type="text/javascript">
 document.habboLoggedIn = true;
@@ -80,18 +79,20 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body id="faq" class="plain-template">
 <script src="<?php echo PATH; ?>/web-gallery/static/js/faq.js" type="text/javascript"></script>
 <div id="faq" class="clearfix">
-<div id="faq-header" class="clearfix"><img src="<?php echo PATH; ?>/web-gallery/v2/images/faq/faq_header.png" /><form method="post" action="<?php echo PATH; ?>/help/faqsearch" class="search-box"><input type="text" id="faq-search" name="query" class="search-box-query search-box-onfocus" size="50" value="<?php echo $lang->loc['search']; ?>..."/><input type="submit" value="" title="<?php echo $lang->loc['search']; ?>" class="search" /></form></div>
+<div id="faq-header" class="clearfix"><img src="<?php echo PATH; ?>/web-gallery/v2/images/faq/faq_header.png" /><form method="post" action="<?php echo PATH; ?>/help/faqsearch" class="search-box"><?php echo Csrf::field(); ?><input type="text" id="faq-search" name="query" class="search-box-query search-box-onfocus" size="50" value="<?php echo $lang->loc['search']; ?>..."/><input type="submit" value="" title="<?php echo $lang->loc['search']; ?>" class="search" /></form></div>
 <div id="faq-container" class="clearfix">
 <div id="faq-category-list">
 <ul class="faq">
 <?php
-$sql = $db->query("SELECT * FROM ".PREFIX."faq WHERE type = 'cat' ORDER BY id ASC");
-while($row = $db->fetch_assoc($sql)){
-echo "<li><a href=\"".PATH."/help/".$row['id']."\" name=\"\"><span class=\"faq-link\">".$row['title']."</span></a></li>\n";
+$faqCategories = [];
+try { $faqCategories = $db->fetchAll('SELECT MIN(id) AS id, category FROM phpretro_faq WHERE active = 1 GROUP BY category ORDER BY category ASC'); } catch (Throwable $exception) { $faqCategories = []; }
+foreach ($faqCategories as $row){
+echo "<li><a href=\"".PATH."/help/".$row['id']."\" name=\"\"><span class=\"faq-link\">".$input->HoloText($row['category'])."</span></a></li>\n";
 }
 ?>
 </ul>

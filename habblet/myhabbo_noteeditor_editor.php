@@ -27,7 +27,7 @@ $scope = $_POST['scope'];
 if($scope == ""){ $scope = 1; }
 $query = $input->HoloText($_POST['query']);
 ?>
-<form action="#" method="post" id="webstore-notes-form">
+<form action="#" method="post" id="webstore-notes-form"><?php echo Csrf::field(); ?>
 
 <input type="hidden" name="maxlength" id="webstore-notes-maxlength" value="<?php echo $user->user("rank") > 5 ? "1.7976931348623157E+10308" : "500"; ?>" />
 

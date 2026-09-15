@@ -2,10 +2,10 @@
 $page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
-require_once('../includes/core.php');
+require_once __DIR__ . '/../includes/core.php';
 require_once('./includes/hksession.php');
-require_once('../includes/PhpretroHelpdesk.php');
-require_once('../includes/AdminAudit.php');
+require_once __DIR__ . '/../includes/PhpretroHelpdesk.php';
+require_once __DIR__ . '/../includes/AdminAudit.php';
 $lang->addLocale('housekeeping.help');
 $lang->addLocale('housekeeping.help.display');
 $lang->addLocale('housekeeping.help.remove');
@@ -13,7 +13,7 @@ $desk = phpretroHelpdesk();
 $action = $_GET['do'] ?? 'list';
 $notice = '';
 $escape = static fn($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'remove') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'remove') { Csrf::requireValid();
     $id = (int) ($_POST['id'] ?? 0);
     $desk->remove($id);
     AdminAudit::log(new Database(), (int) $user->id, 'help_remove', 'helpdesk', $id);
@@ -40,7 +40,7 @@ $removeId = (int) ($_GET['id'] ?? 0);
 <div class="page_main"><div class="center">
 <?php if ($notice !== '') { ?><div class="clean-ok"><?php echo $escape($notice); ?></div><?php } ?>
 <?php if ($action === 'remove' && $removeId > 0) { ?>
-<form method="post" action="<?php echo PATH; ?>/housekeeping/help?do=remove">
+<form method="post" action="<?php echo PATH; ?>/housekeeping/help?do=remove"><?php echo Csrf::field(); ?>
 <input type="hidden" name="id" value="<?php echo $removeId; ?>">
 <p>Remove this ticket?</p>
 <button type="submit" name="remove" value="1"><?php echo $escape($lang->loc['remove'] ?? 'Remove'); ?></button>

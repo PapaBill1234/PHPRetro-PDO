@@ -21,12 +21,11 @@ $lang->addLocale("landing.forgot");
 $page['name'] = $lang->loc['pagename.forgot.password'];
 $page['bodyid'] = "";
 
-session_start();
-
 require_once('./templates/login_header.php');
 $db = new Database();
 $mailer = new HoloMail;
 if (isset($_POST['actionForgot'])) {
+    Csrf::requireValid();
     $lang->addLocale("forgot.email");
     $forgotName = trim((string) ($_POST['forgottenpw-username'] ?? ''));
     $forgotMail = trim((string) ($_POST['forgottenpw-email'] ?? ''));
@@ -39,6 +38,7 @@ if (isset($_POST['actionForgot'])) {
         $mailer->sendSimpleMessage($account['mail'], $lang->loc['forgot.mail.subject'], $html);
     } else { $result = $lang->loc['forgot.error.invalid']; }
 } elseif (isset($_POST['actionList'])) {
+    Csrf::requireValid();
     $lang->addLocale("forgot.email");
     $forgotMail = trim((string) ($_POST['ownerEmailAddress'] ?? ''));
     $accounts = $db->fetchAll("SELECT username FROM users WHERE mail = ? ORDER BY username ASC", [$forgotMail]);
@@ -82,7 +82,7 @@ if(!isset($success)){
 
         <div class="clear"></div>
 
-        <form method="post" action="forgot" id="forgottenpw-form">
+        <form method="post" action="forgot" id="forgottenpw-form"><?php echo Csrf::field(); ?>
             <p>
             <label for="forgottenpw-username"><?php echo $lang->loc['forgot.username']; ?></label>
             <input type="text" name="forgottenpw-username" id="forgottenpw-username" value="" />
@@ -120,7 +120,7 @@ if(!isset($success)){
 
         <div class="clear"></div>
 
-        <form method="post" action="forgot" id="accountlist-form">
+        <form method="post" action="forgot" id="accountlist-form"><?php echo Csrf::field(); ?>
             <p>
 
             <label for="accountlist-owner-email"><?php echo $lang->loc['forgot.email']; ?></label>

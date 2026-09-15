@@ -25,10 +25,11 @@
 
 */
 $lang->addLocale("footer");
-$sql = $db->query("SELECT * FROM ".PREFIX."faq WHERE show_in_footer = '1' AND type = 'cat' ORDER BY id ASC");
+$faqLinks = [];
+try { $faqLinks = $db->fetchAll('SELECT id, question FROM phpretro_faq WHERE active = 1 ORDER BY sort_order ASC, id ASC'); } catch (Throwable $exception) { $faqLinks = []; }
 $content = "";
-while($row = $db->fetch_assoc($sql)){
-	$content = $content." | <a href=\"".PATH."/help/".$row['id']."\">".$row['title']."</a>";
+foreach ($faqLinks as $row){
+	$content = $content." | <a href=\"".PATH."/help/".$row['id']."\">".$input->HoloText($row['question'])."</a>";
 }
 ?>
 

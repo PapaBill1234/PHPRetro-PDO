@@ -17,19 +17,24 @@
 
 if (!defined("IN_HOLOCMS")) { header("Location: ".PATH."/"); exit; }
 
-if(time() > ($user->time + (((int) $settings->find("site_session_time")) * 60))){
+if(time() > ((int) ($user->time ?? 0) + (((int) $settings->find("site_session_time")) * 60))){
 	$user->error = 1;
 }else{
 	$user = new HoloUser($user->name,$user->password,true);
 	$_SESSION['hk_user'] = $user;
 }
 if(!empty($page['rank'])){
-	$u = $serverdb->fetch_row($core->select3($user->id));
-	if($u[3] < $page['rank']){
+	$liveRank = 0;
+	try {
+		$liveRank = (int) (new Database())->fetchColumn('SELECT rank FROM users WHERE id = ?', [(int) $user->id]);
+	} catch (Throwable $exception) {
+		$liveRank = (int) $user->user('rank');
+	}
+	if($liveRank < (int) $page['rank']){
 		$user->error = 4;
 	}
 }
-if($user->ip != $_SERVER['REMOTE_ADDR']){
+if(($user->ip ?? '') != ($_SERVER['REMOTE_ADDR'] ?? '')){
 	$user->error = 5;
 }
 if($user->error == 4){
@@ -39,4 +44,6 @@ if($user->error == 4){
 	header('Location: '.PATH.'/housekeeping/');
 	exit;
 }
+
+Csrf::protectPost();
 ?>

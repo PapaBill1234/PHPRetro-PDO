@@ -33,9 +33,16 @@ if(!empty($page['discussion'])){
 ?>
     <div class="habblet ">
 <?php if(empty($page['edit']) && !empty($userrow[0]) && !$user->IsHCMember($userrow[0])){ ?>
-		<?php
-		// PolarIS has no PREFIX.banners table. Keep the slot empty.
-		?>
+		<?php $banners = [];
+		try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
+		foreach ($banners as $row) { ?>
+		<?php if($row['advanced'] == "1"){
+		echo $input->HoloText($row['html'], true)."\n<br />\n";
+		}else{ ?>
+		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
+		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
+		<?php } ?>
+		<?php } ?>
 <?php } ?>
     </div>
                 </td>
@@ -48,6 +55,16 @@ if(!empty($page['discussion'])){
 <?php if(empty($page['edit']) && !empty($userrow[0]) && !$user->IsHCMember($userrow[0])){ ?>
 <div class="habblet ">
 	<div class="ad-container">
+		<?php $banners = [];
+		try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
+		foreach ($banners as $row) { ?>
+		<?php if($row['advanced'] == "1"){
+		echo $input->HoloText($row['html'], true)."\n<br />\n";
+		}else{ ?>
+		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
+		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
+		<?php } ?>
+		<?php } ?>
 	</div>
 </div>
 <?php } ?>
@@ -130,7 +147,7 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 	<div class="topdialog-body" id="guestbook-form-dialog-body">
 
 <div id="guestbook-form-tab">
-<form method="post" id="guestbook-form">
+<form method="post" id="guestbook-form"><?php echo Csrf::field(); ?>
     <p>
         <?php echo $lang->loc['note.guestbook.char.limit']; ?>
         <input type="hidden" name="ownerId" value="<?php echo $userrow[0]; ?>" />
@@ -187,7 +204,7 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 	
 	<a class="topdialog-exit" href="#" id="guestbook-delete-dialog-exit">X</a>
 	<div class="topdialog-body" id="guestbook-delete-dialog-body">
-<form method="post" id="guestbook-delete-form">
+<form method="post" id="guestbook-delete-form"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="entryId" id="guestbook-delete-id" value="" />
 
 	<p><?php echo $lang->loc['are.you.sure.delete.entry']; ?></p>
@@ -292,7 +309,7 @@ Event.observe("dialog-group-settings-exit", "click", function(e) {
 	
 	<a class="topdialog-exit" href="#" id="postentry-delete-dialog-exit">X</a>
 	<div class="topdialog-body" id="postentry-delete-dialog-body">
-<form method="post" id="postentry-delete-form">
+<form method="post" id="postentry-delete-form"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="entryId" id="postentry-delete-id" value="" />
 	<p><?php echo $lang->loc['delete.confirm']; ?></p>
 	<p class="clearfix">

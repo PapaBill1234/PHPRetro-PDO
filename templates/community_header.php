@@ -18,6 +18,9 @@
 if (!defined("IN_HOLOCMS")) { header("Location: ".PATH."/"); exit; }
 $version = version();
 $lang->addLocale("community.header");
+$homeViewId = (int) ($profile['id'] ?? $userrow[0] ?? 0);
+$groupViewId = (int) ($guild['id'] ?? $grouprow['id'] ?? $grouprow[0] ?? 0);
+$isHomeView = in_array($page['type'] ?? '', ['home', 'user'], true);
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -40,9 +43,8 @@ var andSoItBegins = (new Date()).getTime();
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/buttons.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/boxes.css" type="text/css" />
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/tooltips.css" type="text/css" />
-<link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/styles/local/com.css" type="text/css" />
-
-<script src="<?php echo PATH; ?>/web-gallery/js/local/com.js" type="text/javascript"></script>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css'); ?>
+<?php echo HoloOptionalWebGalleryTag('web-gallery/js/local/com.js', 'js'); ?>
 
 <script type="text/javascript">
 document.habboLoggedIn = <?php if($user->id == 0){ echo "false"; }else{ echo "true"; } ?>;
@@ -118,16 +120,16 @@ switch($page['id']){
 <style type="text/css">
 
     #playground, #playground-outer {
-	    width: <?php if($user->IsHCMember($userrow[0])){ echo "922"; }else{ echo "752"; } ?>px;
+	    width: <?php if($user->IsHCMember($homeViewId)){ echo "922"; }else{ echo "752"; } ?>px;
 	    height: 1360px;
     }
 
 </style>
 
-<?php if($page['edit'] == true){ ?>
+<?php if(!empty($page['edit'])){ ?>
 <script src="<?php echo PATH; ?>/web-gallery/static/js/homeedit.js" type="text/javascript"></script>
 <script language="JavaScript" type="text/javascript">
-document.observe("dom:loaded", function() { initView(<?php echo $userrow[0]; ?>, <?php echo $userrow[0]; ?>); });
+document.observe("dom:loaded", function() { initView(<?php echo $homeViewId; ?>, <?php echo $homeViewId; ?>); });
 function isElementLimitReached() {
 	if (getElementCount() >= 200) {
 		showHabboHomeMessageBox("<?php echo addslashes($lang->loc['error']); ?>", "<?php echo addslashes($lang->loc['savehome.limit.error']); ?>", "<?php echo addslashes($lang->loc['close']); ?>");
@@ -136,9 +138,9 @@ function isElementLimitReached() {
 	return false;
 }
 
-<?php if($page['type'] == "home"){ ?>
+<?php if($isHomeView){ ?>
 function cancelEditing(expired) {
-	location.replace("<?php echo PATH; ?>/myhabbo/cancel/<?php echo $userrow[0]; ?>" + (expired ? "?expired=true" : ""));
+	location.replace("<?php echo PATH; ?>/myhabbo/cancel/<?php echo $homeViewId; ?>" + (expired ? "?expired=true" : ""));
 }
 
 function getSaveEditingActionName(){
@@ -193,7 +195,7 @@ function showSaveOverlay() {
 </script>
 <?php }else{ ?>
 <script type="text/javascript">
-document.observe("dom:loaded", function() { initView(<?php if($page['type'] == "home"){ echo $userrow[0]; }else{ echo $grouprow[0]; } ?>, <?php if($user->id == "0"){ echo "null"; }else{ echo $user->id; } ?>); });
+document.observe("dom:loaded", function() { initView(<?php echo $isHomeView ? $homeViewId : $groupViewId; ?>, <?php if($user->id == "0"){ echo "null"; }else{ echo $user->id; } ?>); });
 </script>
 <?php } ?>
 <?php
@@ -201,7 +203,7 @@ document.observe("dom:loaded", function() { initView(<?php if($page['type'] == "
 }
 ?>
 
-<?php if($page['discussion'] == true){ ?><link href="<?php echo PATH; ?>/web-gallery/styles/discussions.css" type="text/css" rel="stylesheet"/><?php } ?>
+<?php if(!empty($page['discussion'])){ ?><link href="<?php echo PATH; ?>/web-gallery/styles/discussions.css" type="text/css" rel="stylesheet"/><?php } ?>
 
 <meta name="description" content="<?php echo $settings->find("site_description"); ?>" />
 <meta name="keywords" content="<?php echo $settings->find("site_keywords"); ?>" />
@@ -224,6 +226,7 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body id="<?php echo $page['bodyid']; ?>" class="<?php if($user->name == "Guest"){ echo "anonymous"; } ?> ">
 <div id="overlay"></div>
@@ -263,7 +266,7 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
                 </p>
             </div>
             <div id="subnavi-login">
-                <form action="<?php echo PATH; ?>/account/submit" method="post" id="login-form">
+                <form action="<?php echo PATH; ?>/account/submit" method="post" id="login-form"><?php echo Csrf::field(); ?>
             		<input type="hidden" name="page" value="<?php echo $_SERVER["REQUEST_URI"]; ?>" />
                     <ul>
                         <li>
@@ -315,6 +318,11 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 			RememberMeUI.init("right");
 		</script>
 <?php } ?>
+<?php
+if (in_array((string) ($page['id'] ?? ''), ['me', 'home', 'profile', 'welcome'], true)) {
+	$page['cat'] = 'home';
+}
+?>
 <ul id="navi">
 		<?php if($user->name != "Guest"){ ?>
         <li<?php if($page['cat'] == "home"){ echo " class=\"selected\""; } ?>>
@@ -354,8 +362,8 @@ switch($page['cat']){
 			<li class="<?php if($page['id'] == "me"){ echo "selected"; } ?>">
 				<?php if($page['id'] == "me"){ echo $lang->loc['home']; }else{ echo "<a href=\"".PATH."/me\">".$lang->loc['home']."</a>"; } ?>
 			</li>
-    		<li class="<?php if($page['id'] == "home" && ($_GET['id'] == $user->id || $_GET['name'] == $user->name)){ echo "selected"; } ?>">
-				<?php if($page['id'] == "home" && ($_POST['name'] == $user->name || $_GET['name'] == $user->name)){ echo $lang->loc['my.page']; }else{ echo "<a href=\"".PATH."/home/".$user->name."\">".$lang->loc['my.page']."</a>"; } ?>
+    		<li class="<?php if($page['id'] == "home" && (((int) ($_GET['id'] ?? 0) === (int) $user->id && (int) $user->id > 0) || ($_GET['name'] ?? '') == $user->name)){ echo "selected"; } ?>">
+				<?php if($page['id'] == "home" && (($_POST['name'] ?? '') == $user->name || ($_GET['name'] ?? '') == $user->name)){ echo $lang->loc['my.page']; }else{ echo "<a href=\"".PATH."/home/".$user->name."\">".$lang->loc['my.page']."</a>"; } ?>
     		</li>
     		<li class="<?php if($page['id'] == "profile"){ echo "selected"; } ?>">
 				<?php if($page['id'] == "profile"){ echo $lang->loc['settings']; }else{ echo "<a href=\"".PATH."/profile\">".$lang->loc['settings']."</a>"; } ?>

@@ -10,6 +10,7 @@ $name = $password = $retypedpassword = $email = $retypedemail = $figure = $gende
 $day = $month = $year = 0;
 
 if (isset($_POST['bean_avatarName'])) {
+    Csrf::requireValid();
     $name = trim((string) $_POST['bean_avatarName']);
     $password = (string) ($_POST['password'] ?? '');
     $retypedpassword = (string) ($_POST['retypedPassword'] ?? '');
@@ -20,6 +21,10 @@ if (isset($_POST['bean_avatarName'])) {
     $year = (int) ($_POST['bean_year'] ?? 0);
     $figure = (string) ($_POST['bean_figure'] ?? '');
     $gender = (string) ($_POST['bean_gender'] ?? '');
+    if ($figure === '' && isset($_POST['randomFigure']) && is_string($_POST['randomFigure']) && preg_match('/^([MF])-(.+)$/', $_POST['randomFigure'], $picked)) {
+        $gender = $picked[1];
+        $figure = $picked[2];
+    }
     $acceptTos = (string) ($_POST['bean_termsOfServiceSelection'] ?? '');
     $lang->addLocale("register.errors");
 
@@ -55,12 +60,20 @@ if (isset($_POST['bean_avatarName'])) {
     if (!$failure) {
         $db = new Database();
         $createdAt = time();
-        $db->execute(
-            "INSERT INTO users (username, password, mail, mail_verified, account_created, account_day_of_birth, last_login, last_online, look, gender, credits, ip_register, ip_current)
-             VALUES (?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$name, password_hash($password, PASSWORD_DEFAULT), $email, $createdAt, mktime(0, 0, 0, $month, $day, $year), $createdAt, $createdAt, $figure, $gender, (int) $settings->find('register_start_credits'), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)]
-        );
+        $startCredits = trim((string) $settings->find('register_start_credits'));
+        $columns = "username, password, mail, mail_verified, account_created, account_day_of_birth, last_login, last_online, look, gender, ip_register, ip_current";
+        $placeholders = "?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?";
+        $params = [$name, password_hash($password, PASSWORD_DEFAULT), $email, $createdAt, mktime(0, 0, 0, $month, $day, $year), $createdAt, $createdAt, $figure, $gender, substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)];
+        if ($startCredits !== '' && preg_match('/^-?\d+$/', $startCredits)) {
+            $columns .= ', credits';
+            $placeholders .= ', ?';
+            $params[] = (int) $startCredits;
+        }
+        $db->execute("INSERT INTO users ($columns) VALUES ($placeholders)", $params);
         $userId = (int) $db->insertId();
+        if ($userId > 0 && !$db->fetchColumn('SELECT user_id FROM users_settings WHERE user_id = ?', [$userId])) {
+            $db->execute('INSERT INTO users_settings (user_id) VALUES (?)', [$userId]);
+        }
 
         if ($settings->find('email_verify_enabled') === '1') {
             $token = bin2hex(random_bytes(32));
@@ -95,7 +108,7 @@ require_once('./templates/register_header.php');
             <img alt="<?php echo $input->HoloText($referrow[1]); ?>" title="<?php echo $input->HoloText($referrow[1]); ?>" src="<?php echo $user->avatarURL($referrow[2],"b,4,4,sml,1,0"); ?>" />
         </div>
 	<?php } ?>
-    <form method="post" action="<?php echo PATH; ?>/register" id="registerform" autocomplete="off">
+    <form method="post" action="<?php echo PATH; ?>/register" id="registerform" autocomplete="off"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="bean.figure" id="register-figure" value="<?php echo $input->HoloText($figure); ?>" />
 	<input type="hidden" name="bean.gender" id="register-gender" value="<?php echo $input->HoloText($gender); ?>" />
 	<input type="hidden" name="bean.editorState" id="register-editor-state" value="" />
@@ -385,6 +398,44 @@ if(!isset($error['captcha'])){
             </div>
 	    </div>
     </form>
+	<script type="text/javascript">
+	HabboView.add(function() {
+		if ($("register-name")) {
+			Event.observe($("register-name"), "blur", function() {
+				if ($F("register-name") != "" && RegistrationForm.Validator._nameCheckNeeded) {
+					RegistrationForm.Validator._checkName();
+				}
+			});
+		}
+		var radios = $$("input[name='randomFigure']");
+		var applyFigure = function(radio) {
+			if (!radio || !radio.value) { return; }
+			var value = String(radio.value);
+			var dash = value.indexOf("-");
+			if (dash < 1) { return; }
+			if ($("register-gender")) { $("register-gender").value = value.substring(0, dash); }
+			if ($("register-figure")) { $("register-figure").value = value.substring(dash + 1); }
+		};
+		radios.each(function(radio) {
+			Event.observe(radio, "click", function() { applyFigure(radio); });
+			Event.observe(radio, "change", function() { applyFigure(radio); });
+		});
+		if (radios.length > 0 && !$F("register-figure")) {
+			radios[0].checked = true;
+			applyFigure(radios[0]);
+		}
+		var origComplete = RegistrationForm.Validator._onCheckNameAvailabilityComplete;
+		RegistrationForm.Validator._onCheckNameAvailabilityComplete = function(C, D) {
+			if (!D || typeof D !== "object") {
+				$("register-name").removeClassName("register-loading");
+				RegistrationForm.Validator._ajaxCheckInProgress = false;
+				RegistrationForm.Validator._showErrorState($("register-name"), false);
+				return;
+			}
+			origComplete(C, D);
+		};
+	});
+	</script>
 	
 						
 							

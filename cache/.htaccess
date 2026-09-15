@@ -1,8 +1,4 @@
-<Files ~ "\.ret$">
-	Order allow,deny
-	Deny from all
-</Files>
-<Files ~ "\.php$">
+<Files ~ "\.(ret|php|cache)$">
 	Order allow,deny
 	Deny from all
 </Files>

@@ -21,5 +21,5 @@
 $page['dir'] = '\habblet';
 require_once('../includes/core.php');
 
-echo $input->HoloText($_GET['return']);
+echo $input->HoloText($_GET['return'] ?? '');
 ?>

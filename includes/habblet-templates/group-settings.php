@@ -1,4 +1,4 @@
-<form action="#" method="post" id="group-settings-form">
+<form action="#" method="post" id="group-settings-form"><?php echo Csrf::field(); ?>
 
   <div id="group-settings">
     <p>Room moves are unavailable here. Use the game client for room changes.</p>

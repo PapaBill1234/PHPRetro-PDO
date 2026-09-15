@@ -66,7 +66,7 @@ require_once('./templates/login_header.php');
 						<div class="cbb loginbox clearfix ">
     <h2 class="title"><?php echo $lang->loc['sign.in']; ?></h2>
     <div class="box-content clearfix" id="login-habblet">
-        <form action="<?php echo PATH; ?>/account/submit" method="post" class="login-habblet">
+        <form action="<?php echo PATH; ?>/account/submit" method="post" class="login-habblet"><?php echo Csrf::field(); ?>
             
             <ul>
 

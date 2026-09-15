@@ -59,5 +59,13 @@ body { behavior: url(../web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro Installer" />
+<?php
+if (session_status() === PHP_SESSION_ACTIVE) {
+    if (!class_exists('Csrf')) {
+        require_once dirname(__DIR__).'/includes/Csrf.php';
+    }
+    echo Csrf::hookScript();
+}
+?>
 </head>
 <body id="installer" class="process-template">

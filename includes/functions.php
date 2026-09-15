@@ -19,24 +19,52 @@
 if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 function HoloDate(){
+	$date = array();
 	$date['H'] = date('H');
 	$date['i'] = date('i');
 	$date['s'] = date('s');
 	$date['m'] = date('m');
 	$date['d'] = date('d');
 	$date['Y'] = date('Y');
+	$date['y'] = date('y');
 	$date['j'] = date('j');
 	$date['n'] = date('n');
 	$date['today'] = $date['d'];
 	$date['month'] = $date['m'];
 	$date['year'] = $date['Y'];
-	$date['date_normal'] = date('d-m-Y',mktime($date['m'],$date['d'],$date['Y']));
-	$date['date_reversed'] = date('Y-m-d', mktime($date['m'],$date['d'],$date['y']));
-	$date['date_full'] = date('d-m-Y H:i:s',mktime($date['H'],$date['i'],$date['s'],$date['m'],$date['d'],$date['Y']));
-	$date['date_time'] = date('H:i:s',mktime($date['H'],$date['i'],$date['s']));
-	$date['date_hc'] = "".$date['j']."-".$date['n']."-".$date['Y']."";
+	$date['date_normal'] = date('d-m-Y');
+	$date['date_reversed'] = date('Y-m-d');
+	$date['date_full'] = date('d-m-Y H:i:s');
+	$date['date_time'] = date('H:i:s');
+	$date['date_hc'] = $date['j']."-".$date['n']."-".$date['Y'];
 	$date['regdate'] = $date['date_normal'];
 	return $date;
+}
+function HoloText($str, $advanced=false){
+	if (isset($GLOBALS['input']) && is_object($GLOBALS['input']) && method_exists($GLOBALS['input'], 'HoloText')) {
+		return $GLOBALS['input']->HoloText($str, $advanced);
+	}
+	$str = (string) $str;
+	return $advanced ? $str : htmlspecialchars($str, ENT_COMPAT, 'UTF-8');
+}
+function HoloOptionalWebGalleryTag($relativeFile, $type){
+	$relativeFile = ltrim(str_replace('\\', '/', (string) $relativeFile), '/');
+	if ($relativeFile === '' || str_contains($relativeFile, '..') || !str_starts_with($relativeFile, 'web-gallery/')) {
+		return '';
+	}
+	$disk = getcwd() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativeFile);
+	if (!is_file($disk)) {
+		return '';
+	}
+	$url = rtrim((string) PATH, '/') . '/' . $relativeFile;
+	$safe = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+	if ($type === 'css') {
+		return '<link rel="stylesheet" href="'.$safe.'" type="text/css" />'."\n";
+	}
+	if ($type === 'js') {
+		return '<script src="'.$safe.'" type="text/javascript"></script>'."\n";
+	}
+	return '';
 }
 function GenerateTicket($type = "sso",$length = 0){
 switch($type){
@@ -78,9 +106,14 @@ function GetOnlineCount(){
 	return $db->fetchColumn("SELECT COUNT(*) FROM users WHERE online > ?", [time() - 300]); // approximate
 }
 function HotelStatus(){
+	$status = array('online' => 'online', 'check' => 0, 'bypass' => false);
 	if($GLOBALS['settings']->find("site_status_image") == 2){
-		@include('./cache/status.ret');
-		if((($status['check'] + (60*30)) < time()) || $status['bypass'] == true){
+		$store = CacheFactory::instance();
+		$cached = $store->get('hotel:status');
+		if (is_array($cached)) {
+			$status = array_merge($status, $cached);
+		}
+		if((($status['check'] + (60*30)) < time()) || ($status['bypass'] ?? false) === true){
 			$fp = @fsockopen($GLOBALS['settings']->find("hotel_ip"), $GLOBALS['settings']->find("hotel_mus"), $errno, $errstr, 1);
 			if($fp){
 				$status['online'] = "online";
@@ -88,13 +121,8 @@ function HotelStatus(){
 			} else {
 				$status['online'] = "offline";
 			}
-			$fh = @fopen('./cache/status.ret', 'w');
-			@fwrite($fh, "<?php\n"."$"."status['online'] = \"".$status['online']."\";\n"."$"."status['check'] = ".time().";\n");
-			if($status['bypass'] == true && $status['online'] != "online"){
-				@fwrite($fh, "$"."status['bypass'] = true;\n");
-			}
-			@fwrite($fh, "?>");
-			@fclose($fh);
+			$status['check'] = time();
+			$store->set('hotel:status', $status, 60 * 30);
 		}
 	}elseif($GLOBALS['settings']->find("site_status_image") == 1){
 		$fp = @fsockopen($GLOBALS['settings']->find("hotel_ip"), $GLOBALS['settings']->find("hotel_mus"), $errno, $errstr, 1);

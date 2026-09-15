@@ -81,7 +81,7 @@ require_once('./install/installer_header.php');
             </div>
 
             <div id="installer-buttons">
-            <form method="POST" action="./upgrade.php" />
+            <form method="POST" action="./upgrade.php"><?php echo Csrf::field(); ?>
                 <input type="submit" name="submit" value="<?php echo $lang->loc['continue']; ?>" class="continue" id="installer-button-continue" />
             </form>
             </div>

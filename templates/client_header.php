@@ -56,7 +56,7 @@ if (typeof HabboClient != "undefined") { HabboClient.windowName = "client"; }
 
 </script>
 
-<?php if($page['no_client_js'] != true){ ?>
+<?php if(empty($page['no_client_js'])){ ?>
 <script type="text/javascript">
 var habboClient = true;
 HabboClientUtils.init({remoteCallsEnabled : true, taggingGameEnabled : false});
@@ -86,4 +86,5 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>

@@ -1,5 +1,5 @@
 <?php
-/** Local configuration loader. The installer creates the ignored .env file. */
+/** Loads `.env` into the process environment. Credentials never live in this file. */
 $envFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env';
 if (is_file($envFile)) {
     foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {

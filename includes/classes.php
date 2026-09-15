@@ -1,6 +1,7 @@
 <?php
 // FILE: includes/classes.php
 require_once(__DIR__ . '/Database.php');
+require_once(__DIR__ . '/Cache.php');
 
 /*================================================================+\
 || # PHPRetro - An extendable virtual hotel site and management
@@ -21,15 +22,8 @@ require_once(__DIR__ . '/Database.php');
 if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 
 class HoloInput {
-	function FilterText($str) {
-		// get_magic_quotes_gpc() removed – assume false
-		$str = preg_replace(array('/\x{0001}/u','/\x{0002}/u','/\x{0003}/u','/\x{0005}/u','/\x{0009}/u'),' ',$str);
-		// SQL escaping removed – will be handled by PDO in Phase 2
-		throw new Exception("Not yet migrated – see Phase 2");
-		return $str;
-	}
 	function HoloText($str, $advanced=false) {
-		$str = stripslashes($str);
+		$str = stripslashes((string) $str);
 		if($advanced != true){ $str = htmlspecialchars($str,ENT_COMPAT,"UTF-8"); }
 		return $str;
 	}
@@ -170,6 +164,7 @@ class HoloUser {
 	public $error = 0;
 	public $banned;
 	public $user = array('0','Guest','null','0',null,null,null,null,null,null,null,null,null);
+	public $figure = null;
 	private $db;
 
 	function __construct($name = null, $password = null, $updateuser=false, $rememberme=null){
@@ -261,6 +256,19 @@ class HoloUser {
 		return true;
 	}
 
+	public function __serialize(): array {
+		$data = get_object_vars($this);
+		unset($data['db']);
+		return $data;
+	}
+
+	public function __unserialize(array $data): void {
+		foreach ($data as $key => $value) {
+			$this->$key = $value;
+		}
+		$this->db = new Database();
+	}
+
 	/**
 	 * Complete a previously validated token login without requiring a password.
 	 */
@@ -347,17 +355,21 @@ class HoloUser {
 		if($style[0] == "s"){ $style[6] = "1"; }else{ $style[6] = "0"; }
 		if($style[3] == "sml"){ $style[7] = "1"; }else{ $style[7] = "0"; }
 		$expandedstyle = "s-".$style[6].".g-".$style[7].".d-".$style[1].".h-".$style[2].".a-0";
-		if($GLOBALS['settings']->find("site_cache_images") == "1" && file_exists("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png")){
+		$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
+		$cacheImages = (string) $GLOBALS['settings']->find("site_cache_images");
+		if($cacheImages !== "0" && $cacheImages !== "1"){ $cacheImages = "0"; }
+		$cachedFile = "./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png";
+		if($cacheImages == "1" && file_exists($cachedFile)){
 			$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
-		}elseif($GLOBALS['settings']->find("site_cache_images") == "1" && !file_exists("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png")){
-			$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
-			$i = file_get_contents($URL);
-			$f = fopen("./cache/avatars/".$figure.",".$expandedstyle.",".$hash.".png","w+");
-			fwrite($f,$i);
-			fclose($f);
-			$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
-		}elseif($GLOBALS['settings']->find("site_cache_images") == "0"){
-			$URL = "http://www.habbo.co.uk/habbo-imaging/avatarimage?figure=".$figure."&size=".$style[0]."&direction=".$style[1]."&head_direction=".$style[2]."&crr=".$style[5]."&gesture=".$style[3]."&frame=".$style[4];
+		}elseif($cacheImages == "1"){
+			$i = @file_get_contents($URL);
+			if($i !== false && $i !== ''){
+				$dir = dirname($cachedFile);
+				if(!is_dir($dir)){ @mkdir($dir, 0777, true); }
+				$f = @fopen($cachedFile,"w+");
+				if($f){ fwrite($f,$i); fclose($f); }
+				$URL = PATH."/habbo-imaging/avatar/".$figure.",".$expandedstyle.",".$hash.".gif";
+			}
 		}
 		if($return == 0){ return $URL; }else{ return $hash; }
 	}
@@ -446,14 +458,9 @@ class HoloUser {
 
 	function IsUserOnline($id){
 		if($id == "self"){ $id = $this->id; }
-		$timeout = ((int)$GLOBALS['settings']->find("site_session_time")) * 60;
-		$row = $this->db->fetchRow("SELECT online, show_online FROM users WHERE id = ?", [(int)$id]);
+		$row = $this->db->fetchRow("SELECT online FROM users WHERE id = ?", [(int)$id]);
 		if(!$row) return false;
-		if($row['show_online'] == 0) return false;
-		if($row['online'] + $timeout >= time()){
-			return true;
-		}
-		return false;
+		return $row['online'] !== '0';
 	}
 
 	function IsUserBanned($id){
@@ -576,15 +583,30 @@ class mssql extends HoloDatabase {
 class HoloLocale {
 	var $loc = array();
 	function addLocale($keys){
-		if(is_array($keys)){
-			foreach($keys as $key){
-				require('./includes/languages/'.$GLOBALS['settings']->find("site_language").'.php');
-				$this->loc = array_merge($this->loc,$loc);
+		$keys = is_array($keys) ? $keys : array($keys);
+		$language = $GLOBALS['settings']->find("site_language");
+		if (!is_string($language) || preg_match('/^[a-zA-Z0-9]+$/', $language) !== 1) {
+			$language = 'en';
+		}
+		$store = CacheFactory::instance();
+		$file = './includes/languages/'.$language.'.php';
+		if (!is_file($file)) {
+			$file = './includes/languages/en.php';
+			$language = 'en';
+		}
+		foreach ($keys as $key) {
+			$cacheKey = 'locale:'.$language.':'.$key;
+			$cached = $store->get($cacheKey);
+			if (is_array($cached)) {
+				$this->loc = array_merge($this->loc, $cached);
+				continue;
 			}
-		}else{
-			$key = $keys;
-			require('./includes/languages/'.$GLOBALS['settings']->find("site_language").'.php');
-			$this->loc = array_merge($this->loc,$loc);
+			$loc = array();
+			require $file;
+			if (isset($loc) && is_array($loc)) {
+				$store->set($cacheKey, $loc);
+				$this->loc = array_merge($this->loc, $loc);
+			}
 		}
 		return true;
 	}
@@ -646,56 +668,96 @@ class HoloFigureCheck {
 		return true;
 	}
 	function generateFigure($club=true,$gender=null){
-		if($gender == null){ if(rand(0,1) == 0){ $gender = "M"; }else{ $gender = "F"; } }
+		if($gender == null){ $gender = (rand(0,1) == 0) ? "M" : "F"; }
 		if($club == true){ $club = (bool) rand(0,1); }
-		$xml = simplexml_load_file('./xml/figuredata.xml');
+		$fallback = ($gender === "F")
+			? "hd-600-1.ch-630-62.lg-695-62.sh-725-62.hr-500-45"
+			: "hd-180-1.ch-210-66.lg-270-82.sh-290-80.hr-105-42";
+		$xml = @simplexml_load_file('./xml/figuredata.xml');
+		if($xml === false){ return array($fallback, $gender); }
 		$figure = "";
 		foreach($xml->sets->settype as $settype){
 			if((string) $settype['mandatory'] == "1" || rand(0,1) == 1){
-				$item['settype'] = $settype['type'];
+				$item = array();
+				$item['settype'] = (string) $settype['type'];
 				$palette = (int) $settype['paletteid'];
 				$possible = array();
 				foreach($settype->set as $xset){
-					if($xset['gender'] != "U" && $xset['gender'] != $gender){ $fail = true; }
-					if($xset['selectable'] == "0"){ $fail = true; }
-					if($xset['colorable'] == "0"){ $color = false; }else{ $color = true; }
-					if($xset['club'] == "1" && $club == false){ $fail = true; }
-					if($fail != true){ $possible[] = array($xset['id'],$color); }
-					$fail = false; $color = false;
+					$fail = false;
+					$setGender = (string) $xset['gender'];
+					if($setGender != "U" && $setGender != $gender){ $fail = true; }
+					if((string) $xset['selectable'] == "0"){ $fail = true; }
+					$colorable = ((string) $xset['colorable'] != "0");
+					if((string) $xset['club'] == "1" && $club == false){ $fail = true; }
+					if($fail != true){ $possible[] = array((string) $xset['id'], $colorable); }
 				}
 				$count = count($possible);
-				$num = rand(0,$count-1);
+				if($count < 1){ continue; }
+				$num = rand(0, $count-1);
 				$item['set'] = $possible[$num][0];
 				if($possible[$num][1] == false){ $item['color'] = ""; }else{
-					$possible = array();
-					foreach($xml->colors->palette[$palette-1]->color as $color){
-						if($color['club'] == "1" && $club == false){ $fail = true; }
-						if($color['selectable'] == "0"){ $fail = true; }
-						if($fail != true){ $possible[] = $color['id']; }
-						$fail = false;
+					$colors = array();
+					$paletteNode = $xml->colors->palette[$palette-1] ?? null;
+					if($paletteNode !== null){
+						foreach($paletteNode->color as $color){
+							$fail = false;
+							if((string) $color['club'] == "1" && $club == false){ $fail = true; }
+							if((string) $color['selectable'] == "0"){ $fail = true; }
+							if($fail != true){ $colors[] = (string) $color['id']; }
+						}
 					}
-					$count = count($possible);
-					$num = rand(0,$count-1);
-					$item['color'] = $possible[$num];
+					$item['color'] = (count($colors) > 0) ? $colors[rand(0, count($colors)-1)] : "";
 				}
 				$figure .= $item['settype']."-".$item['set']."-".$item['color'].".";
 			}
 		}
-		$figure = substr($figure, 0, -1);
+		$figure = rtrim($figure, ".");
+		if($figure === ""){ return array($fallback, $gender); }
 		return array($figure,$gender);
 	}
 }
 class HoloSettings {
+    public const CACHE_KEY = 'settings:all';
     var $cache = array();
     private $database;
-    function __construct(){
+    private Cache $store;
+    function __construct(?Cache $store = null){
         $this->database = $GLOBALS['db'] ?? new Database();
-        $this->cache = array('site_path'=>'','site_shortname'=>'PHPRetro','site_name'=>'PHPRetro','site_language'=>'en','site_closed'=>'0','hotel_server'=>'polaris','cache_settings'=>'0','site_cookie_time'=>'30','site_session_time'=>'20','email_from'=>'noreply@localhost','email_name'=>'PHPRetro');
-        try { foreach ($this->database->fetchAll('SELECT setting_key, setting_value FROM phpretro_site_settings') as $row) { $this->cache[$row['setting_key']] = $row['setting_value']; } } catch (Throwable $exception) { }
+        $this->store = $store ?? CacheFactory::instance();
+        $this->cache = array('site_path'=>'','site_shortname'=>'PHPRetro','site_name'=>'PHPRetro','site_language'=>'en','site_closed'=>'0','hotel_server'=>'polaris','cache_settings'=>'0','site_cookie_time'=>'30','site_session_time'=>'20','email_from'=>'noreply@localhost','email_name'=>'PHPRetro','site_cache_images'=>'1','email_verify_enabled'=>'0');
+        $cached = $this->store->get(self::CACHE_KEY);
+        if (is_array($cached)) {
+            $this->cache = array_merge($this->cache, $cached);
+            $this->applyEnvOverrides();
+            return;
+        }
+        $this->refreshFromDatabase();
     }
-    function generateCache(){ return true; }
+    function generateCache(){
+        $this->refreshFromDatabase();
+        return true;
+    }
     function find($key){ return $this->cache[$key] ?? ''; }
-    function checkCache(){ return false; }
+    function checkCache(){ return $this->store->get(self::CACHE_KEY) === null; }
+    private function refreshFromDatabase(): void {
+        try {
+            $rows = array();
+            foreach ($this->database->fetchAll('SELECT setting_key, setting_value FROM phpretro_site_settings') as $row) {
+                $rows[$row['setting_key']] = $row['setting_value'];
+            }
+            $this->cache = array_merge($this->cache, $rows);
+            $this->store->set(self::CACHE_KEY, $rows);
+        } catch (Throwable $exception) { }
+        $this->applyEnvOverrides();
+    }
+    private function applyEnvOverrides(): void {
+        foreach (['email_from' => 'MAIL_FROM', 'email_name' => 'MAIL_FROM_NAME', 'email_log' => 'MAIL_LOG'] as $setting => $env) {
+            $value = getenv($env);
+            if (is_string($value) && $value !== '') {
+                $this->cache[$setting] = $value;
+            }
+        }
+    }
 }
 class HoloMail {
 	var $plaintext;
@@ -802,7 +864,6 @@ global $lang;
 ob_start();
 include($file);
 $contents = ob_get_clean();
-ob_end_clean();
 return $contents;
 }
 }

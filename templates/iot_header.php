@@ -29,6 +29,7 @@ IOT version: 2.1.00.exported
 CSS build date: 2008-11-12
 IOT deployment date: 12/4/08 7:45 AM GTM
 -->
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body id="" onLoad="scrollDown();">
 

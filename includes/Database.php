@@ -5,6 +5,10 @@ class Database {
     private $pdo;
 
     public function __construct() {
+        $this->connect();
+    }
+
+    private function connect(): void {
         $dsn = getenv('DB_DSN') ?: '';
         $user = getenv('DB_USER') ?: '';
         $pass = getenv('DB_PASS') ?: '';
@@ -21,6 +25,14 @@ class Database {
         } catch (PDOException $e) {
             throw new Exception('Database connection failed: ' . $e->getMessage());
         }
+    }
+
+    public function __serialize(): array {
+        return [];
+    }
+
+    public function __unserialize(array $data): void {
+        $this->connect();
     }
 
     public function query($sql, array $params = []) {

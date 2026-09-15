@@ -17,7 +17,7 @@
 
 define("IN_HOLOCMS", TRUE);
 $page = $page ?? array();
-$page += array('dir' => '', 'no_ajax' => false, 'bypass_user_check' => false, 'housekeeping' => false, 'id' => '', 'new_landing' => false);
+$page += array('dir' => '', 'no_ajax' => false, 'bypass_user_check' => false, 'housekeeping' => false, 'id' => '', 'new_landing' => false, 'discussion' => false, 'no_column3' => false, 'allow_guests' => false, 'rank' => '', 'name' => '', 'bodyid' => '', 'type' => '', 'cat' => '', 'category' => '', 'scrollbar' => false, 'second_scrollbar' => false);
 
 if(strpos($_SERVER['SERVER_SOFTWARE'],"Win") == false){ $page['dir'] = str_replace('\\','/',$page['dir']); }
 chdir(str_replace($page['dir'], "", getcwd()));
@@ -38,6 +38,9 @@ $lang = new HoloLocale;
 
 session_start();
 
+require_once('./includes/Csrf.php');
+Csrf::boot();
+
 define("PATH", $settings->find("site_path"));
 define("SHORTNAME", $settings->find("site_shortname"));
 define("FULLNAME", $settings->find("site_name"));
@@ -48,7 +51,7 @@ $core = new core_sql;
 require('./includes/functions.php');
 require('./includes/version.php');
 
-if($page['housekeeping'] != true){ if(is_object($_SESSION['user'] ?? null)){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'])){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
+if($page['housekeeping'] != true){ if(is_object($_SESSION['user'] ?? null)){ $user = $_SESSION['user']; }else{ $user = new HoloUser(null,null); } }else{ if(is_object($_SESSION['hk_user'] ?? null)){ $user = $_SESSION['hk_user']; }else{ $user = new HoloUser(null,null); } }
 
 if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_SESSION['hk_user'])) {
     try {
@@ -60,8 +63,7 @@ if($page['housekeeping'] == true && isset($_SESSION['hk_user']) && is_object($_S
 
 if($user->error == 1 && $page['bypass_user_check'] != true && ($_COOKIE['rememberme'] ?? '') == "true" && $page['housekeeping'] != true){ $_SESSION['page'] = $_SERVER["REQUEST_URI"]; header("Location: ".PATH."/security_check_token"); }
 
-$phase5bMaintenance = false;
-try { $phase5bMaintenance = (new Database())->fetchColumn('SELECT setting_value FROM phpretro_site_settings WHERE setting_key = ?', ['maintenance_mode']) === '1'; } catch (Throwable $exception) { $phase5bMaintenance = false; }
+$phase5bMaintenance = $settings->find('maintenance_mode') === '1';
 if(($settings->find("site_closed") == "1" || $phase5bMaintenance) && $page['id'] != "maintenance" && $page['housekeeping'] != true && $user->user("rank") < 5){
 	header("Location: ".PATH."/maintenance"); exit;
 }
