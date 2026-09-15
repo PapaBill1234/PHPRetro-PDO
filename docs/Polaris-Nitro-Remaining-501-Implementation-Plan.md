@@ -1,10 +1,10 @@
-# Trax HTML5, Nitro and Polaris Implementation Plan
+# Polaris, Nitro and Remaining-501 Implementation Plan
 
 ## Goal
 
-Restore Trax as a modern hotel feature: people can choose approved tracks for a room jukebox, everyone in that room hears the same playback state, and room owners or authorised users control it. The legacy Flash Trax player is a visual and behavioural reference only. It will not be embedded, translated automatically, or used in production.
+Restore every intentional 501 remaining in PR #27 with modern PHP, Polaris and Nitro implementations. This includes Trax, Club purchase, room transfer, voucher redemption, group badge editing, group tags, and avatar-sticker purchase/editing.
 
-This is an emulator-and-client feature. The PHP website supplies account/admin pages and talks to Polaris through its authenticated CMS interface; it must not write live music state directly into Polaris tables.
+Trax is the first detailed feature in this document. Each remaining feature receives the same source-audited implementation contract before code is written. The PHP website supplies account/admin pages and talks to Polaris through its authenticated CMS interface; it must not write live emulator state directly into Polaris tables.
 
 ## Current verified state
 
@@ -13,6 +13,22 @@ This is an emulator-and-client feature. The PHP website supplies account/admin p
 - Polaris has `soundtracks` and `users_soundtracks`, but those represent its own jukebox/music-disc model. They must not be presented as a drop-in replacement for the Flash home player.
 - `users_settings.volume_trax` already exists and is owned by Polaris. The new client should honour it rather than add another volume setting.
 - No Polaris-owned table will be altered. New persistent data, if required, is owned by this project and is prefixed `phpretro_`.
+
+## Combined PR #27 completion scope
+
+PR #27 intentionally leaves seven feature areas unavailable. The final combined implementation PR replaces all of them, subject to the source-audit gates below.
+
+| PR #27 501 feature | Modern replacement | Primary work |
+| --- | --- | --- |
+| Trax widget, select-song endpoint, song route | Room jukebox plus modern MyHabbo display/control widget | Polaris plugin, Nitro TypeScript, PHP configuration UI |
+| Club subscription purchase | Native Polaris offer purchase flow surfaced through Nitro and a safe website handoff | Polaris extension/core audit, Nitro UI, PHP handoff only |
+| Group room transfer | Authorised guild-room reassignment | Polaris core change or maintained fork, Nitro room/guild refresh, PHP settings handoff |
+| Website voucher redemption | Native emulator voucher redemption from a connected Nitro client | Polaris/Nitro contract, PHP handoff only |
+| Flash badge editor | Nitro-compatible three-digit guild badge editor | Polaris/Nitro audit and implementation, PHP handoff only |
+| Group tags | Modern website group-tag feature | PHPRetro migration/PHP; Nitro only if in-client display is approved |
+| Flash avatar-sticker purchase/editor | Modern avatar-decoration feature after a source/data audit | PHP plus possible Polaris/Nitro extension; no assumed schema mapping |
+
+No item will be restored by writing guessed columns into Polaris tables, replaying a Flash request, or using an unauthenticated website-to-emulator channel.
 
 ## Product boundary to approve before implementation
 
@@ -43,6 +59,86 @@ The combined work adds a **modern MyHabbo Trax widget** on top of the room-jukeb
 7. Keep group Trax widgets out of the first release. PR #27 also skips legacy group slot 113; that is a later product decision after the user-home widget is stable.
 
 The existing PR #27 outbox remains useful for layout/configuration changes, but it cannot synchronize real-time music. The Polaris plugin packet broadcasts remain the only authority for start, pause, track selection and late-join playback state.
+
+## Remaining PR #27 features: required implementation work
+
+### Club subscription purchase
+
+The legacy website offers (one, three and six months at fixed legacy prices) do not match Polaris `catalog_club_offers`. The new feature uses verified current Polaris offer IDs, prices, currencies, subscription type, duration and rewards; it does not translate old `optionNumber` values.
+
+1. During the source audit, identify Polaris's real catalog purchase/subscription service, offer validation, credit/points debit path and cache refresh path.
+2. Add a narrowly scoped server-side purchase operation only if it uses the same atomic service as the in-game catalog. It must validate the offer from server data and debit balances and grant the subscription in one transaction.
+3. Add Nitro's Club offer/purchase UI using the discovered catalog contract, including confirmation, insufficient-balance, duplicate-request and successful-refresh states.
+4. Replace the website purchase endpoint with a view of current membership plus a handoff to the Nitro Club purchase flow. PHP must never directly decrement `users.credits` or create a `users_subscriptions` row for Club.
+5. Test valid purchase, insufficient credits/points, forged offer ID, repeated request, disconnected user, online user cache refresh and expired/active membership display.
+
+**Exit check:** a purchase has exactly the same balance, subscription and client refresh result as a native Polaris catalog purchase.
+
+### Group room transfer
+
+Polaris's current guild room relationship is not safely mutable through the existing CMS/RCON surface: the guild room property is immutable in the audited implementation and the normal guild update path does not persist a new room ID. This requires a Polaris core change or a maintained Polaris fork; it is not a PHP-only feature or a plugin-only database update.
+
+1. Audit the exact Guild, Room, room-cache, guild-manager and packet classes in the deployed Polaris revision.
+2. Implement one atomic `transferGuildRoom` service in Polaris core: validate owner/admin permission, target room ownership/eligibility, current guild state and any room occupancy restrictions; update every authoritative relation; invalidate caches; and persist or roll back as one operation.
+3. Add a versioned CMS command that invokes that service, never an SQL update.
+4. Add Nitro handlers/UI refresh for the guild detail and room state packets affected by the transfer. Existing occupants must receive a coherent result or a clear re-enter instruction.
+5. Change the PHP group-settings screen from 501 to a signed command request with a clear status response.
+6. Test same-room no-op, unauthorised caller, missing/foreign room, occupied room policy, success, rollback on failure, reconnect and emulator restart.
+
+**Exit check:** no direct write to `guilds.room_id` is possible from PHP, and a transferred guild has one consistent room relationship after restart.
+
+### Website voucher redemption
+
+Polaris currently redeems vouchers through a connected game client and keeps redemption state in emulator-managed memory/cache. A PHP query against vouchers or `voucher_history` would not be equivalent and can double-grant rewards.
+
+1. Audit the deployed voucher manager, redemption method, duplicate/reward handling, catalog refresh behavior and required `GameClient` context.
+2. Add a Nitro voucher dialog that sends the code through the native or source-audited custom packet path to the emulator.
+3. If a website entry point is kept, it validates only presentation input and hands the signed-in user to the Nitro dialog; it does not redeem the code itself.
+4. Return explicit client results for unknown, expired, exhausted, already-redeemed and successful vouchers without exposing voucher inventory to other users.
+5. Test every reward type, use limit, duplicate redemption, malformed code, reconnect and restart behavior against a real emulator-managed cache.
+
+**Exit check:** the website never inserts into `voucher_history`, and every successful redemption is recorded and granted once by Polaris.
+
+### Group badge editor
+
+The legacy Flash editor uses two-digit parts while Polaris/Nitro uses a different three-digit group-badge representation. There is no safe conversion table to invent.
+
+1. Audit the exact Polaris badge-part catalog, guild badge validation/update service, ownership checks, persistence path and emitted packets.
+2. Build a Nitro TypeScript editor from the verified three-digit parts, including preview, colour/part selection, accessibility labels and server error feedback.
+3. Add server-side validation that accepts only currently configured native parts and verifies guild owner/admin permission.
+4. Replace `groups_actions_show_badge_editor.php` with a PHP handoff to the Nitro editor. Any website display uses the native generated badge identifier, not old SWF part strings.
+5. Test invalid parts, forged guild IDs, owner/admin/member permissions, simultaneous edits, restart persistence and client refresh for all occupants.
+
+**Exit check:** a badge made in Nitro is accepted by Polaris, survives restart and renders through the normal current client path.
+
+### Group tags
+
+Polaris `guilds` has no tags column. Group tags are therefore a website-owned feature and use new PHPRetro storage; they are never overloaded into user tags or a Polaris table.
+
+1. Add a migration for `phpretro_guild_tags` with `id`, `guild_id`, `tag`, `created_by_user_id`, `created_at`, unique case-insensitive guild/tag constraint and verified foreign keys to `guilds.id` and `users.id`.
+2. Define the approved tag rules after reviewing legacy behavior: normalized whitespace/case, length, character allowlist, per-guild cap, duplicates and moderation/deletion policy.
+3. Replace add/list/remove 501 handlers with PDO-bound, CSRF-protected, guild owner/admin-authorised PHP endpoints.
+4. Render tags in group/MyHabbo pages with output escaping and search them using bound exact/prefix matching as appropriate.
+5. Keep tags website-only in the first release. If in-client display is later wanted, add a separate Polaris plugin packet and Nitro display-only UI; do not alter `guilds`.
+6. Test permissions, duplicate/case variants, injection-as-data, maximum count, deleted guild cleanup and concurrent writes.
+
+**Exit check:** group tags work on the website without modifying `guilds`, `users_settings.tags`, or any Polaris cache.
+
+### Avatar-sticker purchase and editor
+
+The old Flash avatar-sticker feature has no verified Polaris equivalent. It may overlap with figure rendering, profile backgrounds or an entirely separate legacy asset system. No table or protocol is selected until the old SWF, its requests and available modern assets are audited.
+
+1. Inventory the SWF's visible sticker categories, purchase flow, request parameters, asset identifiers and whether it altered figure, profile home or client avatar state.
+2. Audit Polaris user background fields, Nitro avatar rendering/decorations and the current figure-data asset pipeline for a real native mapping.
+3. Make a documented choice after that audit:
+   - use a verified native Polaris/Nitro decoration system; or
+   - create project-owned `phpretro_avatar_decorations` and `phpretro_user_avatar_decorations` tables for a website-only feature; or
+   - omit unsupported legacy behavior rather than pretending it maps.
+4. Build the editor in HTML/Nitro TypeScript as appropriate, validate allowed asset IDs server-side, and make purchases atomic through the approved balance service.
+5. If the feature changes in-client avatars, add a Polaris/Nitro refresh contract. If it is website-only, label it as such and do not write avatar fields used by the client.
+6. Test asset authorization, price/balance edge cases, invalid IDs, duplicate purchase, rendering fallback and rollback.
+
+**Exit check:** every purchasable decoration has a verified renderer and ownership record; no Flash asset or guessed avatar field is used.
 
 ## Target architecture
 
@@ -111,7 +207,17 @@ The contract needs these messages conceptually:
 
 Every mutable command carries a room-state revision. The plugin rejects stale revisions and returns the current state, preventing two controls from silently overwriting each other.
 
-## Delivery phases
+## Combined delivery order
+
+1. **Phase Zero — PR #27 foundation:** use PR #27 as the branch base; do not duplicate its migrations or MyHabbo implementation.
+2. **Phase A — complete source/asset audit:** extend the existing Trax audit to Club catalog purchase, guild-room transfer, voucher redemption, badge data, group-tag legacy behavior and avatar-sticker behavior.
+3. **Phase B — safe website-owned feature:** implement group tags after the audit and migration review. This is independent of the client protocol work.
+4. **Phase C — Polaris core capability:** implement and test guild-room transfer in a maintained fork if the audit confirms a plugin cannot safely own it.
+5. **Phase D — Polaris/Nitro native flows:** implement Club, vouchers, badge editor and Trax in small independently testable feature slices, each with its own protocol receipt and compatibility check.
+6. **Phase E — avatar-decoration decision and build:** implement only the audited native or website-owned design; omit unsupported Flash-only behavior.
+7. **Phase F — PHP handoffs and combined release:** replace all seven 501 endpoints, run the entire PR #27 regression suite plus new emulator/Nitro integration tests, and open one combined PR against `master`.
+
+## Trax delivery phases
 
 ### Phase A — source and asset audit
 
