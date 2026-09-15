@@ -1,4 +1,4 @@
-<form action="#" method="post" id="topic-settings-form">
+<form action="#" method="post" id="topic-settings-form"><?php echo Csrf::field(); ?>
 	<div id="topic-name-area">
 		<div class="topic-name-input">
 			<span class="topic-name-text" id="topic_name_text"><?php echo $lang->loc['topic']; ?></span>

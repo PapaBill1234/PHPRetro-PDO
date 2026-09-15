@@ -27,6 +27,7 @@ $page['category'] = "tools";
 require_once('./templates/housekeeping_header.php');
 
 if(isset($_GET['do']) && $_GET['do'] == "save"){
+	Csrf::requireValid();
 	$row = $_POST;
 	if(empty($row['data'])){ $error = $lang->loc['error.no.data']."<br />"; }
 	if(empty($row['price']) || !is_numeric($row['price'])){ $error = $lang->loc['invalid.price']."<br />"; }
@@ -59,6 +60,7 @@ if(isset($_GET['do']) && $_GET['do'] == "save"){
 	}
 }elseif($_GET['do'] == "remove"){
 	if(isset($_POST['id']) && isset($_POST['remove'])){
+		Csrf::requireValid();
 		$db->query("DELETE FROM ".PREFIX."homes_catalogue WHERE id = '".$input->FilterText($_POST['id'])."' LIMIT 1");
 		unset($_POST); unset($_GET);
 		$message = $lang->loc['message.item.removed'];
@@ -88,7 +90,7 @@ $content = "";
 if(!empty($error)){ $content .= '<div class="clean-error">'.$error.'</div>'; }
 $content .= 
 '<div class="settings">
-<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=save" method="POST">';
+<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=save" method="POST">'.Csrf::field();
 if(!empty($row['id'])){ $content .= '<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />'; }
 $content .= 
 '<label for="name">'.$lang->loc['name'].':</label><br />
@@ -130,7 +132,7 @@ $icon = "catalogue_remove.png";
 $description = $lang->loc['catalogue.remove.desc'];
 $content = 
 '<div class="clean-yellow">'.$lang->loc['confirm.remove'].' "'.$input->HoloText($row['name']).'"?</div>
-<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=remove" method="POST">
+<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=remove" method="POST">'.Csrf::field().'
 <input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />
 <div class="button"><input type="submit" name="remove" value="'.$lang->loc['remove'].'" /></div>
 </form>';

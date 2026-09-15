@@ -1,6 +1,6 @@
 <div id="group-memberlist-members-list">
 
-<form method="post" action="#" onsubmit="return false;">
+<form method="post" action="#" onsubmit="return false;"><?php echo Csrf::field(); ?>
 <ul class="habblet-list two-cols clearfix">
 <?php $i = 0; $n = 0; foreach($members as $row){
 if($input->IsEven($i)){ $side = "left"; }else{ $side = "right"; $n++; }

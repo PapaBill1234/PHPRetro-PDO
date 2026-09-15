@@ -268,7 +268,7 @@ require_once('./installer_header.php');
 		<div id="column1" class="column">
 			     		
 				<div class="habblet-container ">		
-	    <form method="post" action="./install.php" autocomplete="off">
+	    <form method="post" action="./install.php" autocomplete="off"><?php echo Csrf::field(); ?>
 
 	        <div id="installer-column-left" >
 

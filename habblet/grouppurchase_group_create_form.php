@@ -46,7 +46,7 @@ if($user->user("credits") < 10){
 </p>
 <p>The group badge is a placeholder until you edit it in the hotel client. An owned room with no group is required (PolarIS createGuild).</p>
 
-<form action="#" method="post" id="purchase-group-form-id">
+<form action="#" method="post" id="purchase-group-form-id"><?php echo Csrf::field(); ?>
 
 <div id="group-name-area">
     <div id="group_name_message_error" class="error"></div>

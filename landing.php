@@ -78,7 +78,7 @@ unset($_SESSION['error']);
     <h2 class="title"><?php echo $lang->loc['sign.in']; ?></h2>
     <div class="box-content clearfix" id="login-habblet">
 
-        <form action="<?php echo PATH; ?>/account/submit" method="post" class="login-habblet">
+        <form action="<?php echo PATH; ?>/account/submit" method="post" class="login-habblet"><?php echo Csrf::field(); ?>
             <?php if(isset($_GET['page'])){ ?><input type="hidden" name="page" value="<?php echo $pageto; ?>" /><?php } ?>
             <ul>
                 <li>

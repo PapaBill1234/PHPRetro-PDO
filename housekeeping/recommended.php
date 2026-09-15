@@ -27,6 +27,7 @@ $page['name'] = $lang->loc['pagename.recommended'];
 $page['category'] = "tools";
 
 if(isset($_POST['search'])){
+	Csrf::requireValid();
 	$sql = $data->select7($input->FilterText($_POST['query']));
 	$search_results = "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n"; $i = 0;
 	while($row = $db->fetch_row($sql)){
@@ -40,6 +41,7 @@ if(isset($_POST['search'])){
 }
 
 if(isset($_GET['do']) && $_GET['do'] == "save"){
+	Csrf::requireValid();
 	$row = $_POST;
 	$sponsored[(int) $row['sponsered']] = ' selected="true"';
 	$selected[$row['type']] = ' selected="true"';
@@ -61,6 +63,7 @@ if(isset($_GET['do']) && $_GET['do'] == "save"){
 	}
 }elseif($_GET['do'] == "remove"){
 	if(isset($_POST['id']) && isset($_POST['remove'])){
+		Csrf::requireValid();
 		$db->query("DELETE FROM ".PREFIX."recommended WHERE id = '".$input->FilterText($_POST['id'])."' LIMIT 1");
 		unset($_POST); unset($_GET);
 		$message = $lang->loc['message.recommended.removed'];
@@ -86,7 +89,7 @@ $content = "";
 if(!empty($error)){ $content .= '<div class="clean-error">'.$error.'</div>'; }
 $content .= 
 '<div class="settings">
-<form name="settings" action="'.PATH.'/housekeeping/recommended?do=save" method="POST">';
+<form name="settings" action="'.PATH.'/housekeeping/recommended?do=save" method="POST">'.Csrf::field();
 if(!empty($row['id'])){ $content .= '<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />'; }
 $months = explode("|",$lang->loc['list.months']);
 $content .= 
@@ -106,7 +109,7 @@ $icon = "recommended_remove.png";
 $description = $lang->loc['recommended.remove.desc'];
 $content = 
 '<div class="clean-yellow">'.$lang->loc['confirm.remove'].' "'.$row['rec_id'].'"?</div>
-<form name="settings" action="'.PATH.'/housekeeping/recommended?do=remove" method="POST">
+<form name="settings" action="'.PATH.'/housekeeping/recommended?do=remove" method="POST">'.Csrf::field().'
 <input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />
 <div class="button"><input type="submit" name="remove" value="'.$lang->loc['remove'].'" /></div>
 </form>';
@@ -166,7 +169,7 @@ require_once('./templates/housekeeping_header.php');
 <div class="text">
 <?php echo $description; ?>
 </div>
-<form name="furni_search" action="<?php echo PATH; ?>/housekeeping/recommended" method="POST">
+<form name="furni_search" action="<?php echo PATH; ?>/housekeeping/recommended" method="POST"><?php echo Csrf::field(); ?>
 <div class="hr"></div>
  <div class="text">
    <div class="user_listview_bg">

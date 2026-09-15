@@ -22,6 +22,7 @@ $alert = trim((string) ($_POST['alert'] ?? $_GET['alert'] ?? ''));
 $searchResults = '<table border="0" cellspacing="0" cellpadding="0"><tr><td><b>'.$e($lang->loc['search.desc']).'</b></td></tr></table>';
 
 if (isset($_POST['search'])) {
+    Csrf::requireValid();
     $query = trim((string) ($_POST['query'] ?? ''));
     $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $query).'%';
     $rows = $query === '' ? [] : $database->fetchAll('SELECT id, username FROM users WHERE username LIKE ? LIMIT 50', [$like]);
@@ -34,6 +35,7 @@ if (isset($_POST['search'])) {
 }
 
 if (isset($_POST['save'])) {
+    Csrf::requireValid();
     if ($alert === '') { $error = $lang->loc['error.no.alert']; }
     elseif ($type === 'single' && $userid < 1) { $error = $lang->loc['error.no.userid']; }
     elseif (!$cms->configured()) { $error = $lang->loc['error.polaris.unconfigured']; }
@@ -75,7 +77,7 @@ if ($do === 'create') {
     $description = $type === 'single' ? $lang->loc['alerts.create.single.desc'] : $lang->loc['alerts.create.mass.desc'];
     $content = '';
     if ($error !== '') { $content .= '<div class="clean-error">'.$e($error).'</div>'; }
-    $content .= '<div class="settings"><form name="settings" action="'.PATH.'/housekeeping/alerts?type='.$e($type).'&do=create" method="POST">';
+    $content .= '<div class="settings"><form name="settings" action="'.PATH.'/housekeeping/alerts?type='.$e($type).'&do=create" method="POST">'.Csrf::field();
     if ($type === 'single') {
         $content .= '<label for="userid">'.$e($lang->loc['userid']).':</label><br /><input type="text" name="userid" value="'.$e((string) ($userid ?: '')).'" title="'.$e($lang->loc['userid.desc']).'" /><br />';
     }
@@ -110,7 +112,7 @@ require_once('./templates/housekeeping_header.php');
 <div class="text">
  <p><?php echo $description; ?></p>
  </div>
-<form name="users_search" action="<?php echo PATH; ?>/housekeeping/alerts" method="POST">
+<form name="users_search" action="<?php echo PATH; ?>/housekeeping/alerts" method="POST"><?php echo Csrf::field(); ?>
  <div class="text">
    <div class="user_listview_bg">
     <div id="listview">

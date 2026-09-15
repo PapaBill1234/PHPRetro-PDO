@@ -139,7 +139,7 @@ PaymentMethodHabblet.init();
 							</h2>
 						<div id="purse-habblet">
 <?php if($user->id > 0){ ?>
-	<form method="post" action="<?php echo PATH; ?>/credits" id="voucher-form">
+	<form method="post" action="<?php echo PATH; ?>/credits" id="voucher-form"><?php echo Csrf::field(); ?>
 
 <ul>
     <li class="even icon-purse">

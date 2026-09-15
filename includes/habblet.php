@@ -6,6 +6,11 @@ if (!defined('IN_HOLOCMS')) {
     require_once(__DIR__.'/core.php');
 }
 
+if (!class_exists('Csrf')) {
+    require_once __DIR__.'/Csrf.php';
+}
+Csrf::protectPost();
+
 function habbletText(array $values, string $key, string $default = ''): string {
     return isset($values[$key]) && is_string($values[$key]) ? $values[$key] : $default;
 }
@@ -19,6 +24,7 @@ function habbletInt(array $values, string $key, int $default = 0): int {
 
 function habbletRequireUser(): void {
     global $user, $page, $settings, $serverdb, $core;
+    Csrf::protectPost();
     $page['allow_guests'] = false;
     $_SESSION['page'] = $_SESSION['page'] ?? ($_SERVER['REQUEST_URI'] ?? '/');
     require(__DIR__.'/session.php');

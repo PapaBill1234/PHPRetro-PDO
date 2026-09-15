@@ -59,6 +59,7 @@ require_once('./templates/housekeeping_header.php');
 <div class="center">
 <?php
 if(isset($_POST['save'])){
+	Csrf::requireValid();
 	foreach($_POST as $key => $value){
 		$value = $input->FilterText($value);
 		$db->query("UPDATE ".PREFIX."settings SET value = '".$value."' WHERE id = '".$key."' LIMIT 1");
@@ -68,7 +69,7 @@ if(isset($_POST['save'])){
 	<div class="clean-ok">Settings saved.</div>
 <?php } ?>
 <div class="settings">
-<form name="settings" action="<?php echo PATH; ?>/housekeeping/settings/<?php echo $pagerow['id']; ?>" method="POST">
+<form name="settings" action="<?php echo PATH; ?>/housekeeping/settings/<?php echo $pagerow['id']; ?>" method="POST"><?php echo Csrf::field(); ?>
 <?php
 $sql = $db->query("SELECT category FROM ".PREFIX."settings WHERE page = '".$pagerow['id']."' GROUP BY category ORDER BY `order` ASC");
 while($row = $db->fetch_assoc($sql)){

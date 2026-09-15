@@ -124,7 +124,7 @@ require_once('./templates/community_header.php');
     </div>
     <div id="hc-buy-container" class="box-content">
         <div id="hc-buy-buttons" class="hc-buy-buttons rounded rounded-hcred">
-            <form class="subscribe-form" method="post">
+            <form class="subscribe-form" method="post"><?php echo Csrf::field(); ?>
                 <input type="hidden" id="settings-figure" name="figureData" value="">
                 <input type="hidden" id="settings-gender" name="newGender" value="">
                 <table width="100%">

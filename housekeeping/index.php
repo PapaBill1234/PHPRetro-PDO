@@ -32,6 +32,7 @@ if(!isset($_SESSION['login'])){
 $lang->addLocale("housekeeping.login");
 
 if(!empty($_POST['username'])){
+	Csrf::requireValid();
 	$username = trim((string) ($_POST['username'] ?? ''));
 	$password = (string) ($_POST['password'] ?? '');
 	
@@ -93,7 +94,7 @@ require_once('./templates/housekeeping_header.php');
 <div class="hr"></div>
 <div class="loginuser"><?php echo $lang->loc['please.log.in']; ?></div>
 <div class="text">
-<form id="loginform" action="<?php echo PATH; ?>/housekeeping/" method="post">
+<form id="loginform" action="<?php echo PATH; ?>/housekeeping/" method="post"><?php echo Csrf::field(); ?>
 <strong><?php echo $lang->loc['username']; ?>:</strong><br />
 <input type="text" size="20" name="username" id="namefield" value="<?php echo $input->HoloText($username); ?>" /><br />
 <strong><?php echo $lang->loc['password']; ?>:</strong><br />

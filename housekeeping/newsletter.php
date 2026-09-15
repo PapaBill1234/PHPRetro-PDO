@@ -71,6 +71,7 @@ if($_GET['do'] == "send"){
 	echo "</body></html>";
 	exit;
 }elseif($_GET['do'] == "save"){
+	Csrf::requireValid();
 	$sql = $serverdb->query("SELECT email FROM ".PREFIX."users WHERE email != '' AND newsletter = '1' AND email_verified = '1'");
 	$emails = array();
 	while($row = $serverdb->fetch_row($sql)){
@@ -113,7 +114,7 @@ $content = "";
 if(!empty($error)){ $content .= '<div class="clean-error">'.$error.'</div>'; }
 $content .= 
 '<div class="settings">
-<form name="settings" action="'.PATH.'/housekeeping/newsletter?do=save" method="POST">';
+<form name="settings" action="'.PATH.'/housekeeping/newsletter?do=save" method="POST">'.Csrf::field();
 if(!empty($row['id'])){ $content .= '<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />'; }
 $content .= 
 '<label for="subject">'.$lang->loc['subject'].':</label><br />

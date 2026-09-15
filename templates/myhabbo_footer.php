@@ -147,7 +147,7 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 	<div class="topdialog-body" id="guestbook-form-dialog-body">
 
 <div id="guestbook-form-tab">
-<form method="post" id="guestbook-form">
+<form method="post" id="guestbook-form"><?php echo Csrf::field(); ?>
     <p>
         <?php echo $lang->loc['note.guestbook.char.limit']; ?>
         <input type="hidden" name="ownerId" value="<?php echo $userrow[0]; ?>" />
@@ -204,7 +204,7 @@ Utils.setAllEmbededObjectsVisibility('hidden');
 	
 	<a class="topdialog-exit" href="#" id="guestbook-delete-dialog-exit">X</a>
 	<div class="topdialog-body" id="guestbook-delete-dialog-body">
-<form method="post" id="guestbook-delete-form">
+<form method="post" id="guestbook-delete-form"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="entryId" id="guestbook-delete-id" value="" />
 
 	<p><?php echo $lang->loc['are.you.sure.delete.entry']; ?></p>
@@ -309,7 +309,7 @@ Event.observe("dialog-group-settings-exit", "click", function(e) {
 	
 	<a class="topdialog-exit" href="#" id="postentry-delete-dialog-exit">X</a>
 	<div class="topdialog-body" id="postentry-delete-dialog-body">
-<form method="post" id="postentry-delete-form">
+<form method="post" id="postentry-delete-form"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="entryId" id="postentry-delete-id" value="" />
 	<p><?php echo $lang->loc['delete.confirm']; ?></p>
 	<p class="clearfix">

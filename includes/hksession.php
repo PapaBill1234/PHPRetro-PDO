@@ -39,4 +39,6 @@ if($user->error == 4){
 	header('Location: '.PATH.'/housekeeping/');
 	exit;
 }
+
+Csrf::protectPost();
 ?>

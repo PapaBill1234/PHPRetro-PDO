@@ -38,6 +38,9 @@ $lang = new HoloLocale;
 
 session_start();
 
+require_once('./includes/Csrf.php');
+Csrf::boot();
+
 define("PATH", $settings->find("site_path"));
 define("SHORTNAME", $settings->find("site_shortname"));
 define("FULLNAME", $settings->find("site_name"));
