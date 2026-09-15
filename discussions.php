@@ -20,6 +20,7 @@ $page['allow_guests'] = true;
 $page['no_column3'] = true;
 require_once('./includes/core.php');
 require_once('./includes/session.php');
+require_once('./includes/PhpretroGroupUrls.php');
 $data = new home_sql;
 $lang->addLocale("home.homes");
 $lang->addLocale("community.groups");
@@ -44,9 +45,8 @@ function canPostToGuildForum(array $guild, array $member, int $userId): bool {
         default => false,
     };
 }
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = phpretroRequestGuildId();
 
-// Polaris guilds have no SEO alias; routes must supply the numeric guild id.
 $grouprow = $db->fetchRow("SELECT id, user_id, name, description, state, forum, read_forum, post_messages, post_threads, mod_forum, badge FROM guilds WHERE id = ?", [$id]);
 if(!$grouprow){ $lang->clearLocale; require_once('./error.php'); exit; }
 

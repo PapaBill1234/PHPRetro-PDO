@@ -251,4 +251,22 @@ CREATE TABLE IF NOT EXISTS `phpretro_minimail` (
 
 `phpretro_myhabbo_layouts` / `phpretro_myhabbo_guestbook` stay the 001 shape. Migration `004_web_homes.sql` adds nullable `synced_at`. Widget keys used on user homes: `profilewidget`, `guestbookwidget`, `highscoreswidget`, `badgeswidget`, `friendswidget`, `groupswidget`, `roomswidget`. Trax/rating/store/stickers and group homes stay 501. Layout row `id` is the widget id for guestbook and friends paging.
 
+## 11. `phpretro_group_url_aliases` — website-owned `/groups/{alias}`
+
+PolarIS `guilds` has no alias / `name_seo` column (`CleanDB.sql:40776`). Aliases are website-owned, claimed once, never written to PolarIS. `synced_at` stays NULL; claim also records `groups.alias_claimed` on `phpretro_emulator_outbox`.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_group_url_aliases` (
+  `alias` VARCHAR(64) NOT NULL,
+  `guild_id` INT NOT NULL,
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`alias`),
+  UNIQUE INDEX `idx_guild_id` (`guild_id`),
+  CONSTRAINT `fk_phpretro_group_url_guild` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+Validation: 1–30 chars, `^[A-Za-z][A-Za-z0-9-]{0,29}$`, must equal `stringToURL($alias, false, false)`, not purely numeric, not reserved `actions|id|discussions|home`. `.htaccess` already routes `/groups/{alias}` to `groups.php?alias=`.
+
 

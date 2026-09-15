@@ -126,12 +126,7 @@ function formatItem($type,$data,$pre){
 	return $str;
 }
 function groupURL($id){
-	$db = new Database();
-	$row = $db->fetchRow("SELECT id, name_seo FROM groups WHERE id = ?", [$id]);
-	if($row && !empty($row['name_seo'])){
-		return PATH."/groups/".$row['name_seo'];
-	} else {
-		return PATH."/groups/".$id."/id";
-	}
+	require_once __DIR__.'/PhpretroGroupUrls.php';
+	return phpretroGroupPath((int) $id);
 }
 ?>

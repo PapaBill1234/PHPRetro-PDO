@@ -1,7 +1,7 @@
 <form action="#" method="post" id="group-settings-form">
 
   <div id="group-settings">
-    <p>Custom URLs and room moves are unavailable here. Use the game client for room changes.</p>
+    <p>Room moves are unavailable here. Use the game client for room changes.</p>
     <div id="group-settings-data" class="group-settings-pane">
       <div id="group-logo">
         <img src="<?php echo PATH; ?>/web-gallery/images/groups/group_icon.gif" />
@@ -18,7 +18,7 @@
             <label for="group_url" id="group_url_text"><?php echo $lang->loc['edit.group.url']; ?>:</label><br/>
 			<?php if($noalias == true){ ?>
 
-            <input type="text" disabled="disabled" name="group_url" id="group_url" onKeyUp="GroupUtils.validateGroupElements('group_url', 30, '<?php echo addslashes($lang->loc['url.limit.reached']); ?>');" value="<?php echo $input->HoloText($alias); ?>"/><br />
+            <input type="text" name="group_url" id="group_url" onKeyUp="GroupUtils.validateGroupElements('group_url', 30, '<?php echo addslashes($lang->loc['url.limit.reached']); ?>');" value="<?php echo $input->HoloText($alias); ?>"/><br />
             <input type="hidden" name="group_url_edited" id="group_url_edited" value="1"/>
 
 			<?php }else{ ?>

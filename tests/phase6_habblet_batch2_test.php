@@ -30,6 +30,12 @@ try {
         }
         $db->execute($match[0]);
     }
+    foreach (['003_web_minimail.sql', '005_web_group_urls.sql'] as $file) {
+        $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
+        foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
+            if ($sql !== '') { $db->execute($sql); }
+        }
+    }
     foreach (range(1, 30) as $id) {
         $db->execute('INSERT INTO users (id, username, password, account_created, ip_register, ip_current, mail_verified) VALUES (?, ?, ?, ?, ?, ?, ?)', [$id, $id === 2 ? 'Admin<script>' : 'User'.$id, '', 100, '127.0.0.1', '127.0.0.1', '1']);
         $db->execute('INSERT INTO users_settings (user_id) VALUES (?)', [$id]);
@@ -96,7 +102,7 @@ try {
         return endpoint('myhabbo_groups_batch_'.$action.'.php', ['groupId' => 1, 'targetIds' => $targets]);
     }
     // Missing mappings must not charge, write layouts, aliases or incompatible badges.
-    foreach (['startEditingSession','saveEditingSession','cancelEditingSession','check_group_url','show_badge_editor','update_group_badge'] as $action) {
+    foreach (['startEditingSession','saveEditingSession','cancelEditingSession','show_badge_editor','update_group_badge'] as $action) {
         check(callAction($action)[1] === 501, $action.' unavailable explicitly');
     }
     foreach (['startEditingSession','saveEditingSession','cancelEditingSession'] as $action) {
@@ -165,7 +171,13 @@ try {
     $form = ['name' => "Guild's name", 'description' => 'A & B', 'type' => 0, 'url' => '', 'forumType' => 1, 'newTopicPermission' => 1, 'roomId' => 0];
     check(callAction('update_group_settings', $form)[1] === 200, 'Settings save');
     check($db->fetchColumn('SELECT name FROM guilds WHERE id = 1') === "Guild's name", 'Apostrophe stored literally');
-    check(callAction('update_group_settings', [...$form, 'url' => 'alias'])[1] === 501, 'No invented alias');
+    check(callAction('check_group_url', ['url' => 'cool-name'])[1] === 200, 'Owner can check a group URL');
+    check(str_starts_with(callAction('check_group_url', ['url' => 'cool-name'])[0], 'ERROR ') === false, 'Valid URL is not an ERROR payload');
+    check(str_starts_with(callAction('check_group_url', ['url' => 'actions'])[0], 'ERROR '), 'Reserved URL is ERROR');
+    check(callAction('update_group_settings', [...$form, 'url' => 'cool-name'])[1] === 200, 'Website alias is saved');
+    check($db->fetchColumn('SELECT alias FROM phpretro_group_url_aliases WHERE guild_id = 1') === 'cool-name', 'Alias stored in phpretro table');
+    check(callAction('update_group_settings', [...$form, 'url' => 'other-name'])[1] === 200, 'Existing alias cannot be altered');
+    check($db->fetchColumn('SELECT alias FROM phpretro_group_url_aliases WHERE guild_id = 1') === 'cool-name', 'Original alias kept');
     check(callAction('update_group_settings', [...$form, 'roomId' => 999])[1] === 501, 'No guessed room transfer');
     check(callAction('update_group_settings', [...$form, 'description' => str_repeat('a', 251)])[1] === 400, 'Actual description bound');
     check(callAction('update_group_settings', [...$form, 'name' => '😀'])[1] === 400, 'Latin1 incompatibility rejected');

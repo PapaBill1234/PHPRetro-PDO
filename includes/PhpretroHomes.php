@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/PhpretroLiveSync.php';
+require_once __DIR__.'/PhpretroGroupUrls.php';
 
 class PhpretroHomesError extends RuntimeException {}
 
