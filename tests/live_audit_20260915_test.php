@@ -22,6 +22,7 @@ foreach ($hkFiles as $file) {
     check($source !== false, $file.' is readable');
     check(!preg_match("/require_once __DIR__ \. '\/\.\.\/includes\/[^']+\.php'\)/", $source), $file.' has no leftover require parenthesis');
     check(str_contains($source, "require_once __DIR__ . '/../includes/core.php'"), $file.' requires core via __DIR__');
+    check(!preg_match("/require_once\s*\(\s*['\"]\.\.\/includes\//", $source), $file.' does not require includes via chdir-relative ../includes');
 }
 
 $database = file_get_contents($root.'/includes/Database.php');
@@ -72,6 +73,8 @@ check(str_contains($session, "\$_SESSION['page'] ?? ''"), 'guest redirect never 
 $core = file_get_contents($root.'/includes/core.php');
 check(str_contains($core, "'discussion' => false"), 'core initializes optional discussion page key');
 check(str_contains($core, "'no_column3' => false"), 'core initializes optional no_column3 page key');
+check(str_contains($core, "'scrollbar' => false"), 'core initializes housekeeping scrollbar page key');
+check(str_contains($core, "'second_scrollbar' => false"), 'core initializes housekeeping second_scrollbar page key');
 
 $forgot = file_get_contents($root.'/forgot.php');
 $email = file_get_contents($root.'/email.php');
@@ -116,5 +119,10 @@ $css = HoloOptionalWebGalleryTag('web-gallery/styles/local/com.css', 'css');
 check(str_contains($css, '/web-gallery/styles/local/com.css'), 'existing local CSS file is still emitted');
 check(!str_contains($css, '/web-gallery/styles/"'), 'existing CSS tag does not point at the styles directory');
 check(HoloOptionalWebGalleryTag('../includes/core.php', 'js') === '', 'path traversal is rejected');
+
+$header = file_get_contents($root.'/templates/housekeeping_header.php');
+check(str_contains($header, "!empty(\$page['scrollbar'])"), 'housekeeping header does not read an undefined scrollbar key');
+check(str_contains($header, "!empty(\$page['second_scrollbar'])"), 'housekeeping header does not read an undefined second_scrollbar key');
+check(!str_contains($header, "\$page['scrollbar'] == true"), 'housekeeping header no longer compares scrollbar with == true');
 
 echo 'PASS: '.$assertions.' assertions; live audit 2026-09-15 blockers have source-level regressions covered.'."\n";
