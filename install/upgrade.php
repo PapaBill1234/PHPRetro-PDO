@@ -17,6 +17,7 @@
 
 $page['dir'] = '\install';
 require_once('../includes/core.php');
+Csrf::protectPost();
 
 $revision = $_SESSION['upgrade_version'];
 if((int) $_SESSION['to_version']['revision'] > (int) $revision){

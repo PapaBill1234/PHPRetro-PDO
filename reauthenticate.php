@@ -28,6 +28,7 @@ $page['bodyid'] = "reauthenticate";
 if($user->id == 0){ header("Location: ".PATH."/"); }
 
 if(isset($_POST['password'])) {
+	Csrf::requireValid();
 	$username = $user->name;
 	$plain_password = $_POST['password']; // plaintext, not hashed
 	// We will pass plaintext to HoloUser constructor
@@ -72,7 +73,7 @@ require_once('./templates/login_header.php');
     <h2 class="title"><?php echo $lang->loc['sign.in']; ?></h2>
     
     <div class="box-content clearfix" id="login-habblet">
-        <form action="<?php echo PATH; ?>/account/reauthenticate" method="post" class="login-habblet">
+        <form action="<?php echo PATH; ?>/account/reauthenticate" method="post" class="login-habblet"><?php echo Csrf::field(); ?>
         	<input type="hidden" name="page" value="<?php echo isset($_SESSION['page']) ? $input->HoloText($_SESSION['page']) : ''; ?>" />
             <ul>
 

@@ -27,6 +27,7 @@ $page['category'] = "tools";
 require_once('./templates/housekeeping_header.php');
 
 if(isset($_GET['do']) && $_GET['do'] == "save"){
+	Csrf::requireValid();
 	$row = $_POST;
 	$row['banner'] = str_replace("%path%",PATH,$row['banner']);
 	$row['url'] = str_replace("%path%",PATH,$row['url']);
@@ -49,6 +50,7 @@ if(isset($_GET['do']) && $_GET['do'] == "save"){
 	}
 }elseif($_GET['do'] == "remove"){
 	if(isset($_POST['id']) && isset($_POST['remove'])){
+		Csrf::requireValid();
 		$db->query("DELETE FROM ".PREFIX."banners WHERE id = '".$input->FilterText($_POST['id'])."' LIMIT 1");
 		unset($_POST); unset($_GET);
 		$message = $lang->loc['message.banner.removed'];
@@ -74,7 +76,7 @@ $content = "";
 if(!empty($error)){ $content .= '<div class="clean-error">'.$error.'</div>'; }
 $content .= 
 '<div class="settings">
-<form name="settings" action="'.PATH.'/housekeeping/banners?do=save" method="POST">';
+<form name="settings" action="'.PATH.'/housekeeping/banners?do=save" method="POST">'.Csrf::field();
 if(!empty($row['id'])){ $content .= '<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />'; }
 $content .= 
 '<label for="order">'.$lang->loc['order'].':</label><br />
@@ -101,7 +103,7 @@ $icon = "banners_remove.png";
 $description = $lang->loc['banners.remove.desc'];
 $content = 
 '<div class="clean-yellow">'.$lang->loc['confirm.remove'].' "'.$input->HoloText($row['id']).'"?</div>
-<form name="settings" action="'.PATH.'/housekeeping/banners?do=remove" method="POST">
+<form name="settings" action="'.PATH.'/housekeeping/banners?do=remove" method="POST">'.Csrf::field().'
 <input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />
 <div class="button"><input type="submit" name="remove" value="'.$lang->loc['remove'].'" /></div>
 </form>';

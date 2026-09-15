@@ -224,6 +224,7 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body id="<?php echo $page['bodyid']; ?>" class="<?php if($user->name == "Guest"){ echo "anonymous"; } ?> ">
 <div id="overlay"></div>
@@ -263,7 +264,7 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
                 </p>
             </div>
             <div id="subnavi-login">
-                <form action="<?php echo PATH; ?>/account/submit" method="post" id="login-form">
+                <form action="<?php echo PATH; ?>/account/submit" method="post" id="login-form"><?php echo Csrf::field(); ?>
             		<input type="hidden" name="page" value="<?php echo $_SERVER["REQUEST_URI"]; ?>" />
                     <ul>
                         <li>

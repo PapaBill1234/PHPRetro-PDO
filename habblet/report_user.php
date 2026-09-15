@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../includes/habblet.php';
+Csrf::protectPost();
 habbletRequireUser();
 require_once __DIR__.'/../includes/PhpretroPolarisCms.php';
 global $db, $user;

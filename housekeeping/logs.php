@@ -30,6 +30,7 @@ require_once('./templates/housekeeping_header.php');
 $type = $_GET['type'];
 
 if(isset($_POST['search'])){
+	Csrf::requireValid();
 	$sql = $data->select7($input->FilterText($_POST['query']));
 	$search_results = "<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\n"; $i = 0;
 	while($row = $db->fetch_row($sql)){
@@ -88,7 +89,7 @@ $content .=
 <div class="text">
  <p><?php echo $description; ?></p>
  </div>
-<form name="users_search" action="<?php echo PATH; ?>/housekeeping/logs" method="POST">
+<form name="users_search" action="<?php echo PATH; ?>/housekeeping/logs" method="POST"><?php echo Csrf::field(); ?>
  <div class="text">
    <div class="user_listview_bg">
     <div id="listview">

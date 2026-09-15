@@ -80,11 +80,12 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body id="faq" class="plain-template">
 <script src="<?php echo PATH; ?>/web-gallery/static/js/faq.js" type="text/javascript"></script>
 <div id="faq" class="clearfix">
-<div id="faq-header" class="clearfix"><img src="<?php echo PATH; ?>/web-gallery/v2/images/faq/faq_header.png" /><form method="post" action="<?php echo PATH; ?>/help/faqsearch" class="search-box"><input type="text" id="faq-search" name="query" class="search-box-query search-box-onfocus" size="50" value="<?php echo $lang->loc['search']; ?>..."/><input type="submit" value="" title="<?php echo $lang->loc['search']; ?>" class="search" /></form></div>
+<div id="faq-header" class="clearfix"><img src="<?php echo PATH; ?>/web-gallery/v2/images/faq/faq_header.png" /><form method="post" action="<?php echo PATH; ?>/help/faqsearch" class="search-box"><?php echo Csrf::field(); ?><input type="text" id="faq-search" name="query" class="search-box-query search-box-onfocus" size="50" value="<?php echo $lang->loc['search']; ?>..."/><input type="submit" value="" title="<?php echo $lang->loc['search']; ?>" class="search" /></form></div>
 <div id="faq-container" class="clearfix">
 <div id="faq-category-list">
 <ul class="faq">

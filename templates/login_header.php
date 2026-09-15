@@ -124,6 +124,7 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 </style>
 <![endif]-->
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['status']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body <?php if($page['bodyid'] != ""){ ?>id="<?php echo $page['bodyid']; ?>"<?php } ?><?php if($page['new_landing'] != true){ ?> class="process-template"<?php } ?>>
 

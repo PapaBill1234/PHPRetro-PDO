@@ -56,6 +56,7 @@ window.onload = function(){
 </script>
 
 <meta name="build" content="PHPRetro <?php echo $version['version']." ".$version['stable']; ?>" />
+<?php echo Csrf::hookScript(); ?>
 </head>
 <body>
 

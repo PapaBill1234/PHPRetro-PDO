@@ -31,6 +31,7 @@ if(!isset($_POST['page']) && session_is_registered(page)){ $_POST['page'] = $_SE
 
 switch($var){
 case "submit":
+	Csrf::requireValid();
 	if(empty($_SESSION['login']['enabled']) || $_SESSION['login']['enabled'] == false){
 		header('Location: '.PATH.'/'); exit;
 	}

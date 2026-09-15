@@ -16,6 +16,7 @@
 \+================================================================*/
 
 require_once(__DIR__.'/../includes/habblet.php');
+Csrf::protectPost();
 habbletRequireUser();
 require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
 $type = habbletText($_GET, 'type');

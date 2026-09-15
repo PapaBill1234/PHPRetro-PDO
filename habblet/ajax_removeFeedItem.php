@@ -16,6 +16,7 @@
 \+================================================================*/
 
 require_once(__DIR__.'/../includes/habblet.php');
+Csrf::protectPost();
 habbletRequireUser();
 require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
 $key = isset($_POST['feedItemIndex']) ? substr(trim((string) $_POST['feedItemIndex']), 0, 64) : '';

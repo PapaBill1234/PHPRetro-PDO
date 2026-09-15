@@ -16,6 +16,11 @@
 \+================================================================*/
 
 session_start();
+require_once dirname(__DIR__).'/includes/Csrf.php';
+Csrf::token();
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    Csrf::requireValid();
+}
 if($_SESSION['install_started'] != true || empty($_SESSION['install_started'])){ header('Location: ./index.php'); exit; }
 
 require_once('./install_classes.php');
@@ -204,7 +209,7 @@ require_once('./installer_header.php');
 		<div id="column1" class="column">
 			     		
 				<div class="habblet-container ">		
-	    <form method="post" action="./migrate.php" autocomplete="off">
+	    <form method="post" action="./migrate.php" autocomplete="off"><?php echo Csrf::field(); ?>
 
 	        <div id="installer-column-left" >
 

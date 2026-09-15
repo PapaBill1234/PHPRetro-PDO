@@ -10,6 +10,7 @@ $name = $password = $retypedpassword = $email = $retypedemail = $figure = $gende
 $day = $month = $year = 0;
 
 if (isset($_POST['bean_avatarName'])) {
+    Csrf::requireValid();
     $name = trim((string) $_POST['bean_avatarName']);
     $password = (string) ($_POST['password'] ?? '');
     $retypedpassword = (string) ($_POST['retypedPassword'] ?? '');
@@ -95,7 +96,7 @@ require_once('./templates/register_header.php');
             <img alt="<?php echo $input->HoloText($referrow[1]); ?>" title="<?php echo $input->HoloText($referrow[1]); ?>" src="<?php echo $user->avatarURL($referrow[2],"b,4,4,sml,1,0"); ?>" />
         </div>
 	<?php } ?>
-    <form method="post" action="<?php echo PATH; ?>/register" id="registerform" autocomplete="off">
+    <form method="post" action="<?php echo PATH; ?>/register" id="registerform" autocomplete="off"><?php echo Csrf::field(); ?>
 	<input type="hidden" name="bean.figure" id="register-figure" value="<?php echo $input->HoloText($figure); ?>" />
 	<input type="hidden" name="bean.gender" id="register-gender" value="<?php echo $input->HoloText($gender); ?>" />
 	<input type="hidden" name="bean.editorState" id="register-editor-state" value="" />

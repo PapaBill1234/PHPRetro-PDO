@@ -16,4 +16,5 @@
 \+================================================================*/
 
 require_once __DIR__.'/../includes/habblet_groups_actions.php';
+Csrf::protectPost();
 habbletGroupDispatch('forum-deletepost');

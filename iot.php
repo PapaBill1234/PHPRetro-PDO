@@ -10,6 +10,7 @@ $lang->addLocale('iot.step-1');
 $error = '';
 $sent = false;
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    Csrf::requireValid();
     $username = trim((string) ($_POST['username'] ?? ($user->logged_in ? ($user->name ?? '') : '')));
     $email = trim((string) ($_POST['email'] ?? ''));
     $subject = trim((string) ($_POST['subject'] ?? ''));
@@ -34,7 +35,7 @@ $escape = static fn($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UT
 <h2><?php echo $escape($lang->loc['help.tool']); ?></h2>
 <p><?php echo $escape($lang->loc['step.3.info']); ?></p>
 <?php if ($error !== '') { ?><p class="error"><?php echo $escape($error); ?></p><?php } ?>
-<form method="post" action="<?php echo PATH; ?>/iot/go">
+<form method="post" action="<?php echo PATH; ?>/iot/go"><?php echo Csrf::field(); ?>
 <p><label><?php echo $escape($lang->loc['name'] ?? SHORTNAME.' name'); ?></label><br>
 <input name="username" maxlength="25" value="<?php echo $escape($_POST['username'] ?? (!empty($user->logged_in) ? ($user->name ?? '') : '')); ?>"></p>
 <p><label><?php echo $escape($lang->loc['email']); ?></label><br>
