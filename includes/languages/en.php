@@ -19,7 +19,7 @@ $loc['installed.message'] = "To finish the installation, please <strong>move ./i
 $loc['upgraded.message'] = "Upgrade done, you may proceed to the <a href=\"../\">Front Page</a> or <a href=\"../housekeeping/\">Housekeeping</a> and change additional settings.";
 $loc['error'] = "Error";
 $loc['error.no.upgrades'] = "There does not seem to be any available upgrade for your installed version.";
-$loc['error.delete.installer'] = "PHPRetro is already installed. Please delete the ./install folder for security purposes. If you would like to run the installer anyways, <a href=\"./index.php?bypass=true\">click here</a> to continue. Please note that doing so will cause you to lose all site data.";
+$loc['error.delete.installer'] = "PHPRetro is already installed. Please delete the ./install folder for security purposes. There is no override to re-run the installer while includes/config.php exists.";
 $loc['error.version.lower'] = "You are trying to install an older version of PHPRetro. Downgrading is not available.";
 break;
 case "installer.errors":
