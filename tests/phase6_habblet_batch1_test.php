@@ -33,6 +33,12 @@ try {
     $custom = file_get_contents($root.'/migrations/001_custom_tables.sql');
     preg_match('/CREATE TABLE IF NOT EXISTS `phpretro_collectibles` \(.*?\) ENGINE=.*?;/s', $custom, $match);
     $db->execute($match[0]);
+    foreach (['003_web_minimail.sql', '006_restore_remaining.sql'] as $file) {
+        $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
+        foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
+            if ($sql !== '') { $db->execute($sql); }
+        }
+    }
     foreach (range(1, 36) as $id) {
         $name = $id === 2 ? 'Bob<script>' : sprintf('User%02d', $id);
         $db->execute('INSERT INTO users (id, username, password, account_created, ip_register, ip_current, motto, online) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$id, $name, '', 100, '127.0.0.1', '127.0.0.1', 'original', $id === 2 ? '1' : '0']);
@@ -150,10 +156,18 @@ try {
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 1 OR user_two_id = 1') === 0, 'Both friendship directions deleted');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 2 AND user_two_id = 4') === 1, 'Unrelated friendships preserved');
     check(str_contains(endpoint('minimail_recipients.php')[0], '[]'), 'Empty recipient JSON valid');
-    $blocked = ['ajax_collectiblesPurchase.php', 'ajax_habboclub_gift.php', 'ajax_redeemvoucher.php', 'ajax_removeFeedItem.php', 'habboclub_habboclub_reminder_remove.php', 'habboclub_habboclub_subscribe.php', 'mod_add_report.php'];
+    $blocked = ['ajax_redeemvoucher.php', 'habboclub_habboclub_reminder_remove.php', 'habboclub_habboclub_subscribe.php'];
     $before = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
     foreach ($blocked as $file) { check(endpoint($file, ['messageId' => "' OR 1=1", 'objectId' => '2'])[1] === 501, $file.' unavailable'); }
     check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Unavailable purchases do not debit balances');
+    $claim = endpoint('ajax_collectiblesPurchase.php');
+    check($claim[1] === 200 && str_contains($claim[0], 'Collectible &lt;rare&gt;'), 'Collectible claim records website purchase');
+    check((int) $db->fetchColumn('SELECT COUNT(*) FROM phpretro_collectible_purchases') === 1, 'Collectible purchase stored');
+    check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Collectible claim does not debit PolarIS credits');
+    check(endpoint('ajax_habboclub_gift.php', ['month' => '1'])[1] === 200, 'Club gift preview');
+    check(endpoint('ajax_removeFeedItem.php', ['feedItemIndex' => '3'])[1] === 200, 'Feed dismissal');
+    check(endpoint('mod_add_report.php', ['objectId' => '1'], ['type' => 'room'])[1] === 200, 'Room object report');
+    check(str_contains(endpoint('mod_add_report.php', ['objectId' => '1'], ['type' => 'room'])[0], 'SPAM'), 'Duplicate object report is SPAM');
     restore_error_handler();
     echo "PASS: $assertions assertions; all 37 batch-1 endpoints exercised against disposable MariaDB schema.\n";
 } finally {

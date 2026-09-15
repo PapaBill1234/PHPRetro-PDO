@@ -28,6 +28,12 @@ function habbletGroupRender(string $template, array $values): void
 /** Native Polaris queries. Rank values are never inferred from legacy numeric ranks. */
 class HabbletGroups
 {
+    /** PolarIS-format placeholder from CleanDB guilds_elements id 1. Not a designed badge. */
+    public const PLACEHOLDER_BADGE = 'b001010';
+    public const PLACEHOLDER_COLOR_ONE = 1;
+    public const PLACEHOLDER_COLOR_TWO = 1;
+    public const PURCHASE_PRICE = 10;
+
     public function __construct(public Database $db, public int $actor) {}
 
     public function need(bool $condition, string $message = 'Not permitted.', int $status = 403): void
@@ -165,6 +171,61 @@ class HabbletGroups
         // GuildForumModerateThreadEvent.deleteThread: permanent deletion, not a guessed state.
         $this->db->execute('DELETE FROM guilds_forums_comments WHERE thread_id = ?', [$thread['id']]);
         $this->db->execute('DELETE FROM guilds_forums_threads WHERE id = ? AND guild_id = ?', [$thread['id'], $group['id']]);
+    }
+
+    public function hidePost(array $group, array $thread, int $postId): void
+    {
+        $this->need($this->allowed($group, 'mod_forum'));
+        $post = $this->db->fetchRow('SELECT id, state FROM guilds_forums_comments WHERE id = ? AND thread_id = ? FOR UPDATE', [$postId, $thread['id']]);
+        $this->need((bool) $post, 'Post not found in this topic.', 404);
+        // PolarIS GuildForumModerateMessageEvent: guild admins may set 10. State 20 is staff-only in that handler.
+        // ForumThreadState names 10 HIDDEN_BY_STAFF_MEMBER / 20 HIDDEN_BY_GUILD_ADMIN; the live handler is the write contract.
+        $this->db->execute('UPDATE guilds_forums_comments SET state = 10, admin_id = ? WHERE id = ? AND thread_id = ?', [$this->actor, $postId, $thread['id']]);
+    }
+
+    public function representable(string $text): bool
+    {
+        return mb_convert_encoding(mb_convert_encoding($text, 'Windows-1252', 'UTF-8'), 'UTF-8', 'Windows-1252') === $text;
+    }
+
+    public function purchase(string $name, string $description): int
+    {
+        $name = trim($name);
+        $description = trim($description);
+        $this->need($name !== '' && mb_strlen($name, 'UTF-8') <= 29, 'The group name you have selected is too long.', 400);
+        $this->need(mb_strlen($description, 'UTF-8') <= 250, 'The group description you have entered is too long.', 400);
+        $this->need($this->representable($name.$description), 'Group text contains characters unsupported by the Polaris guilds charset.', 400);
+        $club = $this->db->fetchColumn('SELECT club_expire_timestamp FROM users_settings WHERE user_id = ?', [$this->actor]);
+        $this->need($club !== false && (int) $club > time(), 'Habbo Club is required to create a group. Buy club in the hotel client.', 403);
+        $postedRoom = habbletInt($_POST, 'roomId');
+        $room = $postedRoom > 0
+            ? $this->db->fetchRow('SELECT id, name, guild_id, owner_id FROM rooms WHERE id = ? FOR UPDATE', [$postedRoom])
+            : $this->db->fetchRow('SELECT id, name, guild_id, owner_id FROM rooms WHERE owner_id = ? AND guild_id = 0 ORDER BY id ASC LIMIT 1 FOR UPDATE', [$this->actor]);
+        $this->need((bool) $room, 'Create or choose an owned room with no group in the hotel client first.', 400);
+        $this->need((int) $room['owner_id'] === $this->actor, 'You do not own that room.', 403);
+        $this->need((int) $room['guild_id'] === 0, 'That room already has a group.', 409);
+        $this->need((int) $this->db->fetchColumn('SELECT COUNT(*) FROM guilds_members WHERE user_id = ? AND level_id < 3', [$this->actor]) < 100, 'Group membership limit reached.', 409);
+        $this->db->fetchRow('SELECT id, credits FROM users WHERE id = ? FOR UPDATE', [$this->actor]);
+        $credits = (int) $this->db->fetchColumn('SELECT credits FROM users WHERE id = ?', [$this->actor]);
+        $this->need($credits >= self::PURCHASE_PRICE, 'You do not have enough credits to purchase this group.', 400);
+        $this->db->execute('UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?', [self::PURCHASE_PRICE, $this->actor, self::PURCHASE_PRICE]);
+        $now = time();
+        $this->db->execute(
+            'INSERT INTO guilds (name, description, room_id, user_id, color_one, color_two, badge, date_created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [$name, $description, (int) $room['id'], $this->actor, self::PLACEHOLDER_COLOR_ONE, self::PLACEHOLDER_COLOR_TWO, self::PLACEHOLDER_BADGE, $now]
+        );
+        $id = (int) $this->db->insertId();
+        $this->need($id > 0, 'Group was not created.', 500);
+        $this->db->execute('INSERT INTO guilds_members (guild_id, user_id, level_id, member_since) VALUES (?, ?, 0, ?)', [$id, $this->actor, $now]);
+        $this->db->execute('UPDATE rooms SET guild_id = ? WHERE id = ? AND owner_id = ? AND guild_id = 0', [$id, $room['id'], $this->actor]);
+        $this->db->execute('DELETE FROM room_rights WHERE room_id = ?', [$room['id']]);
+        (new PhpretroLiveSync($this->db))->recordAndNotify('groups.purchased', [
+            'guild_id' => $id,
+            'user_id' => $this->actor,
+            'room_id' => (int) $room['id'],
+            'placeholder_badge' => self::PLACEHOLDER_BADGE,
+        ]);
+        return $id;
     }
 
     public function join(array $group): bool

@@ -17,5 +17,9 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): The object report has no verified object-to-user mapping. phpretro_user_reports requires a real reported_user_id; objectId is not a user ID.
-habbletUnavailable('Reporting this object is unavailable. Please use the user report form.');
+require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
+$type = habbletText($_GET, 'type');
+$objectId = habbletInt($_POST, 'objectId') ?: habbletInt($_GET, 'objectId');
+$result = phpretroWebRun(static fn() => phpretroWebRestorations()->reportObject($type, $objectId));
+if ($result === null) { return; }
+echo $result;

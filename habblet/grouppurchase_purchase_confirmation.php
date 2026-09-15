@@ -32,6 +32,7 @@ $desc = $input->HoloText($_POST['description']);
 <p>
 <?php echo $lang->loc['group.name']; ?>: <b><?php echo $name; ?></b>.<br><?php echo $lang->loc['price']; ?>: <b>10 <?php echo $lang->loc['coins']; ?></b>.<br> <?php echo $lang->loc['you.have']; ?>: <b><?php echo $input->HoloText($user->user("credits")); ?> <?php echo $lang->loc['coins']; ?></b>.
 </p>
+<p>Badge will be stored as placeholder b001010. Change it in the hotel client.</p>
 
 <div id="group-confirmation-button-area">	
 <div class="new-buttons clearfix">

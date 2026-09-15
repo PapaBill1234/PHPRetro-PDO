@@ -17,5 +17,12 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): The monthly collectible has no catalogue item mapping or delivery contract.
-habbletUnavailable('Collectible purchases are unavailable.');
+require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
+$lang->addLocale('ajax.buttons');
+$result = phpretroWebRun(static fn() => phpretroWebRestorations()->purchaseCollectible());
+if ($result === null) { return; }
+$label = $result['duplicate'] ? 'Already claimed this month.' : 'Claim recorded. Delivery waits for a PolarIS worker.';
+?>
+<p><?php echo $input->HoloText($result['item']['name']); ?></p>
+<p><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></p>
+<p><a href="#" class="new-button" id="collectibles-close"><b><?php echo $lang->loc['ok'] ?? 'Done'; ?></b><i></i></a></p>

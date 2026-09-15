@@ -23,7 +23,7 @@ try {
     $db = new Database();
     $serverdb = $db;
     $schema = file_get_contents($root.'/references/schema/CleanDB.sql');
-    $tables = ['users', 'users_settings', 'users_badges', 'guilds', 'guilds_members', 'guilds_forums_threads', 'guilds_forums_comments', 'guild_forum_views', 'rooms', 'items'];
+    $tables = ['users', 'users_settings', 'users_badges', 'guilds', 'guilds_members', 'guilds_forums_threads', 'guilds_forums_comments', 'guild_forum_views', 'rooms', 'items', 'room_rights'];
     foreach ($tables as $table) {
         if (!preg_match('/CREATE TABLE IF NOT EXISTS `'.preg_quote($table, '/').'` \(.*?\) ENGINE=.*?;/s', $schema, $match)) {
             throw new RuntimeException('Missing verified table '.$table);
@@ -102,14 +102,15 @@ try {
         return endpoint('myhabbo_groups_batch_'.$action.'.php', ['groupId' => 1, 'targetIds' => $targets]);
     }
     // Missing mappings must not charge, write layouts, aliases or incompatible badges.
-    foreach (['startEditingSession','saveEditingSession','cancelEditingSession','show_badge_editor','update_group_badge'] as $action) {
+    foreach (['show_badge_editor','update_group_badge'] as $action) {
         check(callAction($action)[1] === 501, $action.' unavailable explicitly');
     }
     foreach (['startEditingSession','saveEditingSession','cancelEditingSession'] as $action) {
         check(str_contains(file_get_contents($root.'/habblet/groups_actions_'.$action.'.php'), "\$page['no_ajax'] = true"), $action.' keeps legacy full-page GET/POST');
+        check(callAction($action)[1] === 302, $action.' is a website edit session');
     }
-    check(endpoint('grouppurchase_purchase_ajax.php', ['name' => 'Purchase', 'description' => 'Test'])[1] === 501, 'Purchase unavailable');
-    check((int) $db->fetchColumn('SELECT COUNT(*) FROM guilds') === 3, 'Unavailable purchase creates no group');
+    check(endpoint('grouppurchase_purchase_ajax.php', ['name' => 'Purchase', 'description' => 'Test'])[1] === 403, 'Purchase without club is rejected');
+    check((int) $db->fetchColumn('SELECT COUNT(*) FROM guilds') === 3, 'Failed purchase creates no group');
     check(callAction('group_settings')[1] === 200, 'Owner settings form renders');
     check(str_contains(callAction('group_settings')[0], 'id="group-settings-form"'), 'Group settings DOM retained');
     $settingsHtml = callAction('group_settings')[0];
@@ -231,7 +232,9 @@ try {
     check(forumAction('deletetopic', ['topicId' => $topic])[1] === 403, 'Member cannot delete topic');
     check(forumAction('opentopicsettings', ['topicId' => $topic])[1] === 403, 'Non-opener cannot edit topic');
     asUser(1);
-    check(forumAction('deletepost', ['topicId' => $topic, 'postId' => $second])[1] === 501, 'Contradictory comment moderation flagged');
+    check(forumAction('deletepost', ['topicId' => $topic, 'postId' => $second])[1] === 200, 'Guild-admin hide uses state 10');
+    check((int) $db->fetchColumn('SELECT state FROM guilds_forums_comments WHERE id = ?', [$second]) === 10, 'Hidden comment state is 10');
+    check((int) $db->fetchColumn('SELECT admin_id FROM guilds_forums_comments WHERE id = ?', [$second]) === 1, 'Hide records admin_id');
     check(forumAction('savetopicsettings', ['topicId' => $topic, 'topicName' => 'Closed topic', 'topicClosed' => 1, 'topicSticky' => 1])[1] === 200, 'Moderator settings write');
     check(forumAction('savepost', ['topicId' => $topic, 'message' => 'Locked reply'])[1] === 403, 'Locked topic rejects replies');
     check((int) $db->fetchColumn('SELECT pinned FROM guilds_forums_threads WHERE id = ?', [$topic]) === 1, 'Native pinned mapping');

@@ -17,5 +17,6 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): No alerts table or per-user feed dismissal equivalent.
-habbletUnavailable('Feed dismissal is unavailable.');
+require_once(__DIR__.'/../includes/PhpretroWebRestorations.php');
+$key = isset($_POST['feedItemIndex']) ? substr(trim((string) $_POST['feedItemIndex']), 0, 64) : '';
+phpretroWebRun(static fn() => phpretroWebRestorations()->dismissFeed($key));

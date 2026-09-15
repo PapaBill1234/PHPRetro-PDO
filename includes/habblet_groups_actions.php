@@ -45,13 +45,23 @@ function habbletGroupDispatch(string $action): void
     habbletGroupRun(static function () use ($action) {
         global $user, $lang, $input, $page;
         $groups = new HabbletGroups(new Database(), (int) $user->id);
-        $id = habbletInt($_POST, 'groupId');
+        $id = habbletInt($_POST, 'groupId') ?: habbletInt($_GET, 'id');
         $lang->addLocale('ajax.buttons');
         if (in_array($action, ['startEditingSession', 'saveEditingSession', 'cancelEditingSession'], true)) {
-            throw new HabbletGroupError('Group layout editing is unavailable: Polaris has no equivalent for legacy homes, item placement, or editing-session ownership.', 501);
+            $group = $groups->group($id);
+            $groups->need($groups->owner($group));
+            if ($action === 'startEditingSession') { $_SESSION['group_page_edit'] = $id; }
+            else { unset($_SESSION['group_page_edit']); }
+            http_response_code(302);
+            header('Location: '.habbletGroupURL($id));
+            return;
         }
         if ($action === 'purchase') {
-            throw new HabbletGroupError('Purchase groups in the game client. This legacy form does not supply the room, badge parts, colours or club/price policy required by Polaris.', 501);
+            $lang->addLocale('group.purchase.confirm');
+            $id = $groups->transaction(static fn() => $groups->purchase(habbletText($_POST, 'name'), habbletText($_POST, 'description')));
+            echo '<p>Group created. The badge is a placeholder ('.htmlspecialchars(HabbletGroups::PLACEHOLDER_BADGE, ENT_QUOTES, 'UTF-8').'); change it in the hotel client.</p>';
+            echo '<p><a href="'.habbletGroupURL($id).'" class="new-button"><b>'.$lang->loc['done'].'</b><i></i></a></p><div class="clear"></div>';
+            return;
         }
         if ($action === 'member-widget') {
             // homeview.js sends _groupspage.requested.group; PHP normalizes dots to underscores.
@@ -90,10 +100,7 @@ function habbletGroupDispatch(string $action): void
                     case 'forum-updatepost': $groups->editPost($group, $thread, habbletInt($_POST, 'postId')); break;
                     case 'forum-savetopicsettings': $groups->topicSettings($group, $thread); break;
                     case 'forum-deletetopic': $groups->deleteTopic($group, $thread); break;
-                    case 'forum-deletepost':
-                        $groups->need($groups->allowed($group, 'mod_forum'));
-                        $groups->need((bool) $groups->db->fetchColumn('SELECT id FROM guilds_forums_comments WHERE id = ? AND thread_id = ?', [habbletInt($_POST, 'postId'), $topicid]), 'Post not found in this topic.', 404);
-                        throw new HabbletGroupError('Individual post deletion is unavailable: Polaris comment moderation state definitions conflict. No post was changed.', 501);
+                    case 'forum-deletepost': $groups->hidePost($group, $thread, habbletInt($_POST, 'postId')); break;
                     default: throw new LogicException('Unknown forum action.');
                 }
                 return $topicid;

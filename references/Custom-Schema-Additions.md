@@ -269,4 +269,102 @@ CREATE TABLE IF NOT EXISTS `phpretro_group_url_aliases` (
 
 Validation: 1–30 chars, `^[A-Za-z][A-Za-z0-9-]{0,29}$`, must equal `stringToURL($alias, false, false)`, not purely numeric, not reserved `actions|id|discussions|home`. `.htaccess` already routes `/groups/{alias}` to `groups.php?alias=`.
 
+## 12. `phpretro_helpdesk_tickets` — CMS Help Tool (IOT)
+
+PolarIS `support_tickets` (`CleanDB.sql:55048`) is the in-game mod tool and is never written from the CMS. Original PHPRetro used `PREFIX.help` for `/iot/go`. This table is the website-owned replacement.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_helpdesk_tickets` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NULL,
+  `username` VARCHAR(25) NOT NULL DEFAULT '',
+  `email` VARCHAR(255) NOT NULL DEFAULT '',
+  `ip` VARCHAR(45) NOT NULL,
+  `subject` VARCHAR(50) NOT NULL,
+  `message` TEXT NOT NULL,
+  `room_id` INT NOT NULL DEFAULT 0,
+  `status` ENUM('open','picked','closed') NOT NULL DEFAULT 'open',
+  `picked_by` INT NULL,
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_status_created` (`status`, `created_at`),
+  CONSTRAINT `fk_phpretro_helpdesk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_phpretro_helpdesk_picker` FOREIGN KEY (`picked_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+`user_id` is nullable so guests can submit. `synced_at` stays NULL; submit/pickup/remove also record `phpretro_emulator_outbox`.
+
+## 13. `phpretro_collectible_purchases` — website collectible claim
+
+`phpretro_collectibles` has no PolarIS catalogue item id or price. The CMS records a claim and does not debit `users.credits` or grant furniture.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_collectible_purchases` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_id` INT NOT NULL,
+  `collectible_id` INT NOT NULL,
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `idx_user_collectible` (`user_id`, `collectible_id`),
+  CONSTRAINT `fk_phpretro_collectible_purchase_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_phpretro_collectible_purchase_item` FOREIGN KEY (`collectible_id`) REFERENCES `phpretro_collectibles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 14. `phpretro_club_gifts` — website club-gift preview copy
+
+PolarIS club gifts live in the catalog (`club_gift` layout) and `users_settings.hc_gifts_claimed`. The CMS must not grant those. This table is preview text only, keyed by calendar month 1–12.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_club_gifts` (
+  `month` TINYINT NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `image` VARCHAR(255) NOT NULL DEFAULT '',
+  `description` TEXT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`month`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 15. `phpretro_feed_dismissals` — dismissed website feed keys
+
+The Habbo JS posts `feedItemIndex`. There is no PolarIS feed-item table to join, so the posted value is stored as a literal `item_key`.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_feed_dismissals` (
+  `user_id` INT NOT NULL,
+  `item_key` VARCHAR(64) NOT NULL,
+  `dismissed_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`user_id`, `item_key`),
+  CONSTRAINT `fk_phpretro_feed_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## 16. `phpretro_object_reports` — object/room reports (not users)
+
+Distinct from `phpretro_user_reports`. Object types do not always have a user owner, so this table has **no `reported_user_id`**. Allowlisted `object_type` values match `.htaccess` `mod/add_(.*)_report`: `name`, `room`, `motto`, `stickie`, `animator`, `habbomovie`, `groupname`, `url`, `groupdesc`, `guestbook`, `discussionpost`.
+
+```sql
+CREATE TABLE IF NOT EXISTS `phpretro_object_reports` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `reporter_id` INT NOT NULL,
+  `object_type` VARCHAR(32) NOT NULL,
+  `object_id` INT NOT NULL,
+  `reason` VARCHAR(100) NOT NULL DEFAULT '',
+  `evidence` TEXT NOT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'open',
+  `created_at` INT NOT NULL,
+  `synced_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_reporter_created` (`reporter_id`, `created_at`),
+  INDEX `idx_object` (`object_type`, `object_id`),
+  INDEX `idx_status_created` (`status`, `created_at`),
+  CONSTRAINT `fk_phpretro_object_reporter` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
 
