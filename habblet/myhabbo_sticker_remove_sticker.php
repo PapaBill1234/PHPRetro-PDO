@@ -15,20 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-
-$id = $input->FilterText($_POST['stickerId']);
-
-if($_SESSION['page_edit'] == "home"){ $lang->location = -2; $where = '> -1'; }else{ $lang->location = "-".$_SESSION['page_edit']; $where = '< 1'; }
-
-$sql = $db->query("SELECT ".PREFIX."homes.id,".PREFIX."homes.location FROM ".PREFIX."homes,".PREFIX."homes_catalogue WHERE ".PREFIX."homes_catalogue.id = ".PREFIX."homes.itemid AND ".PREFIX."homes.ownerid = '".$user->id."' AND ".PREFIX."homes.id = '".$id."' LIMIT 1");
-$row = $db->fetch_row($sql);
-
-if($db->num_rows($sql) == 0){ echo "ERROR"; exit; }
-
-$db->query("UPDATE ".PREFIX."homes SET location = '-1' WHERE id = '".$id."' LIMIT 1");
-
-echo "SUCCESS";
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): No native homes item/widget placement. phpretro_myhabbo_layouts is a different layout model and is not substituted.
+habbletUnavailable('Homes layout editing is unavailable.');

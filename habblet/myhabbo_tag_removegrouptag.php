@@ -15,22 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-$page['allow_guests'] = true;
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-
-$id = $input->FilterText($_POST['groupId']);
-$tag = $input->FilterText($_POST['tagName']);
-
-$grouprow = $db->fetch_row($data->select14($id));
-$memberrow = $db->fetch_row($data->select15($user->id,$grouprow[0]));
-
-if($memberrow[2] < 2){ exit; }
-
-$db->query("DELETE FROM ".PREFIX."tags WHERE ownerid = '".$id."' AND tag = '".$tag."' AND type = 'group' LIMIT 1");
-
-$page['bypass'] = true;
-require_once('./habblet/myhabbo_tag_listgrouptags.php');
-?>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): guilds has no tags column. User tags live in users_settings.tags only.
+habbletUnavailable('Group tags are unavailable.');

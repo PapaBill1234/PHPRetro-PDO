@@ -15,33 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$lang->addLocale("homes.store.purchase.confirm");
-$lang->addLocale("ajax.buttons");
-
-$id = $input->FilterText($_POST['productId']);
-$subcategory = $input->FilterText($_POST['subCategoryId']);
-
-$sql = $db->query("SELECT type,data FROM ".PREFIX."homes_catalogue WHERE id = '".$id."' LIMIT 1");
-$row = $db->fetch_assoc($sql);
-?>
-
-<div class="webstore-item-preview <?php echo formatItem($row['type'],$row['data'],true); ?>
-	>
-	<div class="webstore-item-mask">
-		
-	</div>
-</div>
-
-<p>
-<?php echo $lang->loc['store.purchase.confirm']; ?>
-</p>
-
-<p class="new-buttons">
-<a href="#" class="new-button" id="webstore-confirm-cancel"><b><?php echo $lang->loc['cancel']; ?></b><i></i></a>
-<a href="#" class="new-button" id="webstore-confirm-submit"><b><?php echo $lang->loc['continue']; ?></b><i></i></a>
-</p>
-
-<div class="clear"></div>
+require_once(__DIR__.'/../includes/habblet.php');
+habbletRequireUser();
+// TODO(phase6): There is no homes_catalogue or homes inventory in Polaris. Do not charge credits for undeliverable items.
+habbletUnavailable('The MyHabbo store is unavailable.');

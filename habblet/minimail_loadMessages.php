@@ -15,7 +15,20 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
-habbletRequireUser();
-// TODO(phase6): No minimail equivalent: messenger_messages/members/offline do not provide subjects, mailbox trash or the legacy conversation/read model. No message is read, sent, reported or deleted here.
-habbletUnavailable('Minimail is unavailable. Please use the hotel messenger.');
+require_once __DIR__.'/../includes/habblet.php';
+if (($page['bypass'] ?? false) !== true) {
+    habbletRequireUser();
+}
+require_once __DIR__.'/../includes/PhpretroMinimail.php';
+$mail = phpretroMinimail();
+$label = $label ?? habbletText($_POST, 'label', 'inbox');
+if (!in_array($label, ['inbox', 'sent', 'trash', 'conversation'], true)) { $label = 'inbox'; }
+$offset = isset($start) ? max(0, (int) $start) : max(0, habbletInt($_POST, 'start'));
+$conversationId = isset($conversationid) ? (int) $conversationid : habbletInt($_POST, 'conversationId');
+$unreadOnly = (isset($unread) ? (string) $unread : habbletText($_POST, 'unreadOnly')) === 'true';
+if (($page['bypass'] ?? false) !== true) {
+    phpretroMinimailXjson(['totalMessages' => $mail->folderCount($label === 'inbox' ? 'inbox' : $label, $conversationId, false)]);
+}
+$total = $mail->folderCount($label, $conversationId, $unreadOnly);
+$rows = $mail->list($label, $offset, $conversationId, $unreadOnly);
+require __DIR__.'/../includes/habblet-templates/minimail-list.php';

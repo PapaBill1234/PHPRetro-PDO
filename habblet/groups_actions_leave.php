@@ -15,19 +15,5 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-$page['dir'] = '\habblet';
-require_once('../includes/core.php');
-require_once('./includes/session.php');
-$data = new home_sql;
-
-$id = $input->FilterText($_POST['groupId']);
-
-$memberrow = $db->fetch_row($data->select15($user->id,$id));
-
-if($memberrow[2] != 3){
-	$data->delete1($user->id,$id);
-}	
-?>
-<script type="text/javascript">
-location.href = habboReqPath + "/groups/<?php echo $input->HoloText($id); ?>/id";
-</script>
+require_once __DIR__.'/../includes/habblet_groups_actions.php';
+habbletGroupDispatch('leave');
