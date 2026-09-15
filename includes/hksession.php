@@ -24,8 +24,7 @@ if(time() > ($user->time + (((int) $settings->find("site_session_time")) * 60)))
 	$_SESSION['hk_user'] = $user;
 }
 if(!empty($page['rank'])){
-	$u = $serverdb->fetch_row($core->select3($user->id));
-	if($u[3] < $page['rank']){
+	if((int) $user->user('rank') < (int) $page['rank']){
 		$user->error = 4;
 	}
 }

@@ -78,16 +78,18 @@ window.onload = function(){
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/dashboard"><?php echo $lang->loc['home']; ?></a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/updates"><?php echo $lang->loc['updates']; ?></a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/logs"><?php echo $lang->loc['logs']; ?></a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/auditlog">Audit log</a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/about"><?php echo $lang->loc['about']; ?></a></li>
 	</ul>
 	<div class="border"></div>
 
 	<ul <?php if($page['category'] == "settings"){ ?>class="selected" <?php } ?>id="item">
 	<li class="top"><div style="text-align:center"><a href="#"><?php echo $lang->loc['settings']; ?></a></div></li>
-	<?php $sql = $db->query("SELECT id,name FROM ".PREFIX."settings_pages ORDER BY `order` ASC");
-	while($row = $db->fetch_row($sql)){ echo "<li class=\"item\"><a href=\"".PATH."/housekeeping/settings/".$row[0]."\">".$row[1]."</a></li>\n"; }
-	?>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/settings">Site settings</a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/maintenance">Maintenance</a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/cache"><?php echo $lang->loc['cache']; ?></a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/staffsessions">Staff sessions</a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/twofactor">Staff 2FA</a></li>
 	</ul>
 	<div class="border"></div>
 
@@ -111,6 +113,8 @@ window.onload = function(){
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/bans"><?php echo $lang->loc['bans']; ?></a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/alerts"><?php echo $lang->loc['alerts']; ?></a></li>
 	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/help"><?php echo $lang->loc['help']; ?></a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/reports">Reports</a></li>
+	<li class="item"><a href="<?php echo PATH; ?>/housekeeping/search">Search</a></li>
 	</ul>
 	<div class="border"></div>
 </div>

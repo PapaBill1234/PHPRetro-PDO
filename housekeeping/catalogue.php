@@ -1,206 +1,70 @@
 <?php
-/*================================================================+\
-|| # PHPRetro - An extendable virtual hotel site and management
-|+==================================================================
-|| # Copyright (C) 2009 Yifan Lu. All rights reserved.
-|| # http://www.yifanlu.com
-|| # Parts Copyright (C) 2009 Meth0d. All rights reserved.
-|| # http://www.meth0d.org
-|| # All images, scripts, and layouts
-|| # Copyright (C) 2009 Sulake Ltd. All rights reserved.
-|+==================================================================
-|| # PHPRetro is provided "as is" and comes without
-|| # warrenty of any kind. PHPRetro is free software!
-|| # License: GNU Public License 3.0
-|| # http://opensource.org/licenses/gpl-license.php
-\+================================================================*/
-
-$page['dir'] = '\housekeeping';
+$page['dir'] = '\\housekeeping';
 $page['housekeeping'] = true;
 $page['rank'] = 5;
 require_once('../includes/core.php');
 require_once('./includes/hksession.php');
-$lang->addLocale("housekeeping.catalogue");
-
-$page['name'] = $lang->loc['pagename.catalogue'];
-$page['category'] = "tools";
+require_once('../includes/AdminAudit.php');
+$database = new Database();
+$e = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$notice = '';
+$action = $_GET['do'] ?? 'list';
+$types = ['1' => 'Sticker', '4' => 'Background'];
+$placements = ['-1' => 'Groups only', '0' => 'Anywhere', '1' => 'Homes only'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    Csrf::requireValid();
+    $id = (int) ($_POST['id'] ?? 0);
+    $affected = 0;
+    if ($action === 'delete') {
+        $affected = $database->execute('DELETE FROM phpretro_homes_catalogue WHERE id = ?', [$id]);
+        $notice = $affected > 0 ? 'Item removed.' : 'Item not found.';
+    } else {
+        $type = (string) ($_POST['type'] ?? '1');
+        if (!isset($types[$type])) {
+            $type = '1';
+        }
+        $where = (string) ($_POST['where'] ?? '0');
+        if (!isset($placements[$where])) {
+            $where = '0';
+        }
+        $price = (int) ($_POST['price'] ?? 0);
+        $amount = (int) ($_POST['amount'] ?? 0);
+        $minrank = (int) ($_POST['minrank'] ?? 1);
+        $category = trim((string) ($_POST['category'] ?? ''));
+        $v = [trim((string) ($_POST['name'] ?? '')), trim((string) ($_POST['desc'] ?? '')), $type, trim((string) ($_POST['data'] ?? '')), $price, $amount, $category, $minrank, $where];
+        if ($v[3] === '' || $price < 0 || $amount < 1 || $minrank < 1) {
+            $notice = 'Data, a numeric price, amount, and min rank are required.';
+        } elseif ($id > 0) {
+            $affected = $database->execute('UPDATE phpretro_homes_catalogue SET name = ?, `desc` = ?, `type` = ?, data = ?, price = ?, amount = ?, category = ?, minrank = ?, `where` = ? WHERE id = ?', [...$v, $id]);
+            $notice = $affected > 0 ? 'Item updated.' : 'Item unchanged or not found.';
+        } else {
+            $affected = $database->execute('INSERT INTO phpretro_homes_catalogue (name, `desc`, `type`, data, price, amount, category, minrank, `where`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', $v);
+            $id = (int) $database->insertId();
+            $notice = 'Item created.';
+        }
+    }
+    if ($affected > 0) {
+        AdminAudit::log($database, (int) $user->id, 'catalogue_'.$action, 'homes_catalogue', $id);
+    }
+    $action = 'list';
+}
+$item = ['id' => 0, 'name' => '', 'desc' => '', 'type' => '1', 'data' => '', 'price' => 2, 'amount' => 1, 'category' => '', 'minrank' => 1, 'where' => '0'];
+if ($action === 'edit') {
+    $loaded = $database->fetchRow('SELECT id, name, `desc`, `type`, data, price, amount, category, minrank, `where` FROM phpretro_homes_catalogue WHERE id = ?', [(int) ($_GET['id'] ?? 0)]);
+    if ($loaded !== false) {
+        $item = $loaded;
+    }
+}
+ob_start();
+if ($action === 'create' || $action === 'edit') {
+    ?><form method="post"><?php echo Csrf::field(); ?><input type="hidden" name="id" value="<?php echo (int) $item['id']; ?>"><label>Name</label><br><input name="name" value="<?php echo $e($item['name']); ?>"><br><label>Description</label><br><input name="desc" value="<?php echo $e($item['desc']); ?>"><br><label>Type</label><br><select name="type"><?php foreach ($types as $value => $label) { ?><option value="<?php echo $e($value); ?>"<?php echo (string) $item['type'] === (string) $value ? ' selected' : ''; ?>><?php echo $e($label); ?></option><?php } ?></select><br><label>Data</label><br><input name="data" value="<?php echo $e($item['data']); ?>"><br><label>Price</label><br><input type="number" name="price" value="<?php echo (int) $item['price']; ?>"><br><label>Amount</label><br><input type="number" name="amount" value="<?php echo (int) $item['amount']; ?>"><br><label>Min rank</label><br><input type="number" name="minrank" value="<?php echo (int) $item['minrank']; ?>"><br><label>Where</label><br><select name="where"><?php foreach ($placements as $value => $label) { ?><option value="<?php echo $e($value); ?>"<?php echo (string) $item['where'] === (string) $value ? ' selected' : ''; ?>><?php echo $e($label); ?></option><?php } ?></select><br><label>Category</label><br><input name="category" value="<?php echo $e($item['category']); ?>"><br><button>Save</button></form><?php
+} else {
+    $rows = $database->fetchAll('SELECT id, name, `type`, data, category FROM phpretro_homes_catalogue ORDER BY `type`, category, name, id');
+    ?><p><a href="<?php echo PATH; ?>/housekeeping/catalogue?do=create">New item</a></p><table><tr><th>Type</th><th>Name</th><th>Data</th><th>Category</th><th>Actions</th></tr><?php foreach ($rows as $row) { ?><tr><td><?php echo $e($types[(string) $row['type']] ?? $row['type']); ?></td><td><?php echo $e($row['name']); ?></td><td><?php echo $e($row['data']); ?></td><td><?php echo $e($row['category']); ?></td><td><a href="<?php echo PATH; ?>/housekeeping/catalogue?do=edit&id=<?php echo (int) $row['id']; ?>">Edit</a><form style="display:inline" method="post" action="<?php echo PATH; ?>/housekeeping/catalogue?do=delete"><?php echo Csrf::field(); ?><input type="hidden" name="id" value="<?php echo (int) $row['id']; ?>"><button>Delete</button></form></td></tr><?php } ?></table><?php
+}
+$content = ob_get_clean();
+$page['name'] = 'Catalogue';
+$page['category'] = 'tools';
 require_once('./templates/housekeeping_header.php');
-
-if(isset($_GET['do']) && $_GET['do'] == "save"){
-	Csrf::requireValid();
-	$row = $_POST;
-	if(empty($row['data'])){ $error = $lang->loc['error.no.data']."<br />"; }
-	if(empty($row['price']) || !is_numeric($row['price'])){ $error = $lang->loc['invalid.price']."<br />"; }
-	if(empty($row['amount']) || !is_numeric($row['amount'])){ $error = $lang->loc['invalid.amount']."<br />"; }
-	if(empty($row['minrank']) || !is_numeric($row['minrank'])){ $error = $lang->loc['invalid.minrank']."<br />"; }
-	if($row['categoryid'] == "new"){
-		if(empty($row['new_category'])){
-			$error = $lang->loc['invalid.new.category'];
-		}else{
-			$id = (int) $db->result($db->query("SELECT MAX(id) FROM ".PREFIX."homes_catalogue LIMIT 1"));
-			$row['categoryid'] = $id + 1;
-			$row['category'] = $row['new_category'];
-		}
-	}else{
-		$category = explode(",",$row['categoryid'],2);
-		$row['categoryid'] = $category[0];
-		$row['category'] = $category[1];
-	}
-	if(empty($error)){
-		if(!empty($row['id'])){
-			$db->query("UPDATE ".PREFIX."homes_catalogue SET name = '".$input->FilterText($row['name'])."', `desc` = '".$input->FilterText($row['desc'])."', `type` = '".$input->FilterText($row['type'])."', `data` = '".$input->FilterText($row['data'])."', price = '".$input->FilterText($row['price'])."', amount = '".$input->FilterText($row['amount'])."', category = '".$input->FilterText($row['category'])."', categoryid = '".$input->FilterText($row['categoryid'])."', minrank = '".$input->FilterText($row['minrank'])."', `where` = '".$input->FilterText($row['where'])."' WHERE id = '".$input->FilterText($row['id'])."' LIMIT 1");
-			$message = $lang->loc['message.item.modified'];
-		}else{
-			$db->query("INSERT INTO ".PREFIX."homes_catalogue (name,`desc`,`type`,`data`,price,amount,category,categoryid,minrank,`where`) VALUES ('".$input->FilterText($row['name'])."','".$input->FilterText($row['desc'])."','".$input->FilterText($row['type'])."','".$input->FilterText($row['data'])."','".$input->FilterText($row['price'])."','".$input->FilterText($row['amount'])."','".$input->FilterText($row['category'])."','".$input->FilterText($row['categoryid'])."','".$input->FilterText($row['minrank'])."','".$input->FilterText($row['where'])."')");
-			$message = $lang->loc['message.item.created'];
-		}
-		unset($_POST); unset($_GET);
-	}else{
-		$_GET['do'] = "create";
-	}
-}elseif($_GET['do'] == "remove"){
-	if(isset($_POST['id']) && isset($_POST['remove'])){
-		Csrf::requireValid();
-		$db->query("DELETE FROM ".PREFIX."homes_catalogue WHERE id = '".$input->FilterText($_POST['id'])."' LIMIT 1");
-		unset($_POST); unset($_GET);
-		$message = $lang->loc['message.item.removed'];
-	}
-}
-if((isset($_GET['id']) || isset($_POST['id'])) && empty($row)){
-	$sql = $db->query("SELECT * FROM ".PREFIX."homes_catalogue WHERE id = '".$input->FilterText($_GET['id'])."' LIMIT 1");
-	$row = $db->fetch_assoc($sql);
-	$typeselected[(int) $row['type']] = ' selected="true"';
-	$whereselected[(int) $row['where']] = ' selected="true"';
-}elseif(empty($row)){
-	$typeselected[1] = ' selected="true"';
-	$whereselected[0] = ' selected="true"';
-	$row['price'] = "2";
-	$row['amount'] = "1";
-	$row['minrank'] = "1";
-	$row['categoryid'] = "new";
-}
-
-switch($_GET['do']){
-case "create":
-$lang->addLocale("housekeeping.catalogue.create");
-$icon = "catalogue_create.png";
-$description = $lang->loc['catalogue.create.desc'];
-if(!empty($row['new_category'])){ $newselected = ' selected="true"'; }
-$content = "";
-if(!empty($error)){ $content .= '<div class="clean-error">'.$error.'</div>'; }
-$content .= 
-'<div class="settings">
-<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=save" method="POST">'.Csrf::field();
-if(!empty($row['id'])){ $content .= '<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />'; }
-$content .= 
-'<label for="name">'.$lang->loc['name'].':</label><br />
-<input type="text" name="name" value="'.$input->HoloText($row['name']).'" title="'.$lang->loc['name.desc'].'" /><br />
-<label for="desc">'.$lang->loc['description'].':</label><br />
-<input type="text" name="desc" value="'.$input->HoloText($row['desc']).'" title="'.$lang->loc['description.desc'].'" /><br />
-<label for="type">'.$lang->loc['type'].':</label><br />
-<select name="type" title="'.$lang->loc['type.desc'].'"><option value="1"'.$typeselected[1].'>'.$lang->loc['sticker'].'</option><option value="4"'.$typeselected[4].'>'.$lang->loc['background'].'</option></select><br />
-<label for="data">'.$lang->loc['data'].':</label><br />
-<input type="text" name="data" value="'.$input->HoloText($row['data']).'" title="'.$lang->loc['data.desc'].'" /><br />
-<label for="price">'.$lang->loc['price'].':</label><br />
-<input type="text" name="price" value="'.$input->HoloText($row['price']).'" title="'.$lang->loc['price.desc'].'" /><br />
-<label for="amount">'.$lang->loc['amount'].':</label><br />
-<input type="text" name="amount" value="'.$input->HoloText($row['amount']).'" title="'.$lang->loc['amount.desc'].'" /><br />
-<label for="minrank">'.$lang->loc['minrank'].':</label><br />
-<input type="text" name="minrank" value="'.$input->HoloText($row['minrank']).'" title="'.$lang->loc['minrank.desc'].'" /><br />
-<label for="where">'.$lang->loc['where'].':</label><br />
-<select name="where" title="'.$lang->loc['where.desc'].'"><option value="-1"'.$whereselected[-1].'>'.$lang->loc['groups.only'].'</option><option value="0"'.$whereselected[0].'>'.$lang->loc['anywhere'].'</option><option value="1"'.$whereselected[1].'>'.$lang->loc['homes.only'].'</option></select><br />
-<h2>'.$lang->loc['category'].'</h2>
-<label for="categoryid">'.$lang->loc['category'].':</label><br />
-<select name="categoryid" title="'.$lang->loc['category.desc'].'"><option value="new"'.$newselected.'>'.$lang->loc['new'].'</option>';
-$sql = $db->query("SELECT categoryid,category FROM ".PREFIX."homes_catalogue WHERE type = '1' OR type = '4' GROUP BY categoryid ORDER BY category ASC");
-while($row2 = $db->fetch_assoc($sql)){
-if($row['categoryid'] == $row2['categoryid']){ $selected = ' selected="true"'; }
-if($row['type'] == "1"){ $type = $lang->loc['sticker'].": "; }else{ $type = $lang->loc['background'].": "; }
-$content .= '<option value="'.$row2['categoryid'].','.$row2['category'].'"'.$selected.'>'.$type.$row2['category'].'</option>';
-}
-$content .= 
-'</select><br />
-<label for="new_category">'.$lang->loc['new.category'].':</label><br />
-<input type="text" name="new_category" value="'.$input->HoloText($row['new_category']).'" title="'.$lang->loc['new.category.desc'].'" /><br />
-<div class="button"><input type="submit" name="save" value="'.$lang->loc['save'].'" /></div>
-</form>
-</div>';
-break;
-case "remove":
-$lang->addLocale("housekeeping.catalogue.remove");
-$icon = "catalogue_remove.png";
-$description = $lang->loc['catalogue.remove.desc'];
-$content = 
-'<div class="clean-yellow">'.$lang->loc['confirm.remove'].' "'.$input->HoloText($row['name']).'"?</div>
-<form name="settings" action="'.PATH.'/housekeeping/catalogue?do=remove" method="POST">'.Csrf::field().'
-<input type="hidden" name="id" value="'.$input->HoloText($row['id']).'" />
-<div class="button"><input type="submit" name="remove" value="'.$lang->loc['remove'].'" /></div>
-</form>';
-break;
-default:
-$lang->addLocale("housekeeping.catalogue.display");
-$icon = "catalogue.png";
-$description = $lang->loc['catalogue.display.desc'];
-$content = "";
-if(isset($message) && !empty($message)){ $content .= '<div class="clean-ok">'.$message.'</div>'; }
-$content .= 
-'<div class="contentdisplay">
-<table height="100%"><tbody>
-<tr class="header">
-<th width="100">'.$lang->loc['type'].'</th>
-<th width="150">'.$lang->loc['name'].'</th>
-<th width="100">'.$lang->loc['data'].'</th>
-<th width="100">'.$lang->loc['category'].'</th>
-<th width="50">'.$lang->loc['actions'].'</th>
-</tr>';
-$sql = $db->query("SELECT * FROM ".PREFIX."homes_catalogue WHERE type = '1' OR type = '4' ORDER BY type ASC, categoryid ASC, name ASC, data ASC");
-$i = 0;
-while($row = $db->fetch_assoc($sql)){
-$i++;
-if($input->IsEven($i)){ $even = ' class="even"'; }else{ $even = ''; }
-if($row['type'] == "1"){ $type = $lang->loc['sticker']; }else{ $type = $lang->loc['background']; }
-$content .= 
-'<tr'.$even.'>
-<td><a href="'.PATH.'/housekeeping/catalogue?do=create&id='.$row['id'].'">'.$type.'</a></td>
-<td><a href="'.PATH.'/housekeeping/catalogue?do=create&id='.$row['id'].'">'.$input->HoloText($row['name']).'</a></td>
-<td><a href="'.PATH.'/housekeeping/catalogue?do=create&id='.$row['id'].'">'.$input->HoloText($row['data']).'</a></td>
-<td><a href="'.PATH.'/housekeeping/catalogue?do=create&id='.$row['id'].'">'.$input->HoloText($row['category']).'</a></td>
-<td class="action"><a href="'.PATH.'/housekeeping/catalogue?do=create&id='.$row['id'].'"><img src="'.PATH.'/housekeeping/images/icons/edit.png" alt="'.$lang->loc['edit'].'" title="'.$lang->loc['edit'].'" /></a><a href="'.PATH.'/housekeeping/catalogue?do=remove&id='.$row['id'].'"><img src="'.PATH.'/housekeeping/images/icons/remove.png" alt="'.$lang->loc['remove'].'" title="'.$lang->loc['remove'].'" /></a></td>
-</tr>';
-}
-$content .= 
-'</tbody></table>
-<div class="button"><input type="button" value="'.$lang->loc['new'].'" onclick="window.location.href=\''.PATH.'/housekeeping/catalogue?do=create\'"></input></div>
-</div>';
-break;
-}
 ?>
-<div class="page_title">
- <img src="<?php echo PATH; ?>/housekeeping/images/icons/<?php echo $icon; ?>" class="pticon">
- <span class="page_name_shadow"><?php echo $lang->loc['pagename.catalogue']; ?></span>
-
- <span class="page_name"><?php echo $lang->loc['pagename.catalogue']; ?></span>
-</div>
-<div class="page_main">
-
-<table border="0" cellpadding="0" cellspacing="0" height="100%">
-<tbody>
-<tr height="100%" />
-<td class="page_main_left">
-<div class="left_date"><?php echo date('l F j, Y | g:iA'); ?></div>
-<div class="hr"></div>
-<div class="text">
-<?php echo $description; ?>
-</div>
-</td>
- <td class="page_main_right">
-<div class="center">
-<?php echo $content; ?>
-</div>
- </td>
-</tr>
-</tbody>
-</table>
-
-</div>
-<?php require_once('./templates/housekeeping_footer.php'); ?>
+<div class="page_title"><span class="page_name">Catalogue</span></div><div class="page_main"><div class="center"><?php if ($notice !== '') { ?><div class="clean-ok"><?php echo $e($notice); ?></div><?php } ?><?php echo $content; ?></div></div><?php require_once('./templates/housekeeping_footer.php'); ?>

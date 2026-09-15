@@ -33,14 +33,14 @@ if($page['discussion'] == true){
 ?>
     <div class="habblet ">
 <?php if(!$user->IsHCMember($userrow[0]) && $page['edit'] != true){ ?>
-		<?php $sql = $db->query("SELECT * FROM ".PREFIX."banners WHERE status = '1' ORDER BY id ASC");
-
-		while($row = $db->fetch_assoc($sql)) { ?>
+		<?php $banners = [];
+		try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
+		foreach ($banners as $row) { ?>
 		<?php if($row['advanced'] == "1"){
 		echo $input->HoloText($row['html'], true)."\n<br />\n";
 		}else{ ?>
-		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><img src="<?php echo $row['banner']; ?>"></a><br /><?php } ?>
-		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><?php echo $row['text']; ?></a><br /><?php } ?>
+		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
+		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
 		<?php } ?>
 		<?php } ?>
 <?php } ?>
@@ -55,14 +55,14 @@ if($page['discussion'] == true){
 <?php if(!$user->IsHCMember($userrow[0]) && $page['edit'] != true){ ?>
 <div class="habblet ">
 	<div class="ad-container">
-		<?php $sql = $db->query("SELECT * FROM ".PREFIX."banners WHERE status = '1' ORDER BY id ASC");
-
-		while($row = $db->fetch_assoc($sql)) { ?>
+		<?php $banners = [];
+		try { $banners = $db->fetchAll('SELECT text, banner, url, status, advanced, html FROM phpretro_banners WHERE status = ? ORDER BY sort_order ASC, id ASC', ['1']); } catch (Throwable $exception) { $banners = []; }
+		foreach ($banners as $row) { ?>
 		<?php if($row['advanced'] == "1"){
 		echo $input->HoloText($row['html'], true)."\n<br />\n";
 		}else{ ?>
-		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><img src="<?php echo $row['banner']; ?>"></a><br /><?php } ?>
-		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $row['url']; ?>"><?php echo $row['text']; ?></a><br /><?php } ?>
+		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
+		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
 		<?php } ?>
 		<?php } ?>
 	</div>

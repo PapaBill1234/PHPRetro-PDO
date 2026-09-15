@@ -90,9 +90,10 @@ body { behavior: url(<?php echo PATH; ?>/web-gallery/js/csshover.htc); }
 <div id="faq-category-list">
 <ul class="faq">
 <?php
-$sql = $db->query("SELECT * FROM ".PREFIX."faq WHERE type = 'cat' ORDER BY id ASC");
-while($row = $db->fetch_assoc($sql)){
-echo "<li><a href=\"".PATH."/help/".$row['id']."\" name=\"\"><span class=\"faq-link\">".$row['title']."</span></a></li>\n";
+$faqCategories = [];
+try { $faqCategories = $db->fetchAll('SELECT MIN(id) AS id, category FROM phpretro_faq WHERE active = 1 GROUP BY category ORDER BY category ASC'); } catch (Throwable $exception) { $faqCategories = []; }
+foreach ($faqCategories as $row){
+echo "<li><a href=\"".PATH."/help/".$row['id']."\" name=\"\"><span class=\"faq-link\">".$input->HoloText($row['category'])."</span></a></li>\n";
 }
 ?>
 </ul>
