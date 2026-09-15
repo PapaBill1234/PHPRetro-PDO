@@ -15,7 +15,20 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No native homes item/widget placement. phpretro_myhabbo_layouts is a different layout model and is not substituted.
-habbletUnavailable('Homes layout editing is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$page['edit'] = true;
+$placed = phpretroHomesRun(static fn() => $homes->placeSticker(
+    habbletInt($_POST, 'selectedStickerId'),
+    habbletInt($_POST, 'zindex', 1),
+    habbletText($_POST, 'placeAll') === 'true'
+));
+if ($placed === null) { return; }
+$ids = [];
+foreach ($placed as $item) {
+    $ids[] = (string) $item['id'];
+    require __DIR__.'/../includes/habblet-templates/home-sticker.php';
+}
+phpretroHomesJsonHeader($ids);

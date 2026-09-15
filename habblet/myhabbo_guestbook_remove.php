@@ -19,4 +19,8 @@ require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
 require_once __DIR__.'/../includes/PhpretroHomes.php';
 $homes = phpretroHomes();
-phpretroHomesRun(static fn() => $homes->removeGuestbook(habbletInt($_POST, 'entryId') ?: habbletInt($_POST, 'messageId')));
+$widgetId = habbletInt($_POST, 'widgetId');
+phpretroHomesRun(static fn() => $homes->removeGuestbook(
+    habbletInt($_POST, 'entryId') ?: habbletInt($_POST, 'messageId'),
+    $widgetId > 0 ? $widgetId : null
+));

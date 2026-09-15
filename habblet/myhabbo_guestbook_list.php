@@ -21,5 +21,12 @@ require_once __DIR__.'/../includes/PhpretroHomes.php';
 $homes = phpretroHomes();
 $widget = phpretroHomesRun(static fn() => $homes->guestbook(habbletInt($_POST, 'widgetId') ?: (int) ($widget ?? 0)));
 if ($widget === null) { return; }
-$entries = $homes->guestbookEntries((int) $widget['user_id'], max(0, (habbletInt($_POST, 'start') ?: 0)));
+$entries = $homes->guestbookEntriesForWidget($widget, max(0, (habbletInt($_POST, 'start') ?: 0)));
+if (($widget['scope'] ?? 'user') === 'group') {
+    foreach ($entries as &$entry) {
+        $entry['profile_user_id'] = 0;
+        $entry['can_delete'] = (int) $user->id === (int) $entry['author_user_id'] || $homes->canEditGroup((int) $widget['guild_id']);
+    }
+    unset($entry);
+}
 foreach ($entries as $entry) { require __DIR__.'/../includes/habblet-templates/home-guestbook-entry.php'; }

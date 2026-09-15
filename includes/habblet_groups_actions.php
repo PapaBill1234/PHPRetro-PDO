@@ -48,10 +48,18 @@ function habbletGroupDispatch(string $action): void
         $id = habbletInt($_POST, 'groupId') ?: habbletInt($_GET, 'id');
         $lang->addLocale('ajax.buttons');
         if (in_array($action, ['startEditingSession', 'saveEditingSession', 'cancelEditingSession'], true)) {
+            if ($id < 1) { $id = (int) ($_SESSION['group_page_edit'] ?? 0); }
             $group = $groups->group($id);
             $groups->need($groups->owner($group));
             if ($action === 'startEditingSession') { $_SESSION['group_page_edit'] = $id; }
-            else { unset($_SESSION['group_page_edit']); }
+            elseif ($action === 'saveEditingSession') {
+                require_once __DIR__.'/PhpretroHomes.php';
+                try { phpretroHomes()->saveLayout($_POST); }
+                catch (PhpretroHomesError $error) { throw new HabbletGroupError($error->getMessage(), $error->getCode() ?: 400); }
+                unset($_SESSION['group_page_edit']);
+                echo '<script language="JavaScript" type="text/javascript">waitAndGo('.json_encode(habbletGroupURL($id)).');</script>';
+                return;
+            } else { unset($_SESSION['group_page_edit']); }
             http_response_code(302);
             header('Location: '.habbletGroupURL($id));
             return;

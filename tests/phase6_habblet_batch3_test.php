@@ -140,23 +140,6 @@ try {
     check(endpoint('myhabbo_linktool_search.php', [], ['query' => 'User', 'scope' => []])[1] === 200, 'Malformed scope rejected without error');
 
     $blocked = [
-        'groups_widgets.php',
-        'myhabbo_guestbook_configure.php',
-        'myhabbo_noteeditor_place.php',
-        'myhabbo_rating_rate.php',
-        'myhabbo_rating_reset_ratings.php',
-        'myhabbo_sticker_place_sticker.php',
-        'myhabbo_sticker_remove_sticker.php',
-        'myhabbo_stickie_delete.php',
-        'myhabbo_stickie_edit.php',
-        'myhabbo_store_inventory.php',
-        'myhabbo_store_inventory_items.php',
-        'myhabbo_store_inventory_preview.php',
-        'myhabbo_store_items.php',
-        'myhabbo_store_main.php',
-        'myhabbo_store_preview.php',
-        'myhabbo_store_purchase.php',
-        'myhabbo_store_purchase_confirm.php',
         'myhabbo_tag_addgrouptag.php',
         'myhabbo_tag_listgrouptags.php',
         'myhabbo_tag_removegrouptag.php',

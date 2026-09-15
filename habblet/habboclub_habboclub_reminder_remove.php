@@ -15,7 +15,7 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): No alerts table or persistent club reminder dismissal equivalent.
-habbletUnavailable('Club reminder dismissal is unavailable.');
+require_once __DIR__.'/../includes/PhpretroWebRestorations.php';
+phpretroWebRun(static fn() => phpretroWebRestorations()->dismissFeed('hc-reminder'));

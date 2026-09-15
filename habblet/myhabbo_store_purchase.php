@@ -15,7 +15,26 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): There is no homes_catalogue or homes inventory in Polaris. Do not charge credits for undeliverable items.
-habbletUnavailable('The MyHabbo store is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$lang->addLocale('homes.store.purchase');
+$lang->addLocale('ajax.buttons');
+try {
+    $id = $homes->purchase(habbletInt($_POST, 'selectedId'));
+} catch (PhpretroHomesError $error) {
+    http_response_code($error->getCode() ?: 400);
+?>
+<p>
+<?php echo htmlspecialchars($error->getMessage(), ENT_QUOTES, 'UTF-8'); ?><br />
+</p>
+<p>
+<a href="#" class="new-button" id="webstore-confirm-cancel"><b><?php echo $lang->loc['cancel'] ?? 'Cancel'; ?></b><i></i></a>
+</p>
+<div class="clear"></div>
+<?php
+    return;
+}
+phpretroHomesJsonHeader($id);
+echo 'OK';

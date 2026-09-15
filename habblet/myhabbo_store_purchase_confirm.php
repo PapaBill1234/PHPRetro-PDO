@@ -15,7 +15,24 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): There is no homes_catalogue or homes inventory in Polaris. Do not charge credits for undeliverable items.
-habbletUnavailable('The MyHabbo store is unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$lang->addLocale('homes.store.purchase.confirm');
+$lang->addLocale('ajax.buttons');
+$row = $homes->catalogue(habbletInt($_POST, 'productId'));
+if (!$row) { echo '<p>Unknown product.</p>'; return; }
+?>
+<div class="webstore-item-preview <?php echo $homes->itemCss($row['type'], $row['data'], true); ?>">
+	<div class="webstore-item-mask"></div>
+</div>
+<p>
+<?php echo $lang->loc['store.purchase.confirm']; ?>
+</p>
+<p>You must be signed out of the hotel. Credits are deducted from your hotel account and will show in-game the next time you enter. The item is added to your website inventory immediately.</p>
+<p class="new-buttons">
+<a href="#" class="new-button" id="webstore-confirm-cancel"><b><?php echo $lang->loc['cancel'] ?? 'Cancel'; ?></b><i></i></a>
+<a href="#" class="new-button" id="webstore-confirm-submit"><b><?php echo $lang->loc['continue'] ?? 'Continue'; ?></b><i></i></a>
+</p>
+<div class="clear"></div>

@@ -4,6 +4,7 @@ $key = $widget['widget_key'];
 $owner = $homes->profile((int) $widget['user_id']);
 $edit = !empty($page['edit']);
 $online = $owner['hide_online'] === '1' ? false : $owner['online'] === '1';
+$privacy = ($widget['privacy'] ?? 'public') === 'private' ? 'private' : 'public';
 $class = match ($key) {
     'guestbookwidget' => 'GuestbookWidget',
     'highscoreswidget' => 'HighScoresWidget',
@@ -11,6 +12,7 @@ $class = match ($key) {
     'friendswidget' => 'FriendsWidget',
     'groupswidget' => 'GroupsWidget',
     'roomswidget' => 'RoomsWidget',
+    'ratingwidget' => 'RatingWidget',
     default => 'ProfileWidget',
 };
 $lang->addLocale(match ($key) {
@@ -20,10 +22,11 @@ $lang->addLocale(match ($key) {
     'friendswidget' => 'homes.widget.friends',
     'groupswidget' => 'homes.widget.groups',
     'roomswidget' => 'homes.widget.rooms',
+    'ratingwidget' => 'homes.widget.rating',
     default => 'homes.widget.profile',
 });
 ?>
-<div class="movable widget <?php echo $class; ?>" id="widget-<?php echo $widgetId; ?>">
+<div class="movable widget <?php echo $class; ?>" id="widget-<?php echo $widgetId; ?>" style="<?php echo $homes->widgetStyle($widget); ?>">
 <div class="w_skin_defaultskin">
 <div class="widget-corner" id="widget-<?php echo $widgetId; ?>-handle">
 <div class="widget-headline"><h3>
@@ -38,6 +41,7 @@ echo match ($key) {
     'friendswidget' => ($lang->loc['my.friends'] ?? 'My Friends').' ('.$homes->friendCount((int) $owner['id']).')',
     'groupswidget' => $lang->loc['my.groups'] ?? 'My Groups',
     'roomswidget' => $lang->loc['my.rooms'] ?? 'My Rooms',
+    'ratingwidget' => $lang->loc['my.rating'] ?? 'My Rating',
     default => $lang->loc['my.profile'] ?? 'My Profile',
 };
 ?></span><span class="header-right">&nbsp;</span></h3>
@@ -64,23 +68,29 @@ foreach ($tags as $tag) {
 </div>
 </div>
 <?php } elseif ($key === 'guestbookwidget') {
-    $entries = $homes->guestbookEntries((int) $owner['id']);
+    $entries = $homes->guestbookEntriesForWidget($widget);
     $lang->addLocale('homes.widget.guestbook');
+    $canPost = (int) $user->id > 0 && ($privacy !== 'private' || $homes->areFriends((int) $owner['id'], (int) $user->id));
 ?>
-<div id="guestbook-wrapper" class="gb-public">
+<div id="guestbook-type" class="<?php echo $privacy; ?>">
+<div id="guestbook-wrapper" class="gb-<?php echo $privacy === 'private' ? 'private' : 'public'; ?>">
 <ul class="guestbook-entries" id="guestbook-entry-container">
 <?php if ($entries === []) { ?><div id="guestbook-empty-notes"><?php echo $lang->loc['guestbook.no.entries'] ?? 'No entries.'; ?></div><?php } ?>
 <?php foreach ($entries as $entry) { $page['bypass'] = true; require __DIR__.'/home-guestbook-entry.php'; } ?>
 </ul>
 </div>
-<?php if (!$edit && (int) $user->id > 0) { ?>
+</div>
+<?php if (!$edit && $canPost) { ?>
 <div class="guestbook-toolbar clearfix">
 <a href="#" class="new-button envelope-icon" id="guestbook-open-dialog"><b><span></span><?php echo $lang->loc['new.message'] ?? 'New message'; ?></b><i></i></a>
 </div>
 <?php } ?>
 <?php } elseif ($key === 'highscoreswidget') { ?>
 <table><tr><td><?php echo $lang->loc['no.high.scores'] ?? 'No high scores.'; ?></td></tr></table>
-<?php } elseif ($key === 'badgeswidget') {
+<?php } elseif ($key === 'ratingwidget') {
+    $ownerId = (int) $owner['id'];
+    require __DIR__.'/home-rating.php';
+} elseif ($key === 'badgeswidget') {
     $badges = $homes->badges((int) $owner['id']);
     if ($badges === []) { echo $lang->loc['no.badges'] ?? 'No badges.'; }
     else {

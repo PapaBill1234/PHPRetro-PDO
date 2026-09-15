@@ -15,7 +15,24 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// Privacy settings have no PolarIS or phpretro_* column. Posting requires a signed-in user only.
-habbletUnavailable('Guestbook privacy settings are unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$privacy = phpretroHomesRun(static fn() => $homes->configureGuestbook(habbletInt($_POST, 'widgetId')));
+if ($privacy === null) { return; }
+header('Content-Type: text/javascript; charset=utf-8');
+?>
+var el = $("guestbook-type");
+if (el) {
+	if (el.hasClassName("public")) {
+		el.className = "private";
+		new Effect.Pulsate(el,
+			{ duration: 1.0, afterFinish : function() { Element.setOpacity(el, 1); } }
+		);
+	} else {
+		new Effect.Pulsate(el,
+			{ duration: 1.0, afterFinish : function() { Element.setOpacity(el, 0); el.className = "public"; } }
+		);
+	}
+}

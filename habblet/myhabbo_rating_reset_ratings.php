@@ -15,7 +15,12 @@
 || # http://opensource.org/licenses/gpl-license.php
 \+================================================================*/
 
-require_once(__DIR__.'/../includes/habblet.php');
+require_once __DIR__.'/../includes/habblet.php';
 habbletRequireUser();
-// TODO(phase6): Home 1-5 ratings have no equivalent. rooms.score and room_votes are room votes, not profile ratings.
-habbletUnavailable('Home ratings are unavailable.');
+require_once __DIR__.'/../includes/PhpretroHomes.php';
+$homes = phpretroHomes();
+$lang->addLocale('homes.widget.rating');
+$ownerId = habbletInt($_GET, 'ownerId');
+$widgetId = habbletInt($_GET, 'ratingId');
+if (phpretroHomesRun(static fn() => $homes->resetRatings($ownerId, $widgetId)) === null) { return; }
+require __DIR__.'/../includes/habblet-templates/home-rating.php';
