@@ -22,13 +22,53 @@ project may redesign the UI after the replacement is stable.
 | Staff CMS | Filament | Mature Laravel admin framework for forms, tables, filters, role gates, audit views, and CRUD workflows. It should be styled to preserve required staff workflows before replacing old housekeeping pages. |
 | Database access | Laravel Query Builder / Eloquent, with explicit repository services | Use parameter binding everywhere. Query Polaris-owned tables through narrowly scoped services; do not let generic CMS models modify them. |
 | Client state / forms | React Hook Form + Zod | Explicit validation and predictable form submissions for dialogs and editor screens. |
+| Server state | TanStack Query | Caches server data and supports reliable optimistic updates for messaging, groups, staff tools, and the Homes editor. |
 | Styling | Existing `web-gallery` CSS and assets first | Provides exact visual parity. New isolated CSS may be added only when a legacy asset has no safe equivalent. |
 | Tests | Pest + Playwright | Pest verifies services, permissions, and database work. Playwright checks real browser flows and screenshot parity. |
-| Jobs / cache | Laravel queues and cache | Handles mail, image fetches, scheduled cleanup, and cache invalidation without page-request work. |
+| Cache, sessions, queue, locks | Redis | Keeps sessions and cache fast; provides rate-limit counters, background jobs, and atomic locks for conflicting Homes edits. |
+| Queue operations | Laravel Horizon | Shows queued email, media, cleanup, and scheduled CMS work, including failures and retries. |
+| Realtime events | Laravel Reverb | Delivers minimail notifications, friend-presence changes, staff alerts, and live CMS updates over WebSockets. |
+| Homes drag/drop | dnd-kit | Modern accessible drag/drop behavior while retaining the original Homes visuals and dimensions. |
+| Media | S3-compatible object storage | Stores CMS media, uploads, cached avatar images, and backups outside web-server disk; use MinIO locally and an S3-compatible provider in production. |
+| Search | Laravel Scout + Meilisearch | Adds fast user, room, group, article, and staff-log search when database `LIKE` searches are no longer sufficient. |
+| Monitoring | Sentry + OpenTelemetry-compatible metrics | Captures production errors and exposes request, queue, database, and WebSocket health for operations dashboards. |
+| Delivery | Docker Compose + GitHub Actions | Makes the Laravel, MariaDB, Redis, worker, Reverb, and imager environment repeatable and verifies every pull request. |
 
 No ORM is allowed to "take ownership" of Polaris. Polaris continues to own
 hotel users, rooms, guilds, inventory, catalog, balances, and hotel-side
 permissions. Laravel owns new website/CMS tables under the `phpretro_` prefix.
+
+## Service boundaries
+
+This is the modern equivalent of a large hotel website's separation of
+responsibilities. It keeps website code scalable without pretending that
+Laravel can replace the game server.
+
+```text
+Browser
+  └─ React + TypeScript + existing web-gallery design
+       └─ Laravel application and Filament CMS
+            ├─ Redis: sessions, cache, queues, locks, realtime coordination
+            ├─ phpretro_* tables: CMS and website-owned state
+            ├─ Polaris services/tables: verified hotel operations only
+            ├─ Reverb: website realtime events
+            ├─ S3-compatible storage: media and image caches
+            └─ Horizon / Sentry / metrics: jobs, errors, and operations
+                 └─ Polaris hotel server and Nitro client
+```
+
+Laravel is the website and CMS layer. Polaris and Nitro remain the hotel/game
+layer. Features such as catalog-owned Club purchase, room transfer, Trax, and
+native badge editing still require verified emulator/client support.
+
+## Adoption order for supporting services
+
+Start the first vertical slice with Laravel, React, TypeScript, Inertia,
+Filament, Redis, Pest, Playwright, Docker Compose, and GitHub Actions. Add
+Horizon when the first queued work is introduced and Reverb when minimail or
+presence notifications are migrated. Add object storage before accepting CMS
+uploads. Add Meilisearch only when real search volume makes MySQL searches
+insufficient. Add Sentry and metrics before public cutover.
 
 ## Rules that apply to every phase
 
@@ -70,10 +110,14 @@ or unsupported feature hidden in a ticket.
 - Create a separate Laravel app directory/repository boundary; do not replace
   `C:\xampp\htdocs` in place.
 - Configure environment loading, logging, error handling, health checks,
-  cache, queues, scheduler, and secure session defaults.
+  Redis cache/sessions/queues/locks, scheduler, and secure session defaults.
+- Define Docker Compose services for Laravel, MariaDB, Redis, queue worker,
+  Reverb, Polaris-imager, and local S3-compatible storage where needed.
 - Import `web-gallery` assets through Vite without changing their paths or
   appearance.
 - Add CI for PHP linting, Laravel tests, TypeScript checks, and Playwright.
+- Configure Sentry-style error reporting and baseline request/queue metrics
+  before any public route moves to Laravel.
 - Create a route switch/proxy plan so individual URLs can move from legacy PHP
   to Laravel one at a time and roll back immediately.
 
@@ -139,6 +183,8 @@ and hotel-entry journeys with matching screenshots and permission tests.
 - Convert mailbox lists, threads, compose, delete/read state, friend requests,
   friend search, categories, and online presence displays.
 - Replace HTML-fragment RPC responses with typed React form/action results.
+- Introduce Reverb only for real user-visible events, beginning with new-mail
+  notifications and friend-presence updates.
 - Enforce recipient, friendship, ownership, pagination, rate-limit, and
   anti-spam checks in service methods.
 - Test users attempting to read, delete, or send as another account.
@@ -171,6 +217,8 @@ through a compatibility layer.
   verified widget/catalogue data.
 - Build React components for canvas/grid, drag/drop, z-index, widget
   positions, notes, stickers, store, ratings, guestbook, and privacy.
+- Use dnd-kit for pointer/keyboard drag behavior and TanStack Query for
+  cached layout state, optimistic updates, and recovery after failed saves.
 - Retain the current images, sprites, dimensions, and interaction visuals.
 - Add optimistic updates with transactions, version checks, and rollback to
   prevent conflicting editor writes.
