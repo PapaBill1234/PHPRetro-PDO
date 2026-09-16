@@ -46,7 +46,7 @@ $lang->addLocale("footer");
 <script type='text/javascript'>
 $(document).ready(function(){
   $(".tweet").tweet({
-    username: "<?php echo $settings->find("maintenance_twitter"); ?>",
+    username: <?php echo HoloJson($settings->find("maintenance_twitter")); ?>,
     count: 5
   });
 });

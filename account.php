@@ -75,9 +75,10 @@ $_SESSION['login']['tries'] = (int) ($_SESSION['login']['tries'] ?? 0) + 1;
 </head>
 <body>
 
-<script type="text/javascript">window.location.replace('<?php echo PATH; ?>/?page=<?php echo $input->HoloText($_POST['page'] ?? ''); ?>&username=<?php echo $input->HoloText($_POST['username'] ?? ''); ?>&rememberme=<?php if(isset($_POST['_login_remember_me'])){ echo "true"; }else{ echo "false"; } ?>');</script><noscript><meta http-equiv="Refresh" content="0;URL=<?php echo PATH; ?>/?page=<?php echo $input->HoloText($_POST['page'] ?? ''); ?>&username=<?php echo $input->HoloText($_POST['username'] ?? ''); ?>&rememberme=<?php if(isset($_POST['_login_remember_me'])){ echo "true"; }else{ echo "false"; } ?>"></noscript>
+<?php $redirectUrl = PATH.'/?'.http_build_query(['page' => (string) ($_POST['page'] ?? ''), 'username' => (string) ($_POST['username'] ?? ''), 'rememberme' => isset($_POST['_login_remember_me']) ? 'true' : 'false'], '', '&', PHP_QUERY_RFC3986); ?>
+<script type="text/javascript">window.location.replace(<?php echo HoloJson($redirectUrl); ?>);</script><noscript><meta http-equiv="Refresh" content="0;URL=<?php echo htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8'); ?>"></noscript>
 
-<p class="btn"><?php echo $lang->loc['not.redirected.yet']; ?> <a href="<?php echo PATH; ?>/?page=<?php echo $input->HoloText($_POST['page'] ?? ''); ?>&username=<?php echo $input->HoloText($_POST['username'] ?? ''); ?>&rememberme=<?php if(isset($_POST['_login_remember_me'])){ echo "true"; }else{ echo "false"; } ?>" id="manual_redirect_link"><?php echo $lang->loc['click.here']; ?></a></p>
+<p class="btn"><?php echo $lang->loc['not.redirected.yet']; ?> <a href="<?php echo htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8'); ?>" id="manual_redirect_link"><?php echo $lang->loc['click.here']; ?></a></p>
 
 <?php echo $settings->find("site_tracking"); ?>
 

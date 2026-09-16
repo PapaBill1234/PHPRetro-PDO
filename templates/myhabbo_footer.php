@@ -39,8 +39,8 @@ if(!empty($page['discussion'])){
 		<?php if($row['advanced'] == "1"){
 		echo $input->HoloText($row['html'], true)."\n<br />\n";
 		}else{ ?>
-		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
-		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
+		<?php if(!empty($row['banner']) && ($bannerUrl = HoloUrl($row['banner'])) !== '') { ?><a target="_blank" rel="noopener noreferrer" href="<?php echo HoloUrl($row['url']); ?>"><img src="<?php echo $bannerUrl; ?>" alt=""></a><br /><?php } ?>
+		<?php if(!empty($row['text']) && ($linkUrl = HoloUrl($row['url'])) !== '') { ?><a target="_blank" rel="noopener noreferrer" href="<?php echo $linkUrl; ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
 		<?php } ?>
 		<?php } ?>
 <?php } ?>
@@ -61,8 +61,8 @@ if(!empty($page['discussion'])){
 		<?php if($row['advanced'] == "1"){
 		echo $input->HoloText($row['html'], true)."\n<br />\n";
 		}else{ ?>
-		<?php if(!empty($row['banner'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><img src="<?php echo $input->HoloText($row['banner']); ?>"></a><br /><?php } ?>
-		<?php if(!empty($row['text'])){ ?><a target="blank" href="<?php echo $input->HoloText($row['url']); ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
+		<?php if(!empty($row['banner']) && ($bannerUrl = HoloUrl($row['banner'])) !== '') { ?><a target="_blank" rel="noopener noreferrer" href="<?php echo HoloUrl($row['url']); ?>"><img src="<?php echo $bannerUrl; ?>" alt=""></a><br /><?php } ?>
+		<?php if(!empty($row['text']) && ($linkUrl = HoloUrl($row['url'])) !== '') { ?><a target="_blank" rel="noopener noreferrer" href="<?php echo $linkUrl; ?>"><?php echo $input->HoloText($row['text']); ?></a><br /><?php } ?>
 		<?php } ?>
 		<?php } ?>
 	</div>

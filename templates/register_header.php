@@ -131,8 +131,8 @@ if (typeof HabboClient != "undefined") { HabboClient.windowName = "client"; }
     </script>
 
 
-<meta name="description" content="<?php echo $settings->find("site_description"); ?>" />
-<meta name="keywords" content="<?php echo $settings->find("site_keywords"); ?>" />
+<meta name="description" content="<?php echo htmlspecialchars($settings->find("site_description"), ENT_QUOTES, 'UTF-8'); ?>" />
+<meta name="keywords" content="<?php echo htmlspecialchars($settings->find("site_keywords"), ENT_QUOTES, 'UTF-8'); ?>" />
 
 <!--[if IE 8]>
 <link rel="stylesheet" href="<?php echo PATH; ?>/web-gallery/v2/styles/ie8.css" type="text/css" />

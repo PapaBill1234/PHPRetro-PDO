@@ -29,7 +29,7 @@ $gift = $features->clubGift($month);
 <p>No website gift listed for this month. Claim club gifts in the hotel client.</p>
 <?php } else { ?>
 <p><?php echo $input->HoloText($gift['name']); ?></p>
-<?php if ($gift['image'] !== '') { ?><p><img src="<?php echo $input->HoloText($gift['image']); ?>" alt="" /></p><?php } ?>
+<?php if ($gift['image'] !== '' && ($imageUrl = HoloUrl($gift['image'])) !== '') { ?><p><img src="<?php echo $imageUrl; ?>" alt="" /></p><?php } ?>
 <p><?php echo nl2br($input->HoloText($gift['description'])); ?></p>
 <p>Preview only. PolarIS club gifts are claimed in the hotel client.</p>
 <?php } ?>

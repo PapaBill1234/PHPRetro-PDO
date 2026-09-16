@@ -30,9 +30,9 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 $articles = [];
 try { $articles = $db->fetchAll('SELECT id, title, summary, time FROM phpretro_news ORDER BY time DESC LIMIT 10'); } catch (Throwable $exception) { $articles = []; }
 foreach ($articles as $row){
-	$row['summary'] = $input->HoloText($row['summary'], true);
-	$row['title'] = $input->HoloText($row['title'], true);
-	$row['title_safe'] = $input->stringToURL($input->HoloText($row['title'],true),true,true);
+	$row['summary'] = $input->HoloText($row['summary']);
+	$row['title'] = $input->HoloText($row['title']);
+	$row['title_safe'] = $input->stringToURL($row['title'],true,true);
 	$row['date'] = date('D, j M Y H:i:s e', $row['time']);
 	$row['timestamp'] = date('c', $row['time']);
 ?>
