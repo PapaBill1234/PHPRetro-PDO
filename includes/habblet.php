@@ -147,3 +147,135 @@ function habbletRemoveUserTag(Database $database, int $userId, string $tag): voi
         throw $exception;
     }
 }
+
+function habbletCanEditGuildTags(Database $database, int $guildId, int $userId): bool {
+    if ($guildId < 1 || $userId < 1) { return false; }
+    $owner = (int) $database->fetchColumn('SELECT user_id FROM guilds WHERE id = ?', [$guildId]);
+    if ($owner === $userId) { return true; }
+    $level = $database->fetchColumn('SELECT level_id FROM guilds_members WHERE guild_id = ? AND user_id = ?', [$guildId, $userId]);
+    return $level !== false && (int) $level === 1;
+}
+
+function habbletGuildTags(Database $database, int $guildId): array {
+    if ($guildId < 1) { return []; }
+    return array_column($database->fetchAll('SELECT tag FROM phpretro_guild_tags WHERE guild_id = ? ORDER BY tag ASC, id ASC', [$guildId]), 'tag');
+}
+
+function habbletGuildTagCount(Database $database, string $tag): int {
+    $tag = strtolower(trim($tag));
+    if ($tag === '' || str_contains($tag, ';')) { return 0; }
+    return (int) $database->fetchColumn('SELECT COUNT(*) FROM phpretro_guild_tags WHERE tag = ?', [$tag]);
+}
+
+function habbletGuildsForTag(Database $database, string $tag, int $limit = 20): array {
+    $tag = strtolower(trim($tag));
+    if ($tag === '' || str_contains($tag, ';')) { return []; }
+    $limit = max(1, min(50, $limit));
+    return $database->fetchAll(
+        'SELECT g.id, g.name, g.description, g.badge FROM phpretro_guild_tags t JOIN guilds g ON g.id = t.guild_id WHERE t.tag = ? ORDER BY g.id DESC LIMIT ?',
+        [$tag, $limit]
+    );
+}
+
+function habbletAddGuildTag(Database $database, int $guildId, int $userId, string $tag): string {
+    $tag = trim($tag);
+    if ($guildId < 1 || $userId < 1 || !habbletValidUserTag($tag)) { return 'invalidtag'; }
+    $tag = strtolower($tag);
+    $database->execute('START TRANSACTION');
+    try {
+        $guild = $database->fetchRow('SELECT id, user_id FROM guilds WHERE id = ? FOR UPDATE', [$guildId]);
+        if (!$guild) {
+            $database->execute('ROLLBACK');
+            return 'invalidtag';
+        }
+        $level = $database->fetchColumn('SELECT level_id FROM guilds_members WHERE guild_id = ? AND user_id = ?', [$guildId, $userId]);
+        $canEdit = (int) $guild['user_id'] === $userId || ($level !== false && (int) $level === 1);
+        if (!$canEdit) {
+            $database->execute('ROLLBACK');
+            return 'invalidtag';
+        }
+        $count = (int) $database->fetchColumn('SELECT COUNT(*) FROM phpretro_guild_tags WHERE guild_id = ?', [$guildId]);
+        if ($count >= 20) {
+            $database->execute('COMMIT');
+            return 'taglimit';
+        }
+        $exists = $database->fetchColumn('SELECT id FROM phpretro_guild_tags WHERE guild_id = ? AND tag = ?', [$guildId, $tag]);
+        if ($exists) {
+            $database->execute('COMMIT');
+            return 'invalidtag';
+        }
+        $database->execute(
+            'INSERT INTO phpretro_guild_tags (guild_id, tag, created_by_user_id, created_at) VALUES (?, ?, ?, ?)',
+            [$guildId, $tag, $userId, time()]
+        );
+        require_once __DIR__.'/PhpretroLiveSync.php';
+        (new PhpretroLiveSync($database))->recordAndNotify('guild.tag_added', [
+            'guild_id' => $guildId,
+            'tag' => $tag,
+            'user_id' => $userId,
+        ]);
+        $database->execute('COMMIT');
+        return 'valid';
+    } catch (PDOException $exception) {
+        $database->execute('ROLLBACK');
+        if ((string) $exception->getCode() === '23000') { return 'invalidtag'; }
+        throw $exception;
+    } catch (Throwable $exception) {
+        $database->execute('ROLLBACK');
+        throw $exception;
+    }
+}
+
+function habbletRemoveGuildTag(Database $database, int $guildId, int $userId, string $tag): void {
+    $tag = strtolower(trim($tag));
+    if ($guildId < 1 || $userId < 1 || $tag === '' || str_contains($tag, ';')) { return; }
+    $database->execute('START TRANSACTION');
+    try {
+        $guild = $database->fetchRow('SELECT id, user_id FROM guilds WHERE id = ? FOR UPDATE', [$guildId]);
+        if (!$guild) {
+            $database->execute('ROLLBACK');
+            return;
+        }
+        $level = $database->fetchColumn('SELECT level_id FROM guilds_members WHERE guild_id = ? AND user_id = ?', [$guildId, $userId]);
+        $canEdit = (int) $guild['user_id'] === $userId || ($level !== false && (int) $level === 1);
+        if (!$canEdit) {
+            $database->execute('ROLLBACK');
+            return;
+        }
+        $deleted = $database->execute('DELETE FROM phpretro_guild_tags WHERE guild_id = ? AND tag = ?', [$guildId, $tag]);
+        if ($deleted > 0) {
+            require_once __DIR__.'/PhpretroLiveSync.php';
+            (new PhpretroLiveSync($database))->recordAndNotify('guild.tag_removed', [
+                'guild_id' => $guildId,
+                'tag' => $tag,
+                'user_id' => $userId,
+            ]);
+        }
+        $database->execute('COMMIT');
+    } catch (Throwable $exception) {
+        $database->execute('ROLLBACK');
+        throw $exception;
+    }
+}
+
+function habbletRenderGuildTags(Database $database, int $guildId, bool $canEdit): void {
+    global $input, $lang, $user;
+    $tags = habbletGuildTags($database, $guildId);
+    $loggedIn = !empty($user->logged_in) && (int) $user->id > 0;
+    if ($tags === []) {
+        echo $lang->loc['no.tags'] ?? 'No tags.';
+        return;
+    }
+    foreach ($tags as $tag) {
+        echo '<span class="tag-search-rowholder">';
+        echo '<a href="'.PATH.'/tag/'.rawurlencode($tag).'" class="tag">'.$input->HoloText($tag).'</a>';
+        if ($canEdit) {
+            echo '<img border="0" class="tag-delete-link" onMouseOver="this.src=\''.PATH.'/web-gallery/images/buttons/tags/tag_button_delete_hi.gif\'" onMouseOut="this.src=\''.PATH.'/web-gallery/images/buttons/tags/tag_button_delete.gif\'" src="'.PATH.'/web-gallery/images/buttons/tags/tag_button_delete.gif" />';
+        } elseif ($loggedIn) {
+            echo '<img border="0" class="tag-add-link" onMouseOver="this.src=\''.PATH.'/web-gallery/images/buttons/tags/tag_button_add_hi.gif\'" onMouseOut="this.src=\''.PATH.'/web-gallery/images/buttons/tags/tag_button_add.gif\'" src="'.PATH.'/web-gallery/images/buttons/tags/tag_button_add.gif" />';
+        }
+        echo '</span>';
+    }
+    echo '<img id="tag-img-added" border="0" class="tag-none-link" src="'.PATH.'/web-gallery/images/buttons/tags/tag_button_added.gif" style="display:none"/>';
+}
+

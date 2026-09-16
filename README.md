@@ -45,7 +45,8 @@ Every state-changing POST uses a per-session `csrf_token` field in the POST body
 
 ## What is still 501
 
-Website features that need a PolarIS plugin, a different badge encoding, or a take-credits RCON stay HTTP 501. See [docs/phase-reports/phase10-final-status.md](docs/phase-reports/phase10-final-status.md) for the current list (club subscribe, Trax, room transfer, website voucher redeem, Flash badge editor, group tags, and on `master` also store/group homes/ratings until [PR #27](https://github.com/PapaBill1234/PHPRetro-PDO/pull/27) lands).
+Website features that need a PolarIS plugin, a different badge encoding, or a take-credits RCON stay HTTP 501. See [docs/phase-reports/phase10-final-status.md](docs/phase-reports/phase10-final-status.md) for the current list (club subscribe, Trax, room transfer, website voucher redeem, Flash badge editor). Group tags live on website-owned `phpretro_guild_tags` ([docs/phase-reports/guild-tags.md](docs/phase-reports/guild-tags.md)).
+
 
 ## License
 

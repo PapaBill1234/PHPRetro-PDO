@@ -33,7 +33,7 @@ try {
         }
         $db->execute($match[0]);
     }
-    foreach (['003_web_minimail.sql', '004_web_homes.sql', '005_web_group_urls.sql', '006_restore_remaining.sql', '007_restore_remaining_501s.sql'] as $file) {
+    foreach (['003_web_minimail.sql', '004_web_homes.sql', '005_web_group_urls.sql', '006_restore_remaining.sql', '007_restore_remaining_501s.sql', '009_guild_tags.sql'] as $file) {
         $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
         foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
             if ($sql !== '') { $db->execute($sql); }
@@ -181,7 +181,8 @@ try {
     check((int) $db->fetchColumn('SELECT user_id FROM phpretro_myhabbo_layouts WHERE id = ?', [$groupGuestbookId]) === 1, 'Group widget user_id is the guild owner');
     $info = endpoint('groups_widgets.php', ['widgetType' => 'groupinfowidget']);
     check($info[1] === 200 && str_contains($info[0], 'GroupInfoWidget'), 'Group info widget renders');
-    check(str_contains($info[0], 'No tags.'), 'Group tags stay unavailable copy');
+    check(str_contains($info[0], 'No tags.'), 'Empty group tags show No tags.');
+    check(str_contains($info[0], 'id="profile-tag-list"') && str_contains($info[0], 'new GroupInfoWidget'), 'Group info binds tag widget');
     $members = endpoint('groups_widgets.php', ['widgetType' => 'memberwidget']);
     check($members[1] === 200 && str_contains($members[0], 'MemberWidget'), 'Members widget renders');
     endpoint('myhabbo_guestbook_configure.php', ['widgetId' => (string) $groupGuestbookId]);
@@ -206,9 +207,6 @@ try {
         'trax_song.php',
         'ajax_redeemvoucher.php',
         'groups_actions_show_badge_editor.php',
-        'myhabbo_tag_addgrouptag.php',
-        'myhabbo_tag_listgrouptags.php',
-        'myhabbo_tag_removegrouptag.php',
     ];
     $beforeCredits = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
     foreach ($blocked as $file) {

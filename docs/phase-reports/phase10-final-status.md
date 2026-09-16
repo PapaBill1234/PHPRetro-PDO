@@ -85,7 +85,8 @@ Do **not** tell testers it is production-ready.
 | 9 Cache + secrets | #30 | yes | `.env` loader, no literals in `config.php`. FileCache default, Redis optional. Settings + locale + hotel status cached. PHP sessions are **not** in Redis. |
 | 10 This report | this PR | open | Grep PHP-clean. Lint and manual flows **not run**. README added. |
 
-Open work that is **not** a numbered plan phase: [PR #27](https://github.com/PapaBill1234/PHPRetro-PDO/pull/27) (`feature/restore-remaining-501s`) restores store / stickers / notes / ratings / guestbook privacy / group homes. It is **not merged**. Testers on `master` still get 501 for those.
+Open work that is **not** a numbered plan phase: [PR #27](https://github.com/PapaBill1234/PHPRetro-PDO/pull/27) (`feature/restore-remaining-501s`) restored store / stickers / notes / ratings / guestbook privacy / group homes and **is merged**. Group tags are restored separately on `phpretro_guild_tags` — see [guild-tags.md](guild-tags.md).
+
 
 ---
 
@@ -106,7 +107,6 @@ All of these go through `habbletUnavailable()` / `HabbletGroupError(..., 501)`. 
 | Club reminder dismiss | `habboclub_habboclub_reminder_remove.php` | No persistent reminder row on `master`. **PR #27 maps it to `phpretro_feed_dismissals`.** |
 | Trax | `traxplayerwidget`, `myhabbo_traxplayer_select_song.php`, `trax_song.php` | No website Trax/song store. Stays 501 after #27. |
 | Website voucher redeem | `ajax_redeemvoucher.php` | No redeem RCON; faking `voucher_history` would double-grant against in-memory catalogue. Redeem in the hotel client. |
-| Group tags | `myhabbo_tag_{add,list,remove}grouptag.php` | PolarIS `guilds` has no tags column. |
 | Widget skins on this layout | `myhabbo_widget_edit.php` | Some skins are 501 on the current layout model. |
 | Trax/rating widgets on user homes | `PhpretroHomes::BLOCKED_WIDGETS` | Explicit block list. Rating widget unblocks in #27; Trax stays blocked. |
 

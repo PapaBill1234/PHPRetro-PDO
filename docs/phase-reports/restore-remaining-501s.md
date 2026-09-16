@@ -25,7 +25,7 @@ Categories are from `docs/phase-reports/polaris-cms-rcon.md`.
 | 10 | Room transfer | **(c)** | | `HabbletGroups::settings()` still 501s a `roomId` change |
 | 11 | Website voucher redeem | **(c)** | | `ajax_redeemvoucher.php` |
 | — | Badge editor | **(c)** | | `groups_actions_show_badge_editor.php` |
-| — | Group tags | **(c)** | | `myhabbo_tag_{add,list,remove}grouptag.php` |
+| — | Group tags | **(a)** | Later: `phpretro_guild_tags` (`migrations/009_guild_tags.sql`). See [guild-tags.md](guild-tags.md) | |
 | — | `purchase_avatarsticker` | **(c)** | | Flash sticker editor, never restored |
 
 ## Schema receipts
@@ -111,8 +111,10 @@ Pending/recorded copy (same idea as collectibles/club-gift):
 - Room transfer (`roomId` change in group settings)
 - `ajax_redeemvoucher.php`
 - Flash badge editor
-- Group tags (`guilds` has no tags column)
 - Flash `purchase_avatarsticker`
+
+Group tags were category (c) here because `guilds` has no tags column. They are now website-owned on `phpretro_guild_tags` ([guild-tags.md](guild-tags.md)).
+
 
 ## Validation
 
