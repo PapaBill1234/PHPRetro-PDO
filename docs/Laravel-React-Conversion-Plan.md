@@ -12,6 +12,10 @@ The first release is intentionally not a redesign. It retains `web-gallery`
 CSS, images, sprites, page chrome, class names, dimensions, and copy. A later
 project may redesign the UI after the replacement is stable.
 
+The visual reference is the application deployed at the XAMPP document root:
+`http://127.0.0.1/`. Do not use the retired `/PHPRetro-PDO/` subdirectory URL
+as a screenshot or route baseline.
+
 ## Proposed stack
 
 | Area | Choice | Why |

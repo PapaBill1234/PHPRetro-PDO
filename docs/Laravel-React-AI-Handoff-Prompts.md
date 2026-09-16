@@ -14,6 +14,8 @@ destructive commands. Do not create a PR or merge anything.
 
 Repository: PapaBill1234/PHPRetro-PDO
 Current live PHP/XAMPP checkout: C:\xampp\htdocs
+Visual screenshot baseline: http://127.0.0.1/ at the XAMPP document root.
+The old http://127.0.0.1/PHPRetro-PDO/ subdirectory is not the baseline.
 Target hotel server/database: Polaris CleanDB schema. Polaris-owned tables must
 never be altered or treated as Laravel-owned without verified schema and
 emulator evidence. Website/CMS-owned tables use the phpretro_ prefix.
