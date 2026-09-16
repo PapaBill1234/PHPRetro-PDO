@@ -102,9 +102,10 @@ try {
         return endpoint('myhabbo_groups_batch_'.$action.'.php', ['groupId' => 1, 'targetIds' => $targets]);
     }
     // Missing mappings must not charge, write layouts, aliases or incompatible badges.
-    foreach (['show_badge_editor','update_group_badge'] as $action) {
-        check(callAction($action)[1] === 501, $action.' unavailable explicitly');
-    }
+    $badge = callAction('show_badge_editor');
+    check($badge[1] === 200 && str_contains($badge[0], 'habblet-client-handoff'), 'show_badge_editor is client-handoff');
+    check(!str_contains($badge[0], 'BadgeEditor.swf'), 'show_badge_editor does not embed Flash');
+    check(callAction('update_group_badge')[1] === 501, 'update_group_badge stays 501');
     foreach (['startEditingSession','saveEditingSession','cancelEditingSession'] as $action) {
         check(str_contains(file_get_contents($root.'/habblet/groups_actions_'.$action.'.php'), "\$page['no_ajax'] = true"), $action.' keeps legacy full-page GET/POST');
     }

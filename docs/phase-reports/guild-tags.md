@@ -44,7 +44,7 @@ CSRF: habblets include `habblet.php` then `habbletRequireUser()` → `Csrf::prot
 
 ## Still 501 after this
 
-Club subscribe, Trax, room transfer, website voucher redeem, Flash badge editor, Flash `purchase_avatarsticker`. Tag fight/cloud stay user-tag counts (exact semicolon match); they do not mix group hits.
+Trax, room transfer, Flash `purchase_avatarsticker`. Club subscribe, website voucher redeem, and `show_badge_editor` later became HTTP 200 client-handoff pages ([client-handoff.md](client-handoff.md)); `update_group_badge` stays 501. Tag fight/cloud stay user-tag counts (exact semicolon match); they do not mix group hits.
 
 ## Validation
 

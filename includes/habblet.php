@@ -279,3 +279,17 @@ function habbletRenderGuildTags(Database $database, int $guildId, bool $canEdit)
     echo '<img id="tag-img-added" border="0" class="tag-none-link" src="'.PATH.'/web-gallery/images/buttons/tags/tag_button_added.gif" style="display:none"/>';
 }
 
+function habbletClientOpenButton(string $label = 'Open hotel'): string {
+    return '<a href="'.PATH.'/client" class="new-button" target="client" onclick="HabboClient.openOrFocus(this); return false;"><b>'.htmlspecialchars($label, ENT_QUOTES, 'UTF-8').'</b><i></i></a>';
+}
+
+function habbletClientHandoff(string $title, string $body): void {
+    header('X-PHPRetro-Feature: client-handoff');
+    echo '<div class="habblet-client-handoff">';
+    echo '<p><b>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').'</b></p>';
+    echo '<p>'.htmlspecialchars($body, ENT_QUOTES, 'UTF-8').'</p>';
+    echo '<p>'.habbletClientOpenButton().'</p>';
+    echo '</div>';
+}
+
+

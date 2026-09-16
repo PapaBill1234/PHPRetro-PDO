@@ -156,10 +156,14 @@ try {
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 1 OR user_two_id = 1') === 0, 'Both friendship directions deleted');
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM messenger_friendships WHERE user_one_id = 2 AND user_two_id = 4') === 1, 'Unrelated friendships preserved');
     check(str_contains(endpoint('minimail_recipients.php')[0], '[]'), 'Empty recipient JSON valid');
-    $blocked = ['ajax_redeemvoucher.php', 'habboclub_habboclub_subscribe.php'];
+    $handoffs = ['ajax_redeemvoucher.php', 'habboclub_habboclub_subscribe.php'];
     $before = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
-    foreach ($blocked as $file) { check(endpoint($file, ['messageId' => "' OR 1=1", 'objectId' => '2'])[1] === 501, $file.' unavailable'); }
-    check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Unavailable purchases do not debit balances');
+    foreach ($handoffs as $file) {
+        $result = endpoint($file, ['messageId' => "' OR 1=1", 'objectId' => '2', 'voucherCode' => 'TEST']);
+        check($result[1] === 200 && str_contains($result[0], 'habblet-client-handoff'), $file.' is client-handoff');
+        check(!str_contains($result[0], 'habblet-unavailable'), $file.' is not 501 HTML');
+    }
+    check($before === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Client-handoff purchases do not debit balances');
     check(endpoint('habboclub_habboclub_reminder_remove.php')[1] === 200, 'Club reminder dismisses a website feed key');
     check($db->fetchColumn('SELECT item_key FROM phpretro_feed_dismissals WHERE user_id = 1 AND item_key = ?', ['hc-reminder']) === 'hc-reminder', 'Reminder stores hc-reminder');
     $claim = endpoint('ajax_collectiblesPurchase.php');

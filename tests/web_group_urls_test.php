@@ -144,7 +144,9 @@ try {
     check(phpretroGroupUrls()->resolve('other-crew') === 2, 'Second guild alias resolves');
     asUser(1);
 
-    check(callAction('show_badge_editor')[1] === 501, 'Badge editor stays unavailable');
+    $badge = callAction('show_badge_editor');
+    check($badge[1] === 200 && str_contains($badge[0], 'habblet-client-handoff'), 'Badge editor is client-handoff');
+    check(!str_contains($badge[0], 'BadgeEditor.swf'), 'Badge editor does not embed Flash');
     check(callAction('update_group_settings', [...$save, 'url' => 'Cool-Name', 'roomId' => 999])[1] === 501, 'Room transfer stays unavailable');
 
     check(str_contains(file_get_contents($root.'/groups.php'), 'phpretroRequestGuildId()'), 'groups.php resolves aliases');

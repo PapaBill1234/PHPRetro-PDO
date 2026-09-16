@@ -179,8 +179,8 @@ try {
     check((int) $db->fetchColumn('SELECT COUNT(*) FROM phpretro_user_reports WHERE reporter_id = 3') === 1, 'Website report is independent of PolarIS');
 
     $redeem = endpoint('ajax_redeemvoucher.php', ['voucherCode' => 'TEST']);
-    check($redeem[1] === 501, 'Website voucher redeem stays 501');
-    check(str_contains($redeem[0], 'hotel client'), 'Redeem still tells the user to use the client');
+    check($redeem[1] === 200 && str_contains($redeem[0], 'habblet-client-handoff'), 'Website voucher redeem is client-handoff');
+    check(str_contains($redeem[0], 'in the hotel'), 'Redeem still tells the user to use the hotel');
 
     $alerts = file_get_contents($root.'/housekeeping/alerts.php');
     check(!str_contains($alerts, 'PREFIX') && !str_contains($alerts, 'SendMUSData'), 'alerts.php dropped PREFIX and SendMUSData');
