@@ -202,15 +202,17 @@ try {
     check(!isset($_SESSION['group_page_edit']), 'Group save clears the website session');
 
     $blocked = [
-        'habboclub_habboclub_subscribe.php',
         'myhabbo_traxplayer_select_song.php',
         'trax_song.php',
-        'ajax_redeemvoucher.php',
-        'groups_actions_show_badge_editor.php',
     ];
     $beforeCredits = $db->fetchAll('SELECT id, credits FROM users ORDER BY id');
     foreach ($blocked as $file) {
         check(endpoint($file, ['groupId' => '1', 'tagName' => 'crew', 'code' => 'TEST'])[1] === 501, $file.' stays 501');
+    }
+    foreach (['habboclub_habboclub_subscribe.php', 'ajax_redeemvoucher.php', 'groups_actions_show_badge_editor.php'] as $file) {
+        $handoff = endpoint($file, ['groupId' => '1', 'voucherCode' => 'TEST']);
+        check($handoff[1] === 200 && str_contains($handoff[0], 'habblet-client-handoff'), $file.' is client-handoff');
+        check(!str_contains($handoff[0], 'habblet-unavailable'), $file.' is not 501 HTML');
     }
     check(endpoint('myhabbo_widget_add.php', ['widget_key' => 'traxplayerwidget'])[1] === 501, 'Trax player widget stays 501');
     check(endpoint('groups_actions_update_group_settings.php', [
@@ -223,7 +225,7 @@ try {
         'roomId' => '2',
         'url' => '',
     ])[1] === 501, 'Room transfer stays 501');
-    check($beforeCredits === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Leftover 501s do not debit credits');
+    check($beforeCredits === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Handoffs and leftover 501s do not debit credits');
     check((int) $db->fetchColumn('SELECT room_id FROM guilds WHERE id = 1') === 1, 'Room transfer 501 does not rewrite guilds.room_id');
 
     $homePhp = file_get_contents($root.'/home.php');

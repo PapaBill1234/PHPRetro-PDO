@@ -17,5 +17,7 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): Legacy optionNumber prices have no mapping to catalog_club_offers IDs/types/rewards. Never charge for an unverified offer.
-habbletUnavailable('Please buy club membership in the hotel client.');
+habbletClientHandoff(
+    'Buy club in the hotel',
+    'This website cannot take coins or grant club membership. Buy it from the hotel catalog.'
+);

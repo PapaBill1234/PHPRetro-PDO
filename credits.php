@@ -49,7 +49,7 @@ THIS IS A SAMPLE HABBLET ONLY! PLEASE EDIT <?php PATH; ?>/credits.php TO CHANGE 
 
 					<div class="credits-summary" >
 						<h3>Ask a Moderator</h3>
-						<p>Moderators are all over the hotel. Ask one of them and they'll give you a voucher. Redeem it on the right.</p>
+						<p>Moderators are all over the hotel. Ask one of them and they'll give you a voucher. Redeem it in the hotel.</p>
 						
 						<p class="credits-read-more" id="method-show-44" style="display: none">Read more</p>
 					</div>

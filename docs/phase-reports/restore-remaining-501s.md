@@ -14,7 +14,7 @@ Categories are from `docs/phase-reports/polaris-cms-rcon.md`.
 | --- | --- | --- | --- | --- |
 | 1 | Homepage rating | **(a)** | `phpretro_home_ratings`. Not `room_votes`. 1–5, unique per rater, self-vote forbidden, owner reset | |
 | 2 | Guestbook privacy | **(a)** | `phpretro_myhabbo_layouts.privacy`. Friends-only on user homes (`messenger_friendships`); members-only on groups (`guilds_members.level_id` IN 0/1/2) | |
-| 3 | Club subscribe | **(c)** | | `habboclub_habboclub_subscribe.php` |
+| 3 | Club subscribe | **(c)** then handoff | | `habboclub_habboclub_subscribe.php` was 501. Now HTTP 200 client-handoff ([client-handoff.md](client-handoff.md)) |
 | 4 | Club reminder | **(a)** | `habboclub_habboclub_reminder_remove.php` → `dismissFeed('hc-reminder')` on `phpretro_feed_dismissals` | |
 | 5 | Trax | **(c)** | | `traxplayerwidget`, `myhabbo_traxplayer_select_song.php`, `trax_song.php` |
 | 6 | Store catalogue/inventory | **(a)** | `phpretro_homes_catalogue` + `phpretro_homes_items` | |
@@ -23,8 +23,8 @@ Categories are from `docs/phase-reports/polaris-cms-rcon.md`.
 | 8 | Notes / stickies | **(a)** | Place/edit/delete. Inventory notes, not PolarIS `items` | |
 | 9 | Group homes | **(a)** | Same `phpretro_myhabbo_layouts` with `guild_id` (no second table — widget ids must not collide). Group guestbook in `phpretro_group_guestbook` | |
 | 10 | Room transfer | **(c)** | | `HabbletGroups::settings()` still 501s a `roomId` change |
-| 11 | Website voucher redeem | **(c)** | | `ajax_redeemvoucher.php` |
-| — | Badge editor | **(c)** | | `groups_actions_show_badge_editor.php` |
+| 11 | Website voucher redeem | **(c)** then handoff | | `ajax_redeemvoucher.php` was 501. Now HTTP 200 client-handoff |
+| — | Badge editor | **(c)** then handoff | | `groups_actions_show_badge_editor.php` is 200 client-handoff. `update_group_badge` stays 501 |
 | — | Group tags | **(a)** | Later: `phpretro_guild_tags` (`migrations/009_guild_tags.sql`). See [guild-tags.md](guild-tags.md) | |
 | — | `purchase_avatarsticker` | **(c)** | | Flash sticker editor, never restored |
 
@@ -106,14 +106,12 @@ Pending/recorded copy (same idea as collectibles/club-gift):
 
 ## Still 501 (c)
 
-- `habboclub_habboclub_subscribe.php` — legacy optionNumber ≠ `catalog_club_offers`; no take-credits
 - `myhabbo_traxplayer_select_song.php`, `trax_song.php`, `traxplayerwidget`
 - Room transfer (`roomId` change in group settings)
-- `ajax_redeemvoucher.php`
-- Flash badge editor
+- `groups_actions_update_group_badge.php` — Flash part encoding ≠ PolarIS `guilds.badge`
 - Flash `purchase_avatarsticker`
 
-Group tags were category (c) here because `guilds` has no tags column. They are now website-owned on `phpretro_guild_tags` ([guild-tags.md](guild-tags.md)).
+Club subscribe, website voucher redeem, and `show_badge_editor` are no longer 501; they are HTTP 200 client-handoff pages ([client-handoff.md](client-handoff.md)). Group tags were category (c) here because `guilds` has no tags column. They are now website-owned on `phpretro_guild_tags` ([guild-tags.md](guild-tags.md)).
 
 
 ## Validation

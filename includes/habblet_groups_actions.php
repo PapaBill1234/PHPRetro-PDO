@@ -170,7 +170,15 @@ function habbletGroupDispatch(string $action): void
             habbletGroupRender('groupinfo', compact('group', 'ownerid', 'rank', 'favorite'));
             return;
         }
-        if (in_array($action, ['show_badge_editor', 'update_group_badge'], true)) {
+        if ($action === 'show_badge_editor') {
+            $groups->need($groups->owner($group));
+            habbletClientHandoff(
+                'Edit group badges in the hotel',
+                'This website cannot save group badges. The Flash editor uses a different part encoding.'
+            );
+            return;
+        }
+        if ($action === 'update_group_badge') {
             $groups->need($groups->owner($group));
             throw new HabbletGroupError('Use the game client to edit group badges. The legacy Flash editor uses a different part encoding from Polaris.', 501);
         }

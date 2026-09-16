@@ -92,21 +92,21 @@ Open work that is **not** a numbered plan phase: [PR #27](https://github.com/Pap
 
 ## Features still returning 501 (on `master`)
 
-All of these go through `habbletUnavailable()` / `HabbletGroupError(..., 501)`. They are blocked because PolarIS has no equivalent column, RCON, or encoding — not because the PHP is unfinished.
+These go through `habbletUnavailable()` / `HabbletGroupError(..., 501)`, or are called out as 200 client-handoff where a website grant would be a lie. They are blocked or handed off because PolarIS has no equivalent column, RCON, or encoding — not because the PHP is unfinished.
 
 | Feature | Entry | Why 501 |
 | --- | --- | --- |
-| Flash group badge editor | `groups_actions_show_badge_editor` / `update_group_badge` | Legacy Flash part encoding ≠ PolarIS badge string. Use the game client. |
+| Flash group badge editor | `groups_actions_show_badge_editor` | **200 client-handoff** (PR client-handoff). `update_group_badge` stays 501 and never writes `guilds.badge`. Flash part encoding ≠ PolarIS badge string. |
 | Room transfer | `HabbletGroups::settings()` when `roomId` changes | Form cannot perform PolarIS room-rights updates. |
 | Group homes | `habblet/groups_widgets.php` | Layout model on `master` is user-homes only. **PR #27 restores this.** |
 | Guestbook privacy | `myhabbo_guestbook_configure.php` | No privacy column on `master`. **PR #27 restores this.** |
 | Home ratings | `myhabbo_rating_rate.php`, `myhabbo_rating_reset_ratings.php` | Not PolarIS `room_votes`. **PR #27 restores website ratings.** |
 | MyHabbo store | `myhabbo_store_*.php` | No catalogue/inventory tables on `master`. **PR #27 restores this** (offline credit debit). |
 | Stickers / notes place-edit | `myhabbo_sticker_*`, `myhabbo_stickie_*`, `myhabbo_noteeditor_place.php` | Same store/inventory gap. **PR #27 restores this.** |
-| Club subscribe | `habboclub_habboclub_subscribe.php` | `optionNumber` ≠ `catalog_club_offers`; no take-credits RCON. Stays 501 even after #27. |
+| Club subscribe | `habboclub_habboclub_subscribe.php` | **200 client-handoff**. `optionNumber` ≠ `catalog_club_offers`; no take-credits RCON. Does not send `X-JSON daysLeft`. |
 | Club reminder dismiss | `habboclub_habboclub_reminder_remove.php` | No persistent reminder row on `master`. **PR #27 maps it to `phpretro_feed_dismissals`.** |
 | Trax | `traxplayerwidget`, `myhabbo_traxplayer_select_song.php`, `trax_song.php` | No website Trax/song store. Stays 501 after #27. |
-| Website voucher redeem | `ajax_redeemvoucher.php` | No redeem RCON; faking `voucher_history` would double-grant against in-memory catalogue. Redeem in the hotel client. |
+| Website voucher redeem | `ajax_redeemvoucher.php` | **200 client-handoff**. No redeem RCON; faking `voucher_history` would double-grant against in-memory catalogue. Purse form is re-rendered so `PurseHabblet` can rebind. |
 | Widget skins on this layout | `myhabbo_widget_edit.php` | Some skins are 501 on the current layout model. |
 | Trax/rating widgets on user homes | `PhpretroHomes::BLOCKED_WIDGETS` | Explicit block list. Rating widget unblocks in #27; Trax stays blocked. |
 
@@ -145,7 +145,7 @@ Unmerged PR #27 files still `require habblet.php` then `habbletRequireUser()` (w
 12. **Installer:** live path is `install/polaris.php`. `install/install.php` exits immediately after requiring it; `install_functions.php` / `migrate_functions.php` are dead Holograph code still in the tree.
 13. **Delete `install/` after setup.** Config existence is a hard lock (Phase 8); deleting the folder is still the production step.
 14. **Captcha and random figures use `rand()`**, not `random_bytes()`. Not token-grade, not `mt_rand()`.
-15. **No website voucher redeem, no club buy, no Trax, no Flash badge editor** until a PolarIS fork/plugin exists.
+15. **No website Trax, no room transfer, no Flash `purchase_avatarsticker`** until a PolarIS fork/plugin exists. Club buy, voucher redeem, and the Flash badge viewer are 200 client-handoff pages ([client-handoff.md](client-handoff.md)) — they do not charge or grant.
 
 ---
 

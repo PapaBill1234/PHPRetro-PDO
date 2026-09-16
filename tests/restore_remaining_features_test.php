@@ -181,7 +181,9 @@ try {
     check($edit[1] === 302 && ($_SESSION['group_page_edit'] ?? 0) > 0, 'Editing session is website-owned');
     endpoint('groups_actions_cancelEditingSession.php', ['groupId' => (string) ($_SESSION['group_page_edit'] ?? 0)]);
     check(!isset($_SESSION['group_page_edit']), 'Cancel clears the website session');
-    check(endpoint('groups_actions_show_badge_editor.php', ['groupId' => '1'])[1] === 501, 'Badge editor stays 501');
+    $badge = endpoint('groups_actions_show_badge_editor.php', ['groupId' => '1']);
+    check($badge[1] === 200 && str_contains($badge[0], 'habblet-client-handoff'), 'Badge editor is client-handoff');
+    check(!str_contains($badge[0], 'BadgeEditor.swf'), 'Badge editor does not embed Flash');
 
     echo "PASS: $assertions assertions; remaining restorations on disposable MariaDB.\n";
 } finally {

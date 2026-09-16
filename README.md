@@ -45,7 +45,7 @@ Every state-changing POST uses a per-session `csrf_token` field in the POST body
 
 ## What is still 501
 
-Website features that need a PolarIS plugin, a different badge encoding, or a take-credits RCON stay HTTP 501. See [docs/phase-reports/phase10-final-status.md](docs/phase-reports/phase10-final-status.md) for the current list (club subscribe, Trax, room transfer, website voucher redeem, Flash badge editor). Group tags live on website-owned `phpretro_guild_tags` ([docs/phase-reports/guild-tags.md](docs/phase-reports/guild-tags.md)).
+Website features that need a PolarIS plugin stay HTTP 501. See [docs/phase-reports/phase10-final-status.md](docs/phase-reports/phase10-final-status.md) for the current list (Trax, room transfer, Flash `purchase_avatarsticker`). Club subscribe, website voucher redeem, and the Flash badge editor dialog are honest HTTP 200 client-handoff pages — they do not charge, grant, or write PolarIS ([docs/phase-reports/client-handoff.md](docs/phase-reports/client-handoff.md)). Group tags live on website-owned `phpretro_guild_tags` ([docs/phase-reports/guild-tags.md](docs/phase-reports/guild-tags.md)).
 
 
 ## License

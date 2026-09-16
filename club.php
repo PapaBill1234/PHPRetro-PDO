@@ -109,7 +109,6 @@ require_once('./templates/community_header.php');
 </div>
 <?php }else{ ?>
 
-						<script src="<?php echo PATH; ?>/web-gallery/static/js/habboclub.js" type="text/javascript"></script>
 <div id="hc-habblet">
     <div id="hc-membership-info" class="box-content">
 <p>
@@ -124,40 +123,9 @@ require_once('./templates/community_header.php');
     </div>
     <div id="hc-buy-container" class="box-content">
         <div id="hc-buy-buttons" class="hc-buy-buttons rounded rounded-hcred">
-            <form class="subscribe-form" method="post"><?php echo Csrf::field(); ?>
-                <input type="hidden" id="settings-figure" name="figureData" value="">
-                <input type="hidden" id="settings-gender" name="newGender" value="">
-                <table width="100%">
-<?php if($user->user("credits") < 20){ ?>
-                  <p class="credits-notice"><?php echo $lang->loc['you.need.coins']; ?>:</p>
-                  <p class="credits-notice"><?php echo $lang->loc['club.starts.at']; ?> 20 <?php echo $lang->loc['coins']; ?></p>                  
-                  <a class="new-button fill" href="<?php echo PATH; ?>/credits"><b><?php echo $lang->loc['purchase.coins']; ?></b><i></i></a>
-<?php }else{ ?>
-                    <tr>
-                        <td>
-		                    <a class="new-button fill" id="subscribe1" href="#" onclick='habboclub.buttonClick(1, "<?php echo $lang->loc['CLUB']; ?>"); return false;'><b style="padding-left: 3px; padding-right: 3px;"><?php echo $lang->loc['buy']; ?> 1 <?php echo $lang->loc['months']; ?></b><i></i></a>
-                        </td>
-                        <td width="45%"><?php echo $lang->loc['purchase']; ?> 31 <?php echo $lang->loc['days']; ?><br/> 20 <?php echo $lang->loc['coins']; ?></td>
-                    </tr>
-                    <tr>
-
-                        <td>
-		                    <a class="new-button fill" id="subscribe2" href="#" onclick='habboclub.buttonClick(2, "<?php echo $lang->loc['CLUB']; ?>"); return false;'><b style="padding-left: 3px; padding-right: 3px;"><?php echo $lang->loc['buy']; ?> 3 <?php echo $lang->loc['months']; ?></b><i></i></a>
-                        </td>
-                        <td width="45%"><?php echo $lang->loc['purchase']; ?> 93 <?php echo $lang->loc['days']; ?><br/> 50 <?php echo $lang->loc['coins']; ?></td>
-                    </tr>
-                    <tr>
-                        <td>
-
-		                    <a class="new-button fill" id="subscribe3" href="#" onclick='habboclub.buttonClick(3, "<?php echo $lang->loc['CLUB']; ?>"); return false;'><b style="padding-left: 3px; padding-right: 3px;"><?php echo $lang->loc['buy']; ?> 6 <?php echo $lang->loc['months']; ?></b><i></i></a>
-                        </td>
-                        <td width="45%"><?php echo $lang->loc['purchase']; ?> 186 <?php echo $lang->loc['days']; ?><br/> 80 <?php echo $lang->loc['coins']; ?></td>
-                    </tr>
-<?php } ?>
-                </table>
-            </form>
+            <p>This website cannot take coins or grant club membership. Buy it from the hotel catalog.</p>
+            <p><a href="<?php echo PATH; ?>/client" class="new-button" target="client" onclick="HabboClient.openOrFocus(this); return false;"><b>Open hotel</b><i></i></a></p>
         </div>
-
     </div>
 </div>
 <?php } ?>
