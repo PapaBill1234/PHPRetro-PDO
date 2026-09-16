@@ -17,5 +17,6 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): guilds has no tags column. User tags live in users_settings.tags only.
-habbletUnavailable('Group tags are unavailable.');
+$guildId = habbletInt($_POST, 'groupId');
+habbletRemoveGuildTag($db, $guildId, (int) $user->id, habbletText($_POST, 'tagName'));
+require __DIR__.'/myhabbo_tag_listgrouptags.php';

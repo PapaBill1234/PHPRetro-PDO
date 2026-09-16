@@ -41,7 +41,30 @@ echo match ($key) {
 <p><a href="<?php echo PATH; ?>/client?forwardId=2&roomId=<?php echo (int) $guild['room_id']; ?>" onclick="HabboClient.roomForward(this, '<?php echo (int) $guild['room_id']; ?>', 'private'); return false;" target="client" class="group-info-room">Room</a></p>
 <?php } ?>
 <div class="group-info-description"><?php echo nl2br($input->HoloText($guild['description'])); ?></div>
-<p><?php echo $lang->loc['no.tags'] ?? 'No tags.'; ?></p>
+<div id="profile-tags-container">
+<div id="profile-tag-list">
+<?php
+$canEditTags = habbletCanEditGuildTags($db, (int) $guild['id'], (int) $user->id);
+$lang->addLocale('tags.ajax');
+habbletRenderGuildTags($db, (int) $guild['id'], $canEditTags);
+?>
+</div>
+<?php if ($canEditTags) { ?>
+<div id="profile-tags-status-field" style="display:none">
+<div id="tag-limit-message" style="display:none"><?php echo $lang->loc['tags.limit'] ?? 'The limit is 20 tags!'; ?></div>
+<div id="tag-invalid-message" style="display:none"><?php echo $lang->loc['invalid.tag'] ?? 'Invalid tag.'; ?></div>
+</div>
+<div class="profile-add-tag">
+<input type="text" id="profile-add-tag-input" maxlength="20" style="float:left" />
+<a href="#" class="new-button" style="float:left" id="profile-add-tag"><b><?php echo $lang->loc['add.tag'] ?? 'Add tag'; ?></b><i></i></a>
+</div>
+<br class="clear" />
+<?php } ?>
+</div>
+<script type="text/javascript">
+new GroupInfoWidget(<?php echo (int) $guild['id']; ?><?php echo !empty($user->logged_in) && (int) $user->id > 0 ? ', '.(int) $user->id : ''; ?>);
+</script>
+
 <?php } elseif ($key === 'guestbookwidget') {
     $entries = $homes->guestbookEntriesForWidget($widget);
     foreach ($entries as &$entry) {
