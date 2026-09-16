@@ -33,7 +33,7 @@ try {
     $custom = file_get_contents($root.'/migrations/001_custom_tables.sql');
     preg_match('/CREATE TABLE IF NOT EXISTS `phpretro_collectibles` \(.*?\) ENGINE=.*?;/s', $custom, $match);
     $db->execute($match[0]);
-    foreach (['003_web_minimail.sql', '006_restore_remaining.sql'] as $file) {
+    foreach (['003_web_minimail.sql', '006_restore_remaining.sql', '009_guild_tags.sql'] as $file) {
         $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
         foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
             if ($sql !== '') { $db->execute($sql); }

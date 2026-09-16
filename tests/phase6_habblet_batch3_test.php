@@ -37,6 +37,12 @@ try {
     $db->execute('INSERT INTO users_settings (user_id, tags) VALUES (1, ?), (2, ?)', ['music;games;', 'music;']);
     $db->execute('INSERT INTO rooms (id, owner_id, owner_name, name, description) VALUES (1, 1, ?, ?, ?), (2, 2, ?, ?, ?)', ['User1', '<script>Room', 'A room', 'Bob<script>', 'Quiet', '']);
     $db->execute('INSERT INTO guilds (id, user_id, name, date_created) VALUES (1, 1, ?, ?), (2, 2, ?, ?)', ['Guild<script>', 100, 'Crew', 100]);
+    foreach (['003_web_minimail.sql', '009_guild_tags.sql'] as $file) {
+        $migration = preg_replace('/^\s*--.*$/m', '', file_get_contents($root.'/migrations/'.$file)) ?? '';
+        foreach (array_filter(array_map('trim', explode(';', $migration))) as $sql) {
+            if ($sql !== '') { $db->execute($sql); }
+        }
+    }
     chdir($root);
     $input = new HoloInput();
     $settings = new HoloSettings();
@@ -140,9 +146,6 @@ try {
     check(endpoint('myhabbo_linktool_search.php', [], ['query' => 'User', 'scope' => []])[1] === 200, 'Malformed scope rejected without error');
 
     $blocked = [
-        'myhabbo_tag_addgrouptag.php',
-        'myhabbo_tag_listgrouptags.php',
-        'myhabbo_tag_removegrouptag.php',
         'myhabbo_traxplayer_select_song.php',
         'trax_song.php',
     ];
@@ -152,7 +155,9 @@ try {
         check(endpoint($file, ['widgetId' => "' OR 1=1", 'selectedId' => '1', 'message' => 'x', 'tagName' => 'crew', 'groupId' => '1'])[1] === 501, $file.' unavailable');
     }
     check($beforeCredits === $db->fetchAll('SELECT id, credits FROM users ORDER BY id'), 'Unavailable store does not debit credits');
-    check($beforeTags === $db->fetchAll('SELECT user_id, tags FROM users_settings ORDER BY user_id'), 'Unavailable group tags do not write user tags');
+    check(endpoint('myhabbo_tag_addgrouptag.php', ['groupId' => '1', 'tagName' => 'crew'])[0] === 'valid', 'Owner group tag insert');
+    check($beforeTags === $db->fetchAll('SELECT user_id, tags FROM users_settings ORDER BY user_id'), 'Group tags do not write user tags');
+    check($db->fetchColumn('SELECT tag FROM phpretro_guild_tags WHERE guild_id = 1') === 'crew', 'Group tag stored on phpretro_guild_tags');
     check(str_contains(file_get_contents($root.'/habblet/myhabbo_homes.php'), "\$page['no_ajax'] = true"), 'Homes session keeps legacy full-page GET/POST');
     check(str_contains(file_get_contents($root.'/habblet/trax_song.php'), "\$page['no_ajax'] = true"), 'Trax song URL is not an XHR habblet');
     echo "Batch 3: {$assertions} assertions passed.\n";

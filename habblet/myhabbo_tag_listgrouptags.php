@@ -17,5 +17,6 @@
 
 require_once(__DIR__.'/../includes/habblet.php');
 habbletRequireUser();
-// TODO(phase6): guilds has no tags column. User tags live in users_settings.tags only.
-habbletUnavailable('Group tags are unavailable.');
+$lang->addLocale('tags.ajax');
+$guildId = habbletInt($_POST, 'groupId', habbletInt($_GET, 'groupId'));
+habbletRenderGuildTags($db, $guildId, habbletCanEditGuildTags($db, $guildId, (int) $user->id));
