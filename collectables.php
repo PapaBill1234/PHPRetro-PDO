@@ -37,7 +37,7 @@ $rows = $db->fetchAll(
                         <div class="cbb clearfix gray ">
                             <h2 class="title"><?php echo $lang->loc['current.collectables']; ?></h2>
                             <div id="collectible-current-content" class="clearfix">
-        <div id="collectibles-current-img" style="background-image: url(<?php echo $input->HoloText(str_replace("%path%", PATH, $row['image'])); ?>)"></div>
+        <div id="collectibles-current-img" style="background-image: url(<?php echo HoloUrl(str_replace("%path%", PATH, $row['image'])); ?>)"></div>
         <h4><?php echo $input->HoloText($row['name']); ?></h4>
         <p><?php echo date('F Y', $currentTime); ?></p>
         <p class="last"><?php echo $input->HoloText($row['description']); ?></p>
@@ -67,7 +67,7 @@ Collectibles.init(<?php echo $nextTime - time(); ?>);
                             <ul id="collectibles-list">
 <?php foreach ($rows as $index => $showroomRow) { $even = $input->IsEven($index + 1) ? "even" : "odd"; ?>
     <li class="<?php echo $even; ?> clearfix">
-        <div class="collectibles-prodimg" style="background-image: url(<?php echo $input->HoloText(str_replace("%path%", PATH, $showroomRow['image'])); ?>)"></div>
+        <div class="collectibles-prodimg" style="background-image: url(<?php echo HoloUrl(str_replace("%path%", PATH, $showroomRow['image'])); ?>)"></div>
         <h4><?php echo date('F Y', (int) $showroomRow['time']); ?>: <?php echo $input->HoloText($showroomRow['name']); ?></h4>
         <p class="collectibles-proddesc last"><?php echo $input->HoloText($showroomRow['description']); ?></p>
     </li>

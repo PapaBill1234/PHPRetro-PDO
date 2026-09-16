@@ -373,10 +373,10 @@ printf("        <div id=\"active-habbo-data-%s\" class=\"active-habbo-data\">
 $i = 0;
 $news = [];
 foreach ($rows as $row) {
-    $row['summary'] = nl2br($input->HoloText($row['text'], true));
-    $row['title'] = $input->HoloText($row['title'], true);
+    $row['summary'] = nl2br($input->HoloText($row['text']));
+    $row['title'] = $input->HoloText($row['title']);
     $row['title_safe'] = $input->stringToURL($row['title'], true, true);
-    $row['header_image'] = $input->HoloText($row['image'], true);
+    $row['header_image'] = HoloUrl($row['image']);
     $row['date'] = '';
     $news[$i++] = $row;
 }

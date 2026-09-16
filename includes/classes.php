@@ -24,7 +24,7 @@ if(!defined("IN_HOLOCMS")) { header("Location: ".PATH); exit; }
 class HoloInput {
 	function HoloText($str, $advanced=false) {
 		$str = stripslashes((string) $str);
-		if($advanced != true){ $str = htmlspecialchars($str,ENT_COMPAT,"UTF-8"); }
+		if($advanced != true){ $str = htmlspecialchars($str, ENT_QUOTES, "UTF-8"); }
 		return $str;
 	}
 	function stringToURL($str,$lowercase=true,$spaces=false){

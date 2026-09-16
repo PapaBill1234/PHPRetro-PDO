@@ -212,8 +212,8 @@ if($input->IsEven($i)){ $even = "even"; }else{ $even = "odd"; }
         <li class="<?php echo $even; ?>">
             <div class="hotcampaign-container">
                 <a href="<?php echo str_replace("%path%",PATH,$row['url']); ?>"><img src="<?php echo str_replace("%path%",PATH,$row['image']); ?>" align="left" alt="" /></a>
-                <h3><?php echo $input->HoloText($row['name'],true); ?></h3>
-                <p><?php echo $input->HoloText($row['desc'],true); ?></p>
+                <h3><?php echo $input->HoloText($row['name']); ?></h3>
+                <p><?php echo $input->HoloText($row['desc']); ?></p>
 
                 <p class="link"><a href="<?php echo str_replace("%path%",PATH,$row['url']); ?>"><?php echo $lang->loc['go.there']; ?> &raquo;</a></p>
             </div>
@@ -445,9 +445,9 @@ foreach ($newsRows as $row) {
 	$images = array_values(array_filter(array_map('trim', explode(',', (string) $row['images']))));
 	$news[] = [
 		'id' => (int) $row['id'],
-		'title' => $input->HoloText($row['title'], true),
-		'title_safe' => $input->stringToURL($input->HoloText($row['title'], true), true, true),
-		'summary' => nl2br($input->HoloText($row['summary'], true)),
+		'title' => $input->HoloText($row['title']),
+		'title_safe' => $input->stringToURL($row['title'], true, true),
+		'summary' => nl2br($input->HoloText($row['summary'])),
 		'header_image' => $images[0] ?? '',
 		'date' => date('M j, Y', (int) $row['time']),
 	];

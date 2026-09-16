@@ -45,7 +45,18 @@ function HoloText($str, $advanced=false){
 		return $GLOBALS['input']->HoloText($str, $advanced);
 	}
 	$str = (string) $str;
-	return $advanced ? $str : htmlspecialchars($str, ENT_COMPAT, 'UTF-8');
+	return $advanced ? $str : htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+}
+function HoloUrl($url): string {
+	$url = trim((string) $url);
+	if ($url === '' || preg_match('/[\x00-\x1F\x7F]/', $url)) { return ''; }
+	$parts = parse_url($url);
+	if ($parts === false || (isset($parts['scheme']) && !in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true))) { return ''; }
+	if (!isset($parts['scheme']) && !str_starts_with($url, '/') && !preg_match('/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/', $url)) { return ''; }
+	return htmlspecialchars(str_replace(['(', ')'], ['%28', '%29'], $url), ENT_QUOTES, 'UTF-8');
+}
+function HoloJson($value): string {
+	return json_encode((string) $value, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) ?: '""';
 }
 function HoloOptionalWebGalleryTag($relativeFile, $type){
 	$relativeFile = ltrim(str_replace('\\', '/', (string) $relativeFile), '/');

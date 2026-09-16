@@ -76,12 +76,12 @@ require_once('./templates/community_header.php');
 <?php if ($categories) { ?> —
 <?php foreach ($categories as $index => $newsCategory) { ?><?php if ($index > 0) { echo ', '; } ?><a href="<?php echo PATH; ?>/articles?category=<?php echo rawurlencode($newsCategory); ?>"><?php echo $input->HoloText($newsCategory); ?></a><?php } ?>
 <?php } ?></div>
-<?php if ($images) { ?><img src="<?php echo $input->HoloText($images[0]); ?>" class="article-image" alt="" /><?php } ?>
+<?php if ($images && ($imageUrl = HoloUrl($images[0])) !== '') { ?><img src="<?php echo $imageUrl; ?>" class="article-image" alt="" /><?php } ?>
 <p class="summary"><?php echo nl2br($input->HoloText($newsRow['summary'])); ?></p>
 <div class="article-body"><p><?php echo nl2br($input->HoloText($newsRow['story'])); ?></p>
 <div class="article-author">- <?php echo $input->HoloText($newsRow['author']); ?></div>
 <?php if (count($images) > 1) { ?><div class="article-images clearfix">
-<?php foreach (array_slice($images, 1) as $image) { ?><a href="<?php echo $input->HoloText($image); ?>" style="background-image: url(<?php echo $input->HoloText($image); ?>); background-position: 0 0"></a><?php } ?>
+<?php foreach (array_slice($images, 1) as $image) { if (($imageUrl = HoloUrl($image)) === '') { continue; } ?><a href="<?php echo $imageUrl; ?>" style="background-image: url(<?php echo $imageUrl; ?>); background-position: 0 0"></a><?php } ?>
 </div><?php } ?>
 <script type="text/javascript">
 document.observe("dom:loaded", function() {
